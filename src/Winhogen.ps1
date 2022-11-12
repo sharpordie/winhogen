@@ -5,7 +5,7 @@ Function Main {
 
     # Change title
     $Current = "$($Script:MyInvocation.MyCommand.Path)"
-    $Host.UI.RawUI.WindowTitle = (Get-Item "$Current").BaseName.ToUpper()
+    $Host.UI.RawUI.WindowTitle = (Get-Item "$Current").BaseName
 
     # Output welcome
     Clear-Host ; $ProgressPreference = "SilentlyContinue"
