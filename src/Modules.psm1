@@ -815,6 +815,27 @@ Function Update-SevenZip {
 
 }
 
+Function Update-Sizer {
+
+    # Update package
+    $Address = "https://community.chocolatey.org/packages/sizer"
+    $Pattern = "Sizer ([\d.]+)</title>"
+    $Version = (Invoke-Scraper "Html" "$Address" "$Pattern").Groups[1].Value
+    $Starter = "${Env:ProgramFiles(x86)}\Sizer\sizer.exe"
+    $Current = Expand-Version "$Starter"
+    $Updated = [Version] ($Current.Remove(1,2)) -Ge [Version] "$Version"
+    If (-Not $Updated) {
+        $Address = "http://brianapps.net/sizer4/"
+        $Pattern = "(sizer4_dev[\d]+.msi)"
+        $Address = (Invoke-Scraper "Html" "$Address" "$Pattern").Groups[1].Value
+        $Address = "http://brianapps.net/sizer4/$Address"
+        $Fetched = Invoke-Fetcher "$Address"
+        Invoke-Gsudo { Start-Process "msiexec" "/i `"$Using:Fetched`" /qn" -Wait }
+        Remove-Desktop "Sizer*.lnk"
+    }
+
+}
+
 Function Update-Spotify {
 
     # Update package

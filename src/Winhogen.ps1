@@ -37,35 +37,36 @@ Function Main {
         "Update-Jdownloader"
         "Update-Keepassxc"
         "Update-Mpv"
-        # "Update-Python"
+        "Update-Python"
         "Update-Qbittorrent"
-        # "Update-Spotify"
-        # "Update-Wsl"
+        "Update-Sizer"
+        "Update-Spotify"
+        "Update-Wsl"
         "Update-YtDlg"
     )
     
     # Output progress
     $Maximum = (60 - 20) * -1
     $Shaping = "`r{0,$Maximum}{1,-3}{2,-6}{3,-3}{4,-8}"
-    $Heading = "$Shaping" -f "FUNCTION", " ", "STATUS", " ", "DURATION"
+    $Heading = "$Shaping" -F "FUNCTION", " ", "STATUS", " ", "DURATION"
     Write-Host "$heading"
     Foreach ($Element In $Factors) {
         $Started = Get-Date
         $Running = $Element.Split(' ')[0].ToUpper()
         $Shaping = "`n{0,$Maximum}{1,-3}{2,-6}{3,-3}{4,-8}"
-        $Loading = "$Shaping" -f "$Running", "", "ACTIVE", "", "--:--:--"
+        $Loading = "$Shaping" -F "$Running", "", "ACTIVE", "", "--:--:--"
         Write-Host "$Loading" -ForegroundColor DarkYellow -NoNewline
         Try {
             Invoke-Expression $Element *> $Null
-            $Elapsed = "{0:hh}:{0:mm}:{0:ss}" -f ($(Get-Date) - $Started)
+            $Elapsed = "{0:hh}:{0:mm}:{0:ss}" -F ($(Get-Date) - $Started)
             $Shaping = "`r{0,$Maximum}{1,-3}{2,-6}{3,-3}{4,-8}"
-            $Success = "$Shaping" -f "$Running", "", "WORKED", "", "$Elapsed"
+            $Success = "$Shaping" -F "$Running", "", "WORKED", "", "$Elapsed"
             Write-Host "$Success" -ForegroundColor Green -NoNewLine
         }
         Catch {
-            $Elapsed = "{0:hh}:{0:mm}:{0:ss}" -f ($(Get-Date) - $Started)
+            $Elapsed = "{0:hh}:{0:mm}:{0:ss}" -F ($(Get-Date) - $Started)
             $Shaping = "`r{0,$Maximum}{1,-3}{2,-6}{3,-3}{4,-8}"
-            $Failure = "$Shaping" -f "$Running", "", "FAILED", "", "$Elapsed"
+            $Failure = "$Shaping" -F "$Running", "", "FAILED", "", "$Elapsed"
             Write-Host "$Failure" -ForegroundColor Red -NoNewLine
         }
     }
