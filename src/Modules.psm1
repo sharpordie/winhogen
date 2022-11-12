@@ -845,6 +845,9 @@ Function Update-Spotify {
     Invoke-Gsudo { Start-Sleep 2 ; Stop-Process -Name "Spotify" }
     Remove-Desktop "Spotify*.lnk"
 
+    # Remove autorun
+    Remove-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" -Name "Spotify" -EA SI
+
 }
 
 Function Update-Vscode {
