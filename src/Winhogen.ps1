@@ -1,7 +1,7 @@
 Function Main {
 
-    # Import modules
-    Import-Module -Name "$PSScriptRoot\Modules.psm1" -Force
+    # Import members
+    Import-Module -Name "$PSScriptRoot\Members.psm1" -Force
 
     # Change title
     $Current = "$($Script:MyInvocation.MyCommand.Path)"
