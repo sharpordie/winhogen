@@ -920,7 +920,7 @@ Function Update-VisualStudioEnterprise {
 
     # Finish installation
     If (-Not $Present) {
-        Invoke-Gsudo { Start-Process "$Starter" "/ResetUserData" -Wait }
+        Invoke-Gsudo { Start-Process "$Using:Starter" "/ResetUserData" -Wait }
         Add-Type -AssemblyName "System.Windows.Forms"
         Start-Process -FilePath "$Starter"
         Start-Sleep 15 ; [Windows.Forms.SendKeys]::SendWait("{TAB}" * 4)
