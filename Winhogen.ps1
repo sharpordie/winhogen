@@ -130,6 +130,35 @@ Function Remove-Desktop {
 
 }
 
+Function Update-LnkFile {
+
+    Param(
+        [String] $LnkFile,
+        [String] $Starter,
+        [String] $ArgList,
+        [String] $Message,
+        [String] $Picture,
+        [String] $WorkDir,
+        [Switch] $AsAdmin
+    )
+
+    $Wscript = New-Object -ComObject WScript.Shell
+    $Element = $Wscript.CreateShortcut("$LnkFile")
+    If ($Starter) { $Element.TargetPath = "$Starter" }
+    If ($ArgList) { $Element.Arguments = "$ArgList" }
+    If ($Message) { $Element.Description = "$Message" }
+    $Element.IconLocation = If ($Picture -And (Test-Path "$Picture")) { "$Picture" } Else { "$Starter" }
+    $Element.WorkingDirectory = If ($WorkDir -And (Test-Path "$WorkDir")) { "$WorkDir" } Else { Split-Path "$Starter" }
+    $Element.Save()
+
+    If ($AsAdmin) { 
+        $Content = [IO.File]::ReadAllBytes("$LnkFile")
+        $Content[0x15] = $Content[0x15] -Bor 0x20
+        [IO.File]::WriteAllBytes("$LnkFile", $Content)
+    }
+
+}
+
 Function Update-SysPath {
     
     Param (
@@ -506,10 +535,10 @@ Function Update-Git {
         $Fetched = Invoke-Fetcher "$Address"
         $ArgList = "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART, /NOCANCEL, /SP- /COMPONENTS=`"`""
         Invoke-Gsudo { Start-Process "$Using:Fetched" "$Using:ArgList" -Wait }
-        Update-SysPath "$Env:ProgramFiles\Git\cmd" "Process"
     }
     
     # Change settings
+    Update-SysPath "$Env:ProgramFiles\Git\cmd" "Process"
     Invoke-Expression "git config --global http.postBuffer 1048576000"
     Invoke-Expression "git config --global init.defaultBranch '$Default'"
     Invoke-Expression "git config --global user.email '$GitMail'"
@@ -891,10 +920,10 @@ Function Update-VisualStudioEnterprise {
 
     # Finish installation
     If (-Not $Present) {
-        Start-Process "$Starter" "/ResetUserData" -Verb RunAs -Wait
+        Invoke-Gsudo { Start-Process "$Starter" "/ResetUserData" -Wait }
         Add-Type -AssemblyName "System.Windows.Forms"
         Start-Process -FilePath "$Starter"
-        Start-Sleep 10 ; [Windows.Forms.SendKeys]::SendWait("{TAB}" * 4)
+        Start-Sleep 15 ; [Windows.Forms.SendKeys]::SendWait("{TAB}" * 4)
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{TAB}") ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
         Start-Sleep 20 ; [Windows.Forms.SendKeys]::SendWait("%{F4}") ; Start-Sleep 2
@@ -1118,7 +1147,7 @@ Function Main {
         "Update-Mpv"
         "Update-PaintNet"
         "Update-Python"
-        "Update-Qbittorrent"
+        # "Update-Qbittorrent"
         "Update-Sizer"
         "Update-Spotify"
         # "Update-VmwareWorkstation"
