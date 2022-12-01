@@ -958,6 +958,14 @@ Function Update-VisualStudioEnterprise {
 
 }
 
+Function Update-VisualStudioEnterpriseExtension {
+
+    Param (
+        [String] $Payload
+    )
+
+}
+
 Function Update-VisualStudioEnterpriseWorkload {
 
     Param (
@@ -1054,14 +1062,6 @@ Function Update-Wsl {
     Start-Process "$Program" "run sudo apt autoremove -y" -WindowStyle Hidden -Wait
     Start-Process "$Program" "run sudo apt install -y x11-apps" -WindowStyle Hidden -Wait
 
-    # Update cuda
-    # Start-Process "$Program" "run wget https://developer.download.nvidia.com/compute/cuda/repos/wsl-ubuntu/x86_64/cuda-wsl-ubuntu.pin" -WindowStyle Hidden -Wait
-    # Start-Process "$Program" "run sudo mv cuda-wsl-ubuntu.pin /etc/apt/preferences.d/cuda-repository-pin-600" -WindowStyle Hidden -Wait
-    # Start-Process "$Program" "run sudo apt-key adv --fetch-keys https://developer.download.nvidia.com/compute/cuda/repos/wsl-ubuntu/x86_64/3bf863cc.pub" -WindowStyle Hidden -Wait
-    # Start-Process "$Program" "run sudo add-apt-repository -y 'deb https://developer.download.nvidia.com/compute/cuda/repos/wsl-ubuntu/x86_64/ /'" -WindowStyle Hidden -Wait
-    # Start-Process "$Program" "run sudo apt-get update" -WindowStyle Hidden -Wait
-    # Start-Process "$Program" "run sudo apt-get -y install cuda" -WindowStyle Hidden -Wait
-
 }
 
 Function Update-YtDlg {
@@ -1106,13 +1106,13 @@ Function Main {
     $Factors = @(
         "Update-SevenZip"
         "Update-Git -GitMail sharpordie@outlook.com -GitUser sharpordie"
-        "Update-NvidiaDriver"
-        "Update-AndroidStudio"
+        # "Update-NvidiaDriver"
+        # "Update-AndroidStudio"
         "Update-Chromium"
         "Update-VisualStudioCode"
         "Update-VisualStudioEnterprise"
-        "Update-Bluestacks"
-        "Update-Flutter"
+        # "Update-Bluestacks"
+        # "Update-Flutter"
         "Update-Jdownloader"
         "Update-Keepassxc"
         "Update-Mpv"
@@ -1121,7 +1121,7 @@ Function Main {
         "Update-Qbittorrent"
         "Update-Sizer"
         "Update-Spotify"
-        "Update-VmwareWorkstation"
+        # "Update-VmwareWorkstation"
         "Update-YtDlg"
     )
     
