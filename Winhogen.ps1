@@ -353,17 +353,17 @@ Function Update-Chromium {
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{DOWN}" * 2)
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("%{F4}") ; Start-Sleep 2
-        Start-Process "$Starter" "--lang=en --start-maximized"
-        Start-Sleep 4 ; [Windows.Forms.SendKeys]::SendWait("^l")
-        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("chrome://flags/")
-        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
-        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("hide-extensions-menu")
-        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
-        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{TAB}" * 6)
-        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
-        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{DOWN}" * 2)
-        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
-        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("%{F4}") ; Start-Sleep 2
+        # Start-Process "$Starter" "--lang=en --start-maximized"
+        # Start-Sleep 4 ; [Windows.Forms.SendKeys]::SendWait("^l")
+        # Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("chrome://flags/")
+        # Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+        # Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("hide-extensions-menu")
+        # Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+        # Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{TAB}" * 6)
+        # Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+        # Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{DOWN}" * 2)
+        # Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+        # Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("%{F4}") ; Start-Sleep 2
         Start-Process "$Starter" "--lang=en --start-maximized"
         Start-Sleep 4 ; [Windows.Forms.SendKeys]::SendWait("^l")
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("chrome://flags/")
@@ -969,7 +969,7 @@ Function Update-VisualStudioEnterprise {
     # Change directory
     Remove-Item "$Env:UserProfile\source" -Recurse -EA SI
     New-Item "$Deposit" -ItemType Directory -EA SI | Out-Null
-    Add-MpPreference -ExclusionPath "$Deposit"
+    Invoke-Gsudo { Add-MpPreference -ExclusionPath "$Using:Deposit" }
     If (Test-Path "$Config1") {
         $Config1 = Get-Item "$Config1"
         [Xml] $Content = Get-Content "$Config1"
@@ -1045,11 +1045,9 @@ Function Update-VmwareWorkstation {
         $Fetched = Invoke-Fetcher "$Address"
         $Extract = Expand-Archive "$Fetched"
         $Program = Join-Path "$Extract" "windows\unlock.exe"
-        Invoke-Gsudo {
-            [Environment]::SetEnvironmentVariable("UNLOCK_QUIET", "1", "Machine")
-            Start-Process "$Using:Program" -Wait
-            [Environment]::SetEnvironmentVariable("UNLOCK_QUIET", $Null, "Machine")
-        }
+        Invoke-Gsudo { [Environment]::SetEnvironmentVariable("UNLOCK_QUIET", "1", "Machine") }
+        Invoke-Gsudo { Start-Process "$Using:Program" -Wait }
+        Invoke-Gsudo { [Environment]::SetEnvironmentVariable("UNLOCK_QUIET", $Null, "Machine") }
     }
 
     # Change directory
@@ -1130,6 +1128,10 @@ Function Main {
     Write-Host "$Loading" -FO DarkYellow -NoNewline ; Enable-PowPlan "Ultimate"
     $Correct = (Update-Gsudo) -And -Not (gsudo cache on -d -1 2>&1).ToString().Contains("Error")
     If (-Not $Correct) { Write-Host "$Failure" -FO Red ; Write-Host ; Exit }
+
+    Update-VisualStudioEnterprise
+    Update-VmwareWorkstation
+    Exit
 
     # Handle functions
     $Factors = @(
