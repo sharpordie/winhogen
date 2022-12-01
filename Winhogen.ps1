@@ -234,18 +234,19 @@ Function Update-Bluestacks {
     If (-Not $Updated) {
         $Address = "https://cdn3.bluestacks.com/downloads/windows/nxt/$Version/$Hashing/FullInstaller/x64/BlueStacksFullInstaller_${Version}_amd64_native.exe"
         $Fetched = Invoke-Fetcher "$Address"
-        $ArgList = "-s --defaultImageName Nougat64 --imageToLaunch Nougat64 --defaultImageName Nougat64 --imageToLaunch Nougat64"
+        # $ArgList = "-s --defaultImageName Nougat64 --imageToLaunch Nougat64 --defaultImageName Nougat64 --imageToLaunch Nougat64"
+        $ArgList = "-s --defaultImageName Nougat64 --imageToLaunch Nougat64 --defaultImageName Pie64 --imageToLaunch Pie64"
         Invoke-Gsudo { Start-Process "$Using:Fetched" "$Using:ArgList" -Wait }
         Remove-Desktop "BlueStacks*.lnk"
     }
 
     # Update shortcut
-    $Altered = (Get-Item "$Env:ProgramData\Microsoft\Windows\Start Menu\Programs\BlueStacks 5.lnk").FullName
-    If ($Null -Ne $Altered) {
-        $Content = [IO.File]::ReadAllBytes("$Altered")
-        $Content[0x15] = $Content[0x15] -Bor 0x20
-        Invoke-Gsudo { [IO.File]::WriteAllBytes("$Using:Altered", $Using:Content) }
-    }
+    # $Altered = (Get-Item "$Env:ProgramData\Microsoft\Windows\Start Menu\Programs\BlueStacks 5.lnk").FullName
+    # If ($Null -Ne $Altered) {
+    #     $Content = [IO.File]::ReadAllBytes("$Altered")
+    #     $Content[0x15] = $Content[0x15] -Bor 0x20
+    #     Invoke-Gsudo { [IO.File]::WriteAllBytes("$Using:Altered", $Using:Content) }
+    # }
 
 }
 
@@ -386,7 +387,8 @@ Function Update-Chromium {
         $Address = "https://api.github.com/repos/NeverDecaf/chromium-web-store/releases/latest"
         $Version = [Regex]::Match((Invoke-Scraper "Json" "$Address")[0].tag_name, "[\d.]+").Value
         Update-ChromiumExtension "https://github.com/NeverDecaf/chromium-web-store/releases/download/v$Version/Chromium.Web.Store.crx"
-        Update-ChromiumExtension "cjpalhdlnbpafiamejdnhcphjbkeiagm"
+        Update-ChromiumExtension "mnjggcdmjocbbbhaepdhchncahnbgone" # sponsorblock-for-youtube
+        Update-ChromiumExtension "cjpalhdlnbpafiamejdnhcphjbkeiagm" # ublock-origin
     }
 
     # Update bypass-paywalls-chrome
@@ -681,29 +683,19 @@ Function Update-NvidiaDriver {
 
 }
 
-Function Update-NvidiaGeforceExperience {
-    
+Function Update-PaintNet {
+
     # Update package
-    $Version = "3.26.0.154"
-    $Current = (Get-Package "NVIDIA GeForce Experience*" -EA SI).Version
-    $Present = $Null -Ne $Current
-    $Current = If (-Not $Present) { "0.0.0.0" } Else { $Current }
+    $Address = "https://api.github.com/repos/paintdotnet/release/releases"
+    $Version = [Regex]::Matches((Invoke-Scraper "Json" "$Address")[0].tag_name, "([\d.]+)").Groups[1].Value
+    $Starter = "$Env:ProgramFiles\paint.net\paintdotnet.exe"
+    $Current = Expand-Version "$Starter"
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
     If (-Not $Updated) {
-        $Address = "https://us.download.nvidia.com/GFE/GFEClient/$Version/GeForce_Experience_v$Version.exe"
+        $Address = (Invoke-Scraper "Json" "$Address")[0].assets.Where( { $_.browser_download_url -like "*x64.msi" } ).browser_download_url
         $Fetched = Invoke-Fetcher "$Address"
-        Invoke-Gsudo { Start-Process "$Using:Fetched" "-s -noreboot" -Wait }
-        Remove-Desktop "GeForce*.lnk"
-    }
-
-    # Change settings
-    $Address = "https://github.com/Moyster/BaiGfe/files/9830829/app.js.txt"
-    $Deposit = "$Env:ProgramFiles\NVIDIA Corporation\NVIDIA GeForce Experience\www"
-    $Present = Test-Path "$Deposit\app.js.backup"
-    If (-Not $Present) { Invoke-Gsudo { Copy-Item "$Using:Deposit\app.js" "$Using:Deposit\app.js.backup" } }
-    If (Invoke-Gsudo { (Get-FileHash "$Using:Deposit\app.js").Hash -Eq (Get-FileHash "$Using:Deposit\app.js.backup").Hash }) {
-        $Fetched = Invoke-Fetcher "$Address"
-        Invoke-Gsudo { Copy-Item "$Using:Fetched" "$Using:Deposit\app.js" -Force }
+        Invoke-Gsudo { Start-Process "msiexec" "/i `"$Using:Fetched`" /qn" -Wait }
+        Remove-Desktop "paint*.lnk"
     }
 
 }
@@ -823,7 +815,7 @@ Function Update-Sizer {
     $Version = (Invoke-Scraper "Html" "$Address" "$Pattern").Groups[1].Value
     $Starter = "${Env:ProgramFiles(x86)}\Sizer\sizer.exe"
     $Current = Expand-Version "$Starter"
-    $Updated = [Version] ($Current.Remove(1,2)) -Ge [Version] "$Version"
+    $Updated = [Version] ($Current.Remove(1, 2)) -Ge [Version] "$Version"
     If (-Not $Updated) {
         $Address = "http://brianapps.net/sizer4/"
         $Pattern = "(sizer4_dev[\d]+.msi)"
@@ -850,7 +842,7 @@ Function Update-Spotify {
 
 }
 
-Function Update-Vscode {
+Function Update-VisualStudioCode {
 
     # Update package
     $Address = "https://code.visualstudio.com/sha?build=stable"
@@ -867,8 +859,8 @@ Function Update-Vscode {
     }
 
     # Update extensions
-    Start-Process "code" "--install-extension github.github-vscode-theme" -WindowStyle Hidden -Wait
-    Start-Process "code" "--install-extension ms-vscode.powershell" -WindowStyle Hidden -Wait
+    Start-Process "code" "--install-extension github.github-vscode-theme --force" -WindowStyle Hidden -Wait
+    Start-Process "code" "--install-extension ms-vscode.powershell --force" -WindowStyle Hidden -Wait
 
     # Change settings
     $Configs = "$Env:AppData\Code\User\settings.json"
@@ -878,10 +870,160 @@ Function Update-Vscode {
     $NewJson | Add-Member -Type NoteProperty -Name "editor.fontSize" -Value 14 -Force
     $NewJson | Add-Member -Type NoteProperty -Name "editor.lineHeight" -Value 28 -Force
     $NewJson | Add-Member -Type NoteProperty -Name "security.workspace.trust.enabled" -Value $False -Force
-    $NewJson | Add-Member -Type NoteProperty -Name "telemetry.telemetryLeve" -Value "crash" -Force
+    $NewJson | Add-Member -Type NoteProperty -Name "telemetry.telemetryLevel" -Value "crash" -Force
     $NewJson | Add-Member -Type NoteProperty -Name "update.mode" -Value "none" -Force
     $NewJson | Add-Member -Type NoteProperty -Name "workbench.colorTheme" -Value "GitHub Dark" -Force
     $NewJson | ConvertTo-Json | Set-Content "$Configs"
+
+}
+
+Function Update-VisualStudioEnterprise {
+
+    Param(
+        [String] $Deposit = "$Env:UserProfile\Projects",
+        [String] $Serials = "VHF9H-NXBBB-638P6-6JHCY-88JWH"
+    )
+
+    # Update software
+    $Starter = "$Env:ProgramFiles\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\devenv.exe"
+    $Present = Test-Path "$Starter"
+    Update-VisualStudioEnterpriseWorkload "Microsoft.VisualStudio.Workload.CoreEditor"
+
+    # Finish installation
+    If (-Not $Present) {
+        Start-Process "$Starter" "/ResetUserData" -Verb RunAs -Wait
+        Add-Type -AssemblyName "System.Windows.Forms"
+        Start-Process -FilePath "$Starter"
+        Start-Sleep 10 ; [Windows.Forms.SendKeys]::SendWait("{TAB}" * 4)
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{TAB}") ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+        Start-Sleep 20 ; [Windows.Forms.SendKeys]::SendWait("%{F4}") ; Start-Sleep 2
+    }
+
+    # Change serials
+    $Program = "$Env:ProgramFiles\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\StorePID.exe"
+    Invoke-Gsudo { Start-Process "$Using:Program" "$Using:Serials 09660" -WindowStyle Hidden -Wait }
+    
+    # Update workload
+    # Update-VisualStudioEnterpriseWorkload "Microsoft.VisualStudio.Workload.NetCrossPlat"
+
+    # Change highlightcurrentline
+    $Config1 = "$Env:LocalAppData\Microsoft\VisualStudio\17*\Settings\CurrentSettings.vssettings"
+    $Config2 = "$Env:LocalAppData\Microsoft\VisualStudio\17*\Settings\CurrentSettings-*.vssettings"
+    If (Test-Path "$Config1") {
+        $Config1 = Get-Item "$Config1"
+        [Xml] $Content = Get-Content "$Config1"
+        $Content.SelectSingleNode("//*[@name='HighlightCurrentLine']").InnerText = "false"
+        $Content.Save("$Config1")
+    }
+    If (Test-Path "$Config2") {
+        $Config2 = Get-Item "$Config2"
+        [Xml] $Content = Get-Content "$Config2"
+        $Content.SelectSingleNode("//*[@name='HighlightCurrentLine']").InnerText = "false"
+        $Content.Save("$Config2")
+    }
+
+    # Change linespacing
+    If (Test-Path "$Config1") {
+        $Config1 = Get-Item "$Config1"
+        [Xml] $Content = Get-Content "$Config1"
+        $Content.SelectSingleNode("//*[@name='LineSpacing']").InnerText = "1.5"
+        $Content.Save($Config1)
+    }
+    If (Test-Path "$Config2") {
+        $Config2 = Get-Item "$Config2"
+        [Xml] $Content = Get-Content "$Config2"
+        $Content.SelectSingleNode("//*[@name='LineSpacing']").InnerText = "1.5"
+        $Content.Save($Config2)
+    }
+
+    # Change directory
+    Remove-Item "$Env:UserProfile\source" -Recurse -EA SI
+    New-Item "$Deposit" -ItemType Directory -EA SI | Out-Null
+    Add-MpPreference -ExclusionPath "$Deposit"
+    If (Test-Path "$Config1") {
+        $Config1 = Get-Item "$Config1"
+        [Xml] $Content = Get-Content "$Config1"
+        $Payload = $Deposit.Replace("${Env:UserProfile}", '%vsspv_user_appdata%') + "\"
+        $Content.SelectSingleNode("//*[@name='ProjectsLocation']").InnerText = "$Payload"
+        $Content.Save($Config1)
+    }
+    If (Test-Path "$Config2") {
+        $Config2 = Get-Item "$Config2"
+        [Xml] $Content = Get-Content "$Config2"
+        $Payload = $Deposit.Replace("${Env:UserProfile}", '%vsspv_user_appdata%') + "\"
+        $Content.SelectSingleNode("//*[@name='ProjectsLocation']").InnerText = "$Payload"
+        $Content.Save($Config2)
+    }
+
+}
+
+Function Update-VisualStudioEnterpriseWorkload {
+
+    Param (
+        [String] $Payload
+    )
+
+    $Address = "https://aka.ms/vs/17/release/vs_enterprise.exe"
+    $Fetched = Invoke-Fetcher "$Address"
+    Invoke-Gsudo {
+        Start-Process "$Using:Fetched" "update --wait --quiet --norestart" -WindowStyle Hidden -Wait
+        Start-Process "$Using:Fetched" "install --wait --quiet --norestart --add $Using:Payload" -WindowStyle Hidden -Wait
+        Start-Sleep 2 ; Start-Process "cmd" "/c taskkill /f /im devenv.exe /t 2>nul 1>nul" -WindowStyle Hidden -Wait
+    }
+    
+}
+
+Function Update-VmwareWorkstation {
+
+    Param (
+        [String] $Leading = "17",
+        [String] $Deposit = "$Env:UserProfile\Machines",
+        [String] $Serials = "MC60H-DWHD5-H80U9-6V85M-8280D"
+    )
+
+    # Update software
+    $Address = "https://softwareupdate.vmware.com/cds/vmw-desktop/ws-windows.xml"
+    $Pattern = "url>ws/($Leading.[\d.]+)/(\d+)/windows/core"
+    $Version = (Invoke-Scraper "Html" "$Address" "$Pattern").Groups[1].Value
+    $Starter = "${Env:ProgramFiles(x86)}\VMware\VMware Workstation\vmware.exe"
+    $Present = Test-Path "$Starter"
+    $Current = Expand-Version "$Starter"
+    $Updated = [Version] "$Current" -Ge [Version] "$Version"
+    If (-Not $Updated) {
+        $Address = "https://www.vmware.com/go/getworkstation-win"
+        $Fetched = Invoke-Fetcher "$Address" (Join-Path "$Env:Temp" "vmware-workstation-full.exe")
+        $ArgList = "/s /v`"/qn EULAS_AGREED=1 SERIALNUMBER=$Serials"
+        Invoke-Gsudo { Start-Process "$Using:Fetched" "$Using:ArgList" -Wait }
+        Remove-Desktop "VMware*.lnk"
+        Start-Process "$Starter" -WindowStyle Hidden ; Start-Sleep 10
+        Stop-Process -Name "vmware" ; Start-Sleep 2
+    }
+
+    # Update unlocker
+    If (-Not $Present) {
+        $Address = "https://api.github.com/repos/DrDonk/unlocker/releases/latest"
+        $Version = [Regex]::Match((Invoke-Scraper "Json" "$Address")[0].tag_name, "[\d.]+").Value
+        $Address = "https://github.com/DrDonk/unlocker/releases/download/v$Version/unlocker$($Version.Replace('.', '')).zip"
+        $Fetched = Invoke-Fetcher "$Address"
+        $Extract = Expand-Archive "$Fetched"
+        $Program = Join-Path "$Extract" "windows\unlock.exe"
+        Invoke-Gsudo {
+            [Environment]::SetEnvironmentVariable("UNLOCK_QUIET", "1", "Machine")
+            Start-Process "$Using:Program" -Wait
+            [Environment]::SetEnvironmentVariable("UNLOCK_QUIET", $Null, "Machine")
+        }
+    }
+
+    # Change directory
+    If ($Deposit) {
+        New-Item -Path "$Deposit" -ItemType Directory -EA SI | Out-Null
+        $Configs = "$Env:AppData\VMware\preferences.ini"
+        If (-Not ((Get-Content "$Configs") -Match "prefvmx.defaultVMPath")) { Add-Content -Path "$Configs" -Value "prefvmx.defaultVMPath = `"$Deposit`"" }
+    }
+
+    # Remove tray
+    Set-ItemProperty -Path "HKCU:\Software\VMware, Inc.\VMware Tray" -Name "TrayBehavior" -Type DWord -Value 2
 
 }
 
@@ -937,4 +1079,84 @@ Function Update-YtDlg {
 
 }
 
-Export-ModuleMember -Function * -Alias *
+Function Main {
+
+    # Change title
+    $Current = "$($Script:MyInvocation.MyCommand.Path)"
+    $Host.UI.RawUI.WindowTitle = (Get-Item "$Current").BaseName
+
+    # Output welcome
+    Clear-Host ; $ProgressPreference = "SilentlyContinue"
+    Write-Host "+----------------------------------------------------------+"
+    Write-Host "|                                                          |"
+    Write-Host "|  > WINHOGEN                                              |"
+    Write-Host "|                                                          |"
+    Write-Host "|  > CONFIGURATION SCRIPT FOR WINDOWS 11                   |"
+    Write-Host "|                                                          |"
+    Write-Host "+----------------------------------------------------------+"
+    
+    # Remove restrictions
+    $Loading = "`nTHE UPDATING DEPENDENCIES PROCESS HAS LAUNCHED"
+    $Failure = "`rTHE UPDATING DEPENDENCIES PROCESS WAS CANCELED"
+    Write-Host "$Loading" -FO DarkYellow -NoNewline ; Enable-PowPlan "Ultimate"
+    $Correct = (Update-Gsudo) -And -Not (gsudo cache on -d -1 2>&1).ToString().Contains("Error")
+    If (-Not $Correct) { Write-Host "$Failure" -FO Red ; Write-Host ; Exit }
+
+    # Handle functions
+    $Factors = @(
+        "Update-SevenZip"
+        "Update-Git -GitMail sharpordie@outlook.com -GitUser sharpordie"
+        "Update-NvidiaDriver"
+        "Update-AndroidStudio"
+        "Update-Chromium"
+        "Update-VisualStudioCode"
+        "Update-VisualStudioEnterprise"
+        "Update-Bluestacks"
+        "Update-Flutter"
+        "Update-Jdownloader"
+        "Update-Keepassxc"
+        "Update-Mpv"
+        "Update-PaintNet"
+        "Update-Python"
+        "Update-Qbittorrent"
+        "Update-Sizer"
+        "Update-Spotify"
+        "Update-VmwareWorkstation"
+        "Update-YtDlg"
+    )
+    
+    # Output progress
+    $Maximum = (60 - 20) * -1
+    $Shaping = "`r{0,$Maximum}{1,-3}{2,-6}{3,-3}{4,-8}"
+    $Heading = "$Shaping" -F "FUNCTION", " ", "STATUS", " ", "DURATION"
+    Write-Host "$heading"
+    Foreach ($Element In $Factors) {
+        $Started = Get-Date
+        $Running = $Element.Split(' ')[0].ToUpper()
+        $Shaping = "`n{0,$Maximum}{1,-3}{2,-6}{3,-3}{4,-8}"
+        $Loading = "$Shaping" -F "$Running", "", "ACTIVE", "", "--:--:--"
+        Write-Host "$Loading" -ForegroundColor DarkYellow -NoNewline
+        Try {
+            Invoke-Expression $Element *> $Null
+            $Elapsed = "{0:hh}:{0:mm}:{0:ss}" -F ($(Get-Date) - $Started)
+            $Shaping = "`r{0,$Maximum}{1,-3}{2,-6}{3,-3}{4,-8}"
+            $Success = "$Shaping" -F "$Running", "", "WORKED", "", "$Elapsed"
+            Write-Host "$Success" -ForegroundColor Green -NoNewLine
+        }
+        Catch {
+            $Elapsed = "{0:hh}:{0:mm}:{0:ss}" -F ($(Get-Date) - $Started)
+            $Shaping = "`r{0,$Maximum}{1,-3}{2,-6}{3,-3}{4,-8}"
+            $Failure = "$Shaping" -F "$Running", "", "FAILED", "", "$Elapsed"
+            Write-Host "$Failure" -ForegroundColor Red -NoNewLine
+        }
+    }
+    
+    # Revert restrictions
+    Invoke-Expression "gsudo -k" *> $Null
+    
+    # Output newline
+    Write-Host "`n"
+
+}
+
+Main
