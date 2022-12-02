@@ -1,7 +1,7 @@
 <hr><div>
 <a href="../.."><img align="right" height="91" src="https://user-images.githubusercontent.com/72373746/205067934-960170e2-d289-4182-81cc-a953294ab71a.svg"></a>
 <h1>WINHOGEN</h1>
-<p>Configuration Script for Windows 11</p>
+<p>Configuration Script for Windows</p>
 </div><hr>
 
 ## PREFACE

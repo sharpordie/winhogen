@@ -225,7 +225,7 @@ Function Update-AndroidStudio {
 
     # Finish installation
     If (-Not $Present) {
-        Invoke-Expression "echo $("yes " * 10) | sdkmanager 'build-tools;33.0.0'"
+        Invoke-Expression "echo $("yes " * 10) | sdkmanager 'build-tools;33.0.1'"
         Invoke-Expression "echo $("yes " * 10) | sdkmanager 'emulator'"
         Invoke-Expression "echo $("yes " * 10) | sdkmanager 'extras;intel;Hardware_Accelerated_Execution_Manager'"
         Invoke-Expression "echo $("yes " * 10) | sdkmanager 'platform-tools'"
