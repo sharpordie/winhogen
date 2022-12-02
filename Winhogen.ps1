@@ -214,9 +214,9 @@ Function Update-AndroidStudio {
     }
 
     # Adjust environment
-    Invoke-Gsudo { [Environment]::SetEnvironmentVariable("ANDROID_HOME", "$SdkHome", "Machine") }
+    Invoke-Gsudo { [Environment]::SetEnvironmentVariable("ANDROID_HOME", "$Using:SdkHome", "Machine") }
     [Environment]::SetEnvironmentVariable("ANDROID_HOME", "$SdkHome", "Process")
-    Invoke-Gsudo { [Environment]::SetEnvironmentVariable("JAVA_HOME", "$JdkHome", "Machine") }
+    Invoke-Gsudo { [Environment]::SetEnvironmentVariable("JAVA_HOME", "$Using:JdkHome", "Machine") }
     [Environment]::SetEnvironmentVariable("JAVA_HOME", "$JdkHome", "Process")
     Update-SysPath "$JdkHome\bin" "Machine"
     Update-SysPath "$SdkHome\cmdline-tools\latest\bin" "Machine"
@@ -1132,25 +1132,25 @@ Function Main {
 
     # Handle functions
     $Factors = @(
-        "Update-SevenZip"
-        "Update-Git -GitMail sharpordie@outlook.com -GitUser sharpordie"
-        "Update-NvidiaDriver"
+        # "Update-SevenZip"
+        # "Update-Git -GitMail sharpordie@outlook.com -GitUser sharpordie"
+        # "Update-NvidiaDriver"
         "Update-AndroidStudio"
-        "Update-Chromium"
-        "Update-VisualStudioCode"
-        "Update-VisualStudioEnterprise"
-        "Update-Bluestacks"
+        # "Update-Chromium"
+        # "Update-VisualStudioCode"
+        # "Update-VisualStudioEnterprise"
+        # "Update-Bluestacks"
         "Update-Flutter"
-        "Update-Jdownloader"
-        "Update-Keepassxc"
-        "Update-Mpv"
-        "Update-PaintNet"
-        "Update-Python"
-        "Update-Qbittorrent"
-        "Update-Sizer"
-        "Update-Spotify"
-        "Update-VmwareWorkstation"
-        "Update-YtDlg"
+        # "Update-Jdownloader"
+        # "Update-Keepassxc"
+        # "Update-Mpv"
+        # "Update-PaintNet"
+        # "Update-Python"
+        # "Update-Qbittorrent"
+        # "Update-Sizer"
+        # "Update-Spotify"
+        # "Update-VmwareWorkstation"
+        # "Update-YtDlg"
     )
     
     # Output progress
