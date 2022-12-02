@@ -1038,7 +1038,7 @@ Function Update-VmwareWorkstation {
     }
 
     # Update unlocker
-    If (-Not $Present) {
+    If (-Not $Present -Or $True) {
         $Address = "https://api.github.com/repos/DrDonk/unlocker/releases/latest"
         $Version = [Regex]::Match((Invoke-Scraper "Json" "$Address")[0].tag_name, "[\d.]+").Value
         $Address = "https://github.com/DrDonk/unlocker/releases/download/v$Version/unlocker$($Version.Replace('.', '')).zip"
