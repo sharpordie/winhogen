@@ -1045,8 +1045,10 @@ Function Update-VmwareWorkstation {
         $Fetched = Invoke-Fetcher "$Address"
         $Extract = Expand-Archive "$Fetched"
         $Program = Join-Path "$Extract" "windows\unlock.exe"
-        [Environment]::SetEnvironmentVariable("UNLOCK_QUIET", "1", "Process")
-        Invoke-Gsudo { Start-Process "$Using:Program" -Wait } -LoadProfile
+        Invoke-Gsudo { 
+            [Environment]::SetEnvironmentVariable("UNLOCK_QUIET", "1", "Process")
+            Start-Process "$Using:Program" -Wait
+        }
     }
 
     # Change directory
