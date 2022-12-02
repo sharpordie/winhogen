@@ -1047,7 +1047,7 @@ Function Update-VmwareWorkstation {
         $Program = Join-Path "$Extract" "windows\unlock.exe"
         Invoke-Gsudo {
             [Environment]::SetEnvironmentVariable("UNLOCK_QUIET", "1", "Process")
-            Start-Process "$Using:Program" -WindowStyle Hidden -Wait
+            Start-Process "$Using:Program" -WindowStyle Normal -Wait
         }
     }
 
