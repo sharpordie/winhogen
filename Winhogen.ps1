@@ -969,7 +969,7 @@ Function Update-VisualStudioEnterprise {
     # Change directory
     Remove-Item "$Env:UserProfile\source" -Recurse -EA SI
     New-Item "$Deposit" -ItemType Directory -EA SI | Out-Null
-    Invoke-Gsudo { Add-MpPreference -ExclusionPath "$Using:Deposit" }
+    Try { Invoke-Gsudo { Add-MpPreference -ExclusionPath "$Using:Deposit" } } Catch {}
     If (Test-Path "$Config1") {
         $Config1 = Get-Item "$Config1"
         [Xml] $Content = Get-Content "$Config1"
@@ -1046,7 +1046,7 @@ Function Update-VmwareWorkstation {
         $Extract = Expand-Archive "$Fetched"
         $Program = Join-Path "$Extract" "windows\unlock.exe"
         Invoke-Gsudo { [Environment]::SetEnvironmentVariable("UNLOCK_QUIET", "1", "Machine") }
-        Invoke-Gsudo { Start-Process "$Using:Program" -Wait }
+        Invoke-Gsudo { Start-Process "$Using:Program" -Wait } -LoadProfile
         Invoke-Gsudo { [Environment]::SetEnvironmentVariable("UNLOCK_QUIET", $Null, "Machine") }
     }
 
