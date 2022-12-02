@@ -1128,6 +1128,9 @@ Function Main {
     $Correct = (Update-Gsudo) -And -Not (gsudo cache on -d -1 2>&1).ToString().Contains("Error")
     If (-Not $Correct) { Write-Host "$Failure" -FO Red ; Write-Host ; Exit }
 
+    Update-VmwareWorkstation
+    Exit
+
     # Handle functions
     $Factors = @(
         # "Update-SevenZip"
