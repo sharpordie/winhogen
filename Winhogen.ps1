@@ -1047,7 +1047,7 @@ Function Update-VmwareWorkstation {
         $Program = Join-Path "$Extract" "windows\unlock.exe"
         Invoke-Gsudo {
             [Environment]::SetEnvironmentVariable("UNLOCK_QUIET", "1", "Process")
-            Start-Process "$Using:Program" -WindowStyle Normal
+            Start-Process "$Using:Program" -WindowStyle Hidden
         }
     }
 
@@ -1132,25 +1132,25 @@ Function Main {
 
     # Handle functions
     $Factors = @(
-        # "Update-SevenZip"
-        # "Update-Git -GitMail sharpordie@outlook.com -GitUser sharpordie"
-        # "Update-NvidiaDriver"
-        # "Update-AndroidStudio"
-        # "Update-Chromium"
-        # "Update-VisualStudioCode"
-        # "Update-VisualStudioEnterprise"
-        # "Update-Bluestacks"
-        # "Update-Flutter"
-        # "Update-Jdownloader"
-        # "Update-Keepassxc"
-        # "Update-Mpv"
-        # "Update-PaintNet"
-        # "Update-Python"
-        # "Update-Qbittorrent"
-        # "Update-Sizer"
-        # "Update-Spotify"
+        "Update-SevenZip"
+        "Update-Git -GitMail sharpordie@outlook.com -GitUser sharpordie"
+        "Update-NvidiaDriver"
+        "Update-AndroidStudio"
+        "Update-Chromium"
+        "Update-VisualStudioCode"
+        "Update-VisualStudioEnterprise"
+        "Update-Bluestacks"
+        "Update-Flutter"
+        "Update-Jdownloader"
+        "Update-Keepassxc"
+        "Update-Mpv"
+        "Update-PaintNet"
+        "Update-Python"
+        "Update-Qbittorrent"
+        "Update-Sizer"
+        "Update-Spotify"
         "Update-VmwareWorkstation"
-        # "Update-YtDlg"
+        "Update-YtDlg"
     )
     
     # Output progress
