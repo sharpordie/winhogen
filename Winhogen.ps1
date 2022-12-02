@@ -969,7 +969,7 @@ Function Update-VisualStudioEnterprise {
     # Change directory
     Remove-Item "$Env:UserProfile\source" -Recurse -EA SI
     New-Item "$Deposit" -ItemType Directory -EA SI | Out-Null
-    Try { Invoke-Gsudo { Add-MpPreference -ExclusionPath "$Using:Deposit" } } Catch {}
+    Invoke-Gsudo { Add-MpPreference -ExclusionPath "$Using:Deposit" *> $Null }
     If (Test-Path "$Config1") {
         $Config1 = Get-Item "$Config1"
         [Xml] $Content = Get-Content "$Config1"
@@ -1045,9 +1045,8 @@ Function Update-VmwareWorkstation {
         $Fetched = Invoke-Fetcher "$Address"
         $Extract = Expand-Archive "$Fetched"
         $Program = Join-Path "$Extract" "windows\unlock.exe"
-        Invoke-Gsudo { [Environment]::SetEnvironmentVariable("UNLOCK_QUIET", "1", "Machine") }
+        [Environment]::SetEnvironmentVariable("UNLOCK_QUIET", "1", "Process")
         Invoke-Gsudo { Start-Process "$Using:Program" -Wait } -LoadProfile
-        Invoke-Gsudo { [Environment]::SetEnvironmentVariable("UNLOCK_QUIET", $Null, "Machine") }
     }
 
     # Change directory
@@ -1129,14 +1128,10 @@ Function Main {
     $Correct = (Update-Gsudo) -And -Not (gsudo cache on -d -1 2>&1).ToString().Contains("Error")
     If (-Not $Correct) { Write-Host "$Failure" -FO Red ; Write-Host ; Exit }
 
-    Update-VisualStudioEnterprise
-    Update-VmwareWorkstation
-    Exit
-
     # Handle functions
     $Factors = @(
-        "Update-SevenZip"
-        "Update-Git -GitMail sharpordie@outlook.com -GitUser sharpordie"
+        # "Update-SevenZip"
+        # "Update-Git -GitMail sharpordie@outlook.com -GitUser sharpordie"
         # "Update-NvidiaDriver"
         # "Update-AndroidStudio"
         # "Update-Chromium"
@@ -1153,7 +1148,7 @@ Function Main {
         # "Update-Sizer"
         # "Update-Spotify"
         "Update-VmwareWorkstation"
-        "Update-YtDlg"
+        # "Update-YtDlg"
     )
     
     # Output progress
