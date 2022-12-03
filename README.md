@@ -16,4 +16,4 @@ iwr -useb https://raw.githubusercontent.com/sharpordie/winhogen/HEAD/Winhogen.ps
 
 ## GALLERY
 
-<a href="https://user-images.githubusercontent.com/72373746/205068043-8c4321d0-7d16-4195-8459-fbeec8e8fcc9.png"><img src="https://user-images.githubusercontent.com/72373746/205068043-8c4321d0-7d16-4195-8459-fbeec8e8fcc9.png" width="49%"/></a><a><img src="https://upload.wikimedia.org/wikipedia/commons/c/ca/1x1.png" width="2%"/></a><a href="https://fakeimg.pl/852x480/273445/fff/?text=‏‏‎ ‎"><img src="https://fakeimg.pl/852x480/273445/fff/?text=‏‏‎ ‎" width="49%"/></a>
+<a href="https://user-images.githubusercontent.com/72373746/205436465-51d35b05-2761-46cc-bf6b-32eb80c39e36.png"><img src="https://user-images.githubusercontent.com/72373746/205436465-51d35b05-2761-46cc-bf6b-32eb80c39e36.png" width="49%"/></a><a><img src="https://upload.wikimedia.org/wikipedia/commons/c/ca/1x1.png" width="2%"/></a><a href="https://fakeimg.pl/852x480/273445/fff/?text=‏‏‎ ‎"><img src="https://fakeimg.pl/852x480/273445/fff/?text=‏‏‎ ‎" width="49%"/></a>
