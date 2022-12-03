@@ -11,8 +11,7 @@ Opiniated post-installation script for Windows 11.
 ## STARTER
 
 ```shell
-iwr -useb https://raw.githubusercontent.com/sharpordie/winhogen/HEAD/Winhogen.ps1 -o Winhogen.ps1
-powershell -ep bypass -f Winhogen.ps1
+iwr -useb https://raw.githubusercontent.com/sharpordie/winhogen/HEAD/Winhogen.ps1 -o Winhogen.ps1 ; powershell -ep bypass -f Winhogen.ps1
 ```
 
 ## GALLERY
