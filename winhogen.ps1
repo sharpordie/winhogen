@@ -1162,31 +1162,31 @@ Function Main {
 
     # Handle functions
     $Factors = @(
-        # "Update-NvidiaDriver"
-        # "Update-Windows"
+        "Update-NvidiaDriver"
+        "Update-Windows"
 
-        # "Update-AndroidStudio"
+        "Update-AndroidStudio"
         "Update-Chromium"
         "Update-Git -GitMail sharpordie@outlook.com -GitUser sharpordie"
         "Update-SevenZip"
         "Update-VisualStudioCode"
         "Update-VisualStudioEnterprise"
 
-        # "Update-Bluestacks"
+        "Update-Bluestacks"
         "Update-Figma"
-        # "Update-Flutter"
+        "Update-Flutter"
         "Update-Jdownloader"
         "Update-Keepassxc"
-        # "Update-Mpv"
+        "Update-Mpv"
         "Update-PaintNet"
-        # "Update-Python"
+        "Update-Python"
         "Update-Qbittorrent"
-        # "Update-Sizer"
-        # "Update-Spotify"
+        "Update-Sizer"
+        "Update-Spotify"
         "Update-VmwareWorkstation"
         "Update-YtDlg"
 
-        # "Update-Appearance"
+        "Update-Appearance"
     )
     
     # Output progress
@@ -1220,8 +1220,6 @@ Function Main {
     
     # Output newline
     Write-Host "`n"
-
-    Start-Sleep 30000
 
 }
 
