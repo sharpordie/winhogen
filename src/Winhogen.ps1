@@ -489,6 +489,30 @@ Function Update-ChromiumExtension {
 
 }
 
+Function Update-Figma {
+
+    # Update package
+    $Address = "https://desktop.figma.com/win/RELEASE.json"
+    $Version = (Invoke-Scraper "Json" "$Address").version
+    $Starter = "$Env:LocalAppData\Figma\Figma.exe"
+    $Present = Test-Path "$Starter"
+    $Current = Expand-Version "$Starter"
+    $Updated = [Version] "$Current" -Ge [Version] "$Version"
+    If (-Not $Updated) {
+        $Address = "https://desktop.figma.com/win/FigmaSetup.exe"
+        $Fetched = Invoke-Fetcher "$Address"
+        $ArgList = "/s /S /q /Q /quiet /silent /SILENT /VERYSILENT"
+        Invoke-Gsudo { Start-Process "$Using:Fetched" "$Using:ArgList" -Wait }
+        If (-Not $Present) {
+            $Started = Get-Date
+            $LnkFile = "$Env:UserProfile\Desktop\Figma*.lnk"
+            While (-Not (Test-Path $LnkFile) -And $Started.AddSeconds(30) -Gt (Get-Date)) { Start-Sleep 2 }
+            Remove-Item -Path $LnkFile
+        }
+    }
+
+}
+
 Function Update-Flutter {
 
     # Update package
@@ -1119,7 +1143,7 @@ Function Main {
     Write-Host "|                                                          |"
     Write-Host "|  > WINHOGEN                                              |"
     Write-Host "|                                                          |"
-    Write-Host "|  > CONFIGURATION SCRIPT FOR WINDOWS 11                   |"
+    Write-Host "|  > CONFIGURATION SCRIPT FOR WINDOWS                      |"
     Write-Host "|                                                          |"
     Write-Host "+----------------------------------------------------------+"
     
@@ -1132,25 +1156,29 @@ Function Main {
 
     # Handle functions
     $Factors = @(
-        # "Update-SevenZip"
-        # "Update-Git -GitMail sharpordie@outlook.com -GitUser sharpordie"
-        # "Update-NvidiaDriver"
+        "Update-Windows"
+        "Update-NvidiaDriver"
+
         "Update-AndroidStudio"
-        # "Update-Chromium"
-        # "Update-VisualStudioCode"
-        # "Update-VisualStudioEnterprise"
-        # "Update-Bluestacks"
+        "Update-Chromium"
+        "Update-Git -GitMail sharpordie@outlook.com -GitUser sharpordie"
+        "Update-SevenZip"
+        "Update-VisualStudioCode"
+        "Update-VisualStudioEnterprise"
+
+        "Update-Bluestacks"
+        "Update-Figma"
         "Update-Flutter"
-        # "Update-Jdownloader"
-        # "Update-Keepassxc"
-        # "Update-Mpv"
-        # "Update-PaintNet"
-        # "Update-Python"
-        # "Update-Qbittorrent"
-        # "Update-Sizer"
-        # "Update-Spotify"
-        # "Update-VmwareWorkstation"
-        # "Update-YtDlg"
+        "Update-Jdownloader"
+        "Update-Keepassxc"
+        "Update-Mpv"
+        "Update-PaintNet"
+        "Update-Python"
+        "Update-Qbittorrent"
+        "Update-Sizer"
+        "Update-Spotify"
+        "Update-VmwareWorkstation"
+        "Update-YtDlg"
     )
     
     # Output progress
