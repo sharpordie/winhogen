@@ -1,5 +1,5 @@
 <hr><div>
-<a href="../.."><img align="right" height="91" src="https://user-images.githubusercontent.com/72373746/205067934-960170e2-d289-4182-81cc-a953294ab71a.svg"></a>
+<a href="../.."><img align="right" height="91" src="https://user-images.githubusercontent.com/72373746/205436866-dcfe8fa7-8aae-4fae-9e1b-46fb4a96fd07.png"></a>
 <h1>WINHOGEN</h1>
 <p>Configuration Script for Windows</p>
 </div><hr>
