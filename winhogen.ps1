@@ -1166,25 +1166,25 @@ Function Main {
         # "Update-Windows"
 
         # "Update-AndroidStudio"
-        # "Update-Chromium"
-        # "Update-Git -GitMail sharpordie@outlook.com -GitUser sharpordie"
-        # "Update-SevenZip"
-        # "Update-VisualStudioCode"
-        # "Update-VisualStudioEnterprise"
+        "Update-Chromium"
+        "Update-Git -GitMail sharpordie@outlook.com -GitUser sharpordie"
+        "Update-SevenZip"
+        "Update-VisualStudioCode"
+        "Update-VisualStudioEnterprise"
 
         # "Update-Bluestacks"
-        # "Update-Figma"
+        "Update-Figma"
         # "Update-Flutter"
-        # "Update-Jdownloader"
-        # "Update-Keepassxc"
+        "Update-Jdownloader"
+        "Update-Keepassxc"
         # "Update-Mpv"
-        # "Update-PaintNet"
+        "Update-PaintNet"
         # "Update-Python"
-        # "Update-Qbittorrent"
+        "Update-Qbittorrent"
         # "Update-Sizer"
         # "Update-Spotify"
-        # "Update-VmwareWorkstation"
-        # "Update-YtDlg"
+        "Update-VmwareWorkstation"
+        "Update-YtDlg"
 
         # "Update-Appearance"
     )
@@ -1220,6 +1220,8 @@ Function Main {
     
     # Output newline
     Write-Host "`n"
+
+    Start-Sleep 30000
 
 }
 
