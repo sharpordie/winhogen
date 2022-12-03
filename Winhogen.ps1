@@ -248,6 +248,12 @@ Function Update-AndroidStudio {
 
 }
 
+Function Update-Appearance {
+
+    return 0
+
+}
+
 Function Update-Bluestacks {
 
     # Update package
@@ -1156,8 +1162,8 @@ Function Main {
 
     # Handle functions
     $Factors = @(
-        "Update-Windows"
         "Update-NvidiaDriver"
+        "Update-Windows"
 
         "Update-AndroidStudio"
         "Update-Chromium"
@@ -1179,6 +1185,8 @@ Function Main {
         "Update-Spotify"
         "Update-VmwareWorkstation"
         "Update-YtDlg"
+
+        "Update-Appearance"
     )
     
     # Output progress
