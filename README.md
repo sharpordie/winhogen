@@ -6,7 +6,7 @@
 
 <h2><samp>OVERVIEW</samp></h2>
 
-Opiniated post-installation script for Windows 11.
+Personal post-installation script for Windows 11.
 
 <h2><samp>IGNITION</samp></h2>
 
