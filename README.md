@@ -4,7 +4,7 @@
 <p>Configuration Script for Windows</p>
 <hr></div>
 
-## <samp>SUPPORTS</samp>
+## <samp>FUNDINGS</samp>
 
 <a href="../.." target="_blank"><img src="https://raw.githubusercontent.com/sharpordie/mybadges/main/src/kofi.svg"></a><img src="https://upload.wikimedia.org/wikipedia/commons/c/ca/1x1.png" width="2%"/><a href="../.." target="_blank"><img src="https://raw.githubusercontent.com/sharpordie/mybadges/main/src/patreon.svg"></a>
 
