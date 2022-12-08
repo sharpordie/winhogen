@@ -6,7 +6,7 @@
 
 ## <samp>FUNDINGS</samp>
 
-<a href="../.." target="_blank"><img src="https://raw.githubusercontent.com/sharpordie/mybadges/main/src/kofi.svg"></a><img src="https://upload.wikimedia.org/wikipedia/commons/c/ca/1x1.png" width="2%"/><a href="../.." target="_blank"><img src="https://raw.githubusercontent.com/sharpordie/mybadges/main/src/patreon.svg"></a>
+<a href="../.." target="_blank"><img src="https://raw.githubusercontent.com/sharpordie/mybadges/main/src/kofi.svg"></a>
 
 ## <samp>OVERVIEW</samp>
 
@@ -16,7 +16,6 @@ Opinionated configuration  script for Windows 11.
 
 ```shell
 powershell -ep bypass -c "irm https://raw.githubusercontent.com/sharpordie/winhogen/main/winhogen.ps1 | iex"
-iwr -useb https://raw.githubusercontent.com/sharpordie/winhogen/HEAD/winhogen.ps1 -o winhogen.ps1 ; powershell -ep bypass -f winhogen.ps1
 ```
 
 ## <samp>SHOWCASE</samp>
