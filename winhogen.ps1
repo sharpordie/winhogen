@@ -763,7 +763,7 @@ Function Update-Python {
 
     Param (
         [Int] $Leading = 3,
-        [Int] $Backing = 11
+        [Int] $Backing = 10
     )
 
     # Update package
@@ -1163,30 +1163,30 @@ Function Main {
     # Handle functions
     $Factors = @(
         "Update-NvidiaDriver"
-        "Update-Windows"
+        # "Update-Windows"
 
-        "Update-AndroidStudio"
+        # "Update-AndroidStudio"
         "Update-Chromium"
-        "Update-Git -GitMail sharpordie@outlook.com -GitUser sharpordie"
+        # "Update-Git -GitMail sharpordie@outlook.com -GitUser sharpordie"
         "Update-SevenZip"
         "Update-VisualStudioCode"
         "Update-VisualStudioEnterprise"
 
-        "Update-Bluestacks"
-        "Update-Figma"
-        "Update-Flutter"
+        # "Update-Bluestacks"
+        # "Update-Figma"
+        # "Update-Flutter"
         "Update-Jdownloader"
         "Update-Keepassxc"
-        "Update-Mpv"
-        "Update-PaintNet"
-        "Update-Python"
-        "Update-Qbittorrent"
-        "Update-Sizer"
-        "Update-Spotify"
-        "Update-VmwareWorkstation"
-        "Update-YtDlg"
+        # "Update-Mpv"
+        # "Update-PaintNet"
+        # "Update-Python"
+        # "Update-Qbittorrent"
+        # "Update-Sizer"
+        # "Update-Spotify"
+        # "Update-VmwareWorkstation"
+        # "Update-YtDlg"
 
-        "Update-Appearance"
+        # "Update-Appearance"
     )
     
     # Output progress
