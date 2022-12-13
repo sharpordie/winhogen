@@ -555,6 +555,12 @@ Function Update-Figma {
         }
     }
 
+    # Remove tray
+    Stop-Process -Name "Figma" ; Stop-Process -Name "figma_agent"
+    $Configs = Get-Content "$Env:AppData\Figma\settings.json" | ConvertFrom-Json
+    Try { $Configs.showFigmaInMenuBar = $False } Catch { $Configs | Add-Member -Type NoteProperty -Name "showFigmaInMenuBar" -Value $False }
+    $Configs | ConvertTo-Json | Set-Content "$Env:AppData\Figma\settings.json"
+
 }
 
 Function Update-Flutter {
