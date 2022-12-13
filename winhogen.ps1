@@ -250,7 +250,44 @@ Function Update-AndroidStudio {
 
 Function Update-Appearance {
 
-    return 0
+    # Change the default pinned elements.
+    $shell = New-Object -ComObject Shell.Application
+    $shell.Namespace("shell:::{679f85cb-0220-4080-b29b-5540cc05aab6}").Items() | ForEach-Object { $_.InvokeVerb("unpinfromhome") }
+    $shell.Namespace("$Env:Temp").Self.InvokeVerb("pintohome")
+    $shell.Namespace("$Env:UserProfile").Self.InvokeVerb("pintohome")
+    $shell.Namespace("$Env:UserProfile\Downloads").Self.InvokeVerb("pintohome")
+    New-Item -Path "$Env:UserProfile\Projects" -ItemType Directory -EA SI ; $shell.Namespace("$Env:UserProfile\Projects").Self.InvokeVerb("pintohome")
+    New-Item -Path "$Env:UserProfile\Machines" -ItemType Directory -EA SI ; $shell.Namespace("$Env:UserProfile\Machines").Self.InvokeVerb("pintohome")
+
+    # Enable file extensions
+    Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "HideFileExt" -Value 0
+
+    # Enable hidden files
+    Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "Hidden" -Value 1
+
+    # Remove recent files
+    Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer" -Name "ShowFrequent" -Value 0
+    Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer" -Name "ShowRecent" -Value 0
+
+    # Remove taskbar items
+    Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "ShowTaskViewButton" -Type DWord -Value 0
+    Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "TaskbarDa" -Type DWord -Value 0
+    Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Search" -Name "SearchboxTaskbarMode" -Type DWord -Value 0
+
+    # Remove pinned applications
+    Invoke-Command {
+        ((New-Object -Com Shell.Application).NameSpace('shell:::{4234d49b-0245-4df3-b780-3893943456e1}').Items() | `
+            Where-Object { $_.Name -eq "Microsoft Edge" }).Verbs() | `
+            Where-Object { $_.Name.replace('&', '') -match "Unpin from taskbar" } | `
+            ForEach-Object { $_.DoIt() }
+        ((New-Object -Com Shell.Application).NameSpace('shell:::{4234d49b-0245-4df3-b780-3893943456e1}').Items() | `
+            Where-Object { $_.Name -eq "Microsoft Store" }).Verbs() | `
+            Where-Object { $_.Name.replace('&', '') -match "Unpin from taskbar" } | `
+            ForEach-Object { $_.DoIt() }
+    } *> $Null
+
+    # Reboot explorer
+    Stop-Process -Name "explorer"
 
 }
 
@@ -542,6 +579,17 @@ Function Update-Flutter {
     Invoke-Expression "flutter config --no-analytics"
     Invoke-Expression "echo $("yes " * 10) | flutter doctor --android-licenses"
 
+    # Update visual-studio
+    $Present = Test-Path "$Env:ProgramFiles\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\devenv.exe"
+    If ($Present) {
+        Update-VisualStudioEnterpriseWorkload "Microsoft.VisualStudio.Workload.NativeDesktop"
+    }
+
+    # # Update visual-studio-code
+    # If ($Null -Ne (Get-Command "code" -EA SI)) {
+    #     Start-Process "code" "--install-extension Dart-Code.flutter --force" -WindowStyle Hidden -Wait
+    # }
+
 }
 
 Function Update-Git {
@@ -659,7 +707,7 @@ Function Update-Keepassxc {
     }
 
     # Remove autorun
-    Remove-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" -Name "KeePassXC" -EA SI
+    Remove-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Name "KeePassXC" -EA SI
 
 }
 
@@ -796,12 +844,12 @@ Function Update-Python {
     Start-Process "poetry" "self update" -WindowStyle Hidden -Wait
     Start-Process "poetry" "config virtualenvs.in-project true" -WindowStyle Hidden -Wait
 
-    # Update vscode
-    If ($Null -Ne (Get-Command "code" -EA SI)) {
-        Start-Process "code" "--install-extension ms-python.python" -WindowStyle Hidden -Wait
-        Start-Process "code" "--install-extension njpwerner.autodocstring" -WindowStyle Hidden -Wait
-        Start-Process "code" "--install-extension visualstudioexptteam.vscodeintellicode" -WindowStyle Hidden -Wait
-    }
+    # # Update vscode
+    # If ($Null -Ne (Get-Command "code" -EA SI)) {
+    #     Start-Process "code" "--install-extension ms-python.python" -WindowStyle Hidden -Wait
+    #     Start-Process "code" "--install-extension njpwerner.autodocstring" -WindowStyle Hidden -Wait
+    #     Start-Process "code" "--install-extension visualstudioexptteam.vscodeintellicode" -WindowStyle Hidden -Wait
+    # }
 
 }
 
@@ -897,7 +945,7 @@ Function Update-Spotify {
     Remove-Desktop "Spotify*.lnk"
 
     # Remove autorun
-    Remove-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run" -Name "Spotify" -EA SI
+    Remove-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Name "Spotify" -EA SI
 
 }
 
@@ -1014,14 +1062,6 @@ Function Update-VisualStudioEnterprise {
         $Content.SelectSingleNode("//*[@name='ProjectsLocation']").InnerText = "$Payload"
         $Content.Save($Config2)
     }
-
-}
-
-Function Update-VisualStudioEnterpriseExtension {
-
-    Param (
-        [String] $Payload
-    )
 
 }
 
@@ -1163,9 +1203,9 @@ Function Main {
     # Handle functions
     $Factors = @(
         "Update-NvidiaDriver"
-        # "Update-Windows"
+        "Update-Windows"
 
-        # "Update-AndroidStudio"
+        "Update-AndroidStudio"
         "Update-Chromium"
         "Update-Git -GitMail sharpordie@outlook.com -GitUser sharpordie"
         "Update-SevenZip"
@@ -1174,19 +1214,19 @@ Function Main {
 
         # "Update-Bluestacks"
         "Update-Figma"
-        # "Update-Flutter"
+        "Update-Flutter"
         "Update-Jdownloader"
         "Update-Keepassxc"
-        # "Update-Mpv"
+        "Update-Mpv"
         # "Update-PaintNet"
-        # "Update-Python"
-        # "Update-Qbittorrent"
+        "Update-Python"
+        "Update-Qbittorrent"
         "Update-Sizer"
         # "Update-Spotify"
-        # "Update-VmwareWorkstation"
-        # "Update-YtDlg"
+        "Update-VmwareWorkstation"
+        "Update-YtDlg"
 
-        # "Update-Appearance"
+        "Update-Appearance"
     )
     
     # Output progress
