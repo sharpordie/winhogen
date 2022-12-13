@@ -257,7 +257,7 @@ Function Update-Appearance {
     $shell.Namespace("$Env:UserProfile").Self.InvokeVerb("pintohome")
     $shell.Namespace("$Env:UserProfile\Downloads").Self.InvokeVerb("pintohome")
     New-Item -Path "$Env:UserProfile\Projects" -ItemType Directory -EA SI ; $shell.Namespace("$Env:UserProfile\Projects").Self.InvokeVerb("pintohome")
-    New-Item -Path "$Env:UserProfile\Machines" -ItemType Directory -EA SI ; $shell.Namespace("$Env:UserProfile\Machines").Self.InvokeVerb("pintohome")
+    # New-Item -Path "$Env:UserProfile\Machines" -ItemType Directory -EA SI ; $shell.Namespace("$Env:UserProfile\Machines").Self.InvokeVerb("pintohome")
 
     # Enable file extensions
     Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "HideFileExt" -Value 0
@@ -312,7 +312,7 @@ Function Update-Bluestacks {
         Remove-Desktop "BlueStacks*.lnk"
     }
 
-    # Update shortcut
+    # # Update shortcut
     # $Altered = (Get-Item "$Env:ProgramData\Microsoft\Windows\Start Menu\Programs\BlueStacks 5.lnk").FullName
     # If ($Null -Ne $Altered) {
     #     $Content = [IO.File]::ReadAllBytes("$Altered")
@@ -1223,7 +1223,7 @@ Function Main {
         "Update-Qbittorrent"
         "Update-Sizer"
         # "Update-Spotify"
-        "Update-VmwareWorkstation"
+        # "Update-VmwareWorkstation"
         "Update-YtDlg"
 
         "Update-Appearance"
