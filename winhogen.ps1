@@ -459,6 +459,7 @@ Function Update-Chromium {
         $Address = "https://api.github.com/repos/NeverDecaf/chromium-web-store/releases/latest"
         $Version = [Regex]::Match((Invoke-Scraper "Json" "$Address")[0].tag_name, "[\d.]+").Value
         Update-ChromiumExtension "https://github.com/NeverDecaf/chromium-web-store/releases/download/v$Version/Chromium.Web.Store.crx"
+        Update-ChromiumExtension "ibplnjkanclpjokhdolnendpplpjiace" # simple-translate
         Update-ChromiumExtension "mnjggcdmjocbbbhaepdhchncahnbgone" # sponsorblock-for-youtube
         Update-ChromiumExtension "cjpalhdlnbpafiamejdnhcphjbkeiagm" # ublock-origin
     }
