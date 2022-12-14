@@ -250,7 +250,7 @@ Function Update-AndroidStudio {
 
 Function Update-Appearance {
 
-    # Change the default pinned elements.
+    # Change pinned elements
     $shell = New-Object -ComObject Shell.Application
     $shell.Namespace("shell:::{679f85cb-0220-4080-b29b-5540cc05aab6}").Items() | ForEach-Object { $_.InvokeVerb("unpinfromhome") }
     $shell.Namespace("$Env:Temp").Self.InvokeVerb("pintohome")
