@@ -119,6 +119,28 @@ Function Invoke-Scraper {
     
 }
 
+Function Invoke-Syspin {
+
+    Param(
+        [ValidateSet("PinToStart", "PinToTaskbar", "UnpinFromStart", "UnpinFromTaskbar")] [String] $Command,
+        [String] $Starter
+    )
+
+    $Content = Switch ($Command) {
+        PinToTaskbar { "5386" }
+        UnpinFromTaskbar { "5387" }
+        PinToStart { "51261" }
+        UnpinFromStart { "51394" }
+        Default { "5386" }
+    }
+
+    $Address = "http://www.technosys.net/download.aspx?file=syspin.exe"
+    $Fetched = Join-Path "$Env:Temp" "syspin.exe"
+    If ((Test-Path "$Fetched") -Eq $False) { Invoke-Fetcher "$Address" "$Fetched" }
+    Invoke-Expression "& `"$Fetched`" `"$Starter`" `"$Content`"" | Out-Null
+
+}
+
 Function Remove-Desktop {
 
     Param(
