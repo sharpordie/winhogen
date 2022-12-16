@@ -4,7 +4,7 @@ Opinionated configuration  script for Windows 11.
 
 ## <samp>PREVIEW</samp>
 
-<a href="assets/img1.png"><img src="assets/img1.png" width="49.5%"/></a><a><img src="https://upload.wikimedia.org/wikipedia/commons/c/ca/1x1.png" width="1%"/></a><a href="assets/img2.png"><img src="assets/img2.png" width="49.5%"/></a>
+<a href="assets/img1.png"><img src="assets/img1.png" width="49.25%"/></a><a><img src="https://upload.wikimedia.org/wikipedia/commons/c/ca/1x1.png" width="1.5%"/></a><a href="assets/img2.png"><img src="assets/img2.png" width="49.25%"/></a>
 
 ## <samp>STARTER</samp>
 
