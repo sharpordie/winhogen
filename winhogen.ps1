@@ -315,16 +315,18 @@ Function Update-Appearance {
     Invoke-Syspin "UnpinFromTaskbar" "$Env:ProgramData\Microsoft\Windows\Start Menu\Programs\Chromium.lnk"
     Invoke-Syspin "UnpinFromTaskbar" "$Env:AppData\Microsoft\Windows\Start Menu\Programs\JDownloader\JDownloader 2.lnk"
     Invoke-Syspin "UnpinFromTaskbar" "$Env:ProgramData\Microsoft\Windows\Start Menu\Programs\qBittorrent\qBittorrent.lnk"
-    Invoke-Syspin "UnpinFromTaskbar" "$Env:ProgramData\Microsoft\Windows\Start Menu\Programs\Visual Studio 2022 Preview.lnk"
     Invoke-Syspin "UnpinFromTaskbar" "$Env:AppData\Microsoft\Windows\Start Menu\Programs\Visual Studio Code\Visual Studio Code.lnk"
+    Invoke-Syspin "UnpinFromTaskbar" "$Env:ProgramData\Microsoft\Windows\Start Menu\Programs\Visual Studio 2022 Preview.lnk"
+    Invoke-Syspin "UnpinFromTaskbar" "$Env:AppData\Microsoft\Windows\Start Menu\LDPlayer9.lnk"
     Invoke-Syspin "UnpinFromTaskbar" "$Env:AppData\Microsoft\Windows\Start Menu\Programs\Spotify.lnk"
     Invoke-Syspin "UnpinFromTaskbar" "$Env:AppData\Microsoft\Windows\Start Menu\Programs\Mpv.lnk"
     Invoke-Syspin "UnpinFromTaskbar" "$Env:AppData\Microsoft\Windows\Start Menu\Programs\Figma.lnk"
     Invoke-Syspin "PinToTaskbar" "$Env:ProgramData\Microsoft\Windows\Start Menu\Programs\Chromium.lnk"
     Invoke-Syspin "PinToTaskbar" "$Env:AppData\Microsoft\Windows\Start Menu\Programs\JDownloader\JDownloader 2.lnk"
     Invoke-Syspin "PinToTaskbar" "$Env:ProgramData\Microsoft\Windows\Start Menu\Programs\qBittorrent\qBittorrent.lnk"
-    Invoke-Syspin "PinToTaskbar" "$Env:ProgramData\Microsoft\Windows\Start Menu\Programs\Visual Studio 2022 Preview.lnk"
     Invoke-Syspin "PinToTaskbar" "$Env:AppData\Microsoft\Windows\Start Menu\Programs\Visual Studio Code\Visual Studio Code.lnk"
+    Invoke-Syspin "PinToTaskbar" "$Env:ProgramData\Microsoft\Windows\Start Menu\Programs\Visual Studio 2022 Preview.lnk"
+    Invoke-Syspin "PinToTaskbar" "$Env:AppData\Microsoft\Windows\Start Menu\LDPlayer9.lnk"
     Invoke-Syspin "PinToTaskbar" "$Env:AppData\Microsoft\Windows\Start Menu\Programs\Spotify.lnk"
     Invoke-Syspin "PinToTaskbar" "$Env:AppData\Microsoft\Windows\Start Menu\Programs\Mpv.lnk"
     Invoke-Syspin "PinToTaskbar" "$Env:AppData\Microsoft\Windows\Start Menu\Programs\Figma.lnk"
@@ -761,6 +763,14 @@ Function Update-Keepassxc {
 
 }
 
+Function Update-Ldplayer {
+
+    # Enable bridge network
+
+    # Remove bloatware
+
+}
+
 Function Update-Mpv {
 
     # Update package
@@ -1118,7 +1128,7 @@ Function Update-VisualStudioPreview {
 
     # Change serials
     $Program = "$Env:ProgramFiles\Microsoft Visual Studio\2022\Preview\Common7\IDE\StorePID.exe"
-    Invoke-Gsudo { Start-Process "$Using:Program" "$Using:Serials 09660" -WindowStyle Hidden -Wait }
+    Invoke-Gsudo { Start-Process "$Using:Program" "$Using:Serials 09660" -WindowStyle Hidden -Wait } ; Start-Sleep 8
 
 }
 
