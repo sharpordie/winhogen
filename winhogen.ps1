@@ -633,13 +633,19 @@ Function Update-Flutter {
     Invoke-Expression "flutter config --no-analytics"
     Invoke-Expression "echo $("yes " * 10) | flutter doctor --android-licenses"
 
-    # Update visual-studio
-    $Present = Test-Path "$Env:ProgramFiles\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\devenv.exe"
+    # Update visual studio
+    $Present = Test-Path "$Env:ProgramFiles\Microsoft Visual Studio\2022\Professional\Common7\IDE\devenv.exe"
     If ($Present) {
-        Update-VisualStudioEnterpriseWorkload "Microsoft.VisualStudio.Workload.NativeDesktop"
+        Update-VisualStudioWorkload "Microsoft.VisualStudio.Workload.NativeDesktop"
     }
 
-    # # Update visual-studio-code
+    # Update visual studio preview
+    $Present = Test-Path "$Env:ProgramFiles\Microsoft Visual Studio\2022\Preview\Common7\IDE\devenv.exe"
+    If ($Present) {
+        Update-VisualStudioPreviewWorkload "Microsoft.VisualStudio.Workload.NativeDesktop"
+    }
+
+    # # Update vscode
     # If ($Null -Ne (Get-Command "code" -EA SI)) {
     #     Start-Process "code" "--install-extension Dart-Code.flutter --force" -WindowStyle Hidden -Wait
     # }
@@ -787,6 +793,9 @@ Function Update-Maui {
         Write-Output $("yes " * 10) | & "$Starter" 'platforms;android-31'
         Write-Output $("yes " * 10) | & "$Starter" 'platforms;android-33'
     }
+
+    # TODO: Update visual studio
+    Update-VisualStudioPreviewExtension "MattLaceyLtd.MauiAppAccelerator"
 
     # TODO: Remove virtual machine service
 
@@ -1155,7 +1164,11 @@ Function Update-VisualStudioPreview {
 
 Function Update-VisualStudioPreviewExtension {
 
-    Return 0
+    Param (
+        [String] $Payload
+    )
+
+    $Address = "https://marketplace.visualstudio.com/items?itemName=$Payload"
 
 }
 
