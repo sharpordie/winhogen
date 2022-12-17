@@ -302,13 +302,15 @@ Function Update-Appearance {
             Where-Object { $_.Name -Eq "Microsoft Edge" }).Verbs() | `
             Where-Object { $_.Name.replace('&', '') -Match "Unpin from taskbar" } | `
             ForEach-Object { $_.DoIt() }
-    } Catch {}
+    }
+    Catch {}
     Try {
         ((New-Object -Com Shell.Application).NameSpace('shell:::{4234d49b-0245-4df3-b780-3893943456e1}').Items() | `
             Where-Object { $_.Name -Eq "Microsoft Store" }).Verbs() | `
             Where-Object { $_.Name.replace('&', '') -Match "Unpin from taskbar" } | `
             ForEach-Object { $_.DoIt() }
-    } Catch {}
+    }
+    Catch {}
 
     # Change pinned applications
     Get-Item "$Env:AppData\Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar\*.lnk" | Remove-Item -Force -EA SI
@@ -765,9 +767,9 @@ Function Update-Keepassxc {
 
 Function Update-Ldplayer {
 
-    # Enable bridge network
-
-    # Remove bloatware
+    # TODO: Enable bridge network
+    # TODO: Remove bloatware
+    Return 0
 
 }
 
@@ -1235,6 +1237,23 @@ Function Update-Vscode {
 
 }
 
+Function Update-Windows {
+
+    # Change hostname
+    Rename-Computer -NewName "WINHOGEN" -EA SI
+
+    # Change timezone
+    Set-TimeZone -Name "Romance Standard Time"
+    Invoke-Gsudo { Start-Process "w32tm" "/resync /force" -WindowStyle Hidden }
+
+    # Enable remove desktop
+    Invoke-Gsudo { 
+        Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server" -Name "fDenyTSConnections" -Value 0
+        Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+    }
+
+}
+
 Function Update-Wsl {
 
     # Enable feature
@@ -1324,11 +1343,11 @@ Function Main {
         # "Update-Python"
         "Update-Qbittorrent"
         # "Update-Sizer"
-        "Update-Spotify"
+        # "Update-Spotify"
         # "Update-VmwareWorkstation"
-        "Update-YtDlg"
+        # "Update-YtDlg"
 
-        "Update-Appearance"
+        # "Update-Appearance"
     )
     
     # Output progress
