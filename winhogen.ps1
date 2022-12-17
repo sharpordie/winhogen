@@ -277,7 +277,7 @@ Function Update-Appearance {
     $shell.Namespace("shell:::{679f85cb-0220-4080-b29b-5540cc05aab6}").Items() | ForEach-Object { $_.InvokeVerb("unpinfromhome") }
     $shell.Namespace("$Env:Temp").Self.InvokeVerb("pintohome")
     $shell.Namespace("$Env:UserProfile").Self.InvokeVerb("pintohome")
-    $shell.Namespace("$Env:UserProfile\Downloads").Self.InvokeVerb("pintohome")
+    # $shell.Namespace("$Env:UserProfile\Downloads").Self.InvokeVerb("pintohome")
     New-Item -Path "$Env:UserProfile\Projects" -ItemType Directory -EA SI ; $shell.Namespace("$Env:UserProfile\Projects").Self.InvokeVerb("pintohome")
     # New-Item -Path "$Env:UserProfile\Machines" -ItemType Directory -EA SI ; $shell.Namespace("$Env:UserProfile\Machines").Self.InvokeVerb("pintohome")
 
@@ -297,16 +297,37 @@ Function Update-Appearance {
     Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Search" -Name "SearchboxTaskbarMode" -Type DWord -Value 0
 
     # Remove pinned applications
-    Invoke-Command {
+    Try {
         ((New-Object -Com Shell.Application).NameSpace('shell:::{4234d49b-0245-4df3-b780-3893943456e1}').Items() | `
-            Where-Object { $_.Name -eq "Microsoft Edge" }).Verbs() | `
-            Where-Object { $_.Name.replace('&', '') -match "Unpin from taskbar" } | `
+            Where-Object { $_.Name -Eq "Microsoft Edge" }).Verbs() | `
+            Where-Object { $_.Name.replace('&', '') -Match "Unpin from taskbar" } | `
             ForEach-Object { $_.DoIt() }
+    } Catch {}
+    Try {
         ((New-Object -Com Shell.Application).NameSpace('shell:::{4234d49b-0245-4df3-b780-3893943456e1}').Items() | `
-            Where-Object { $_.Name -eq "Microsoft Store" }).Verbs() | `
-            Where-Object { $_.Name.replace('&', '') -match "Unpin from taskbar" } | `
+            Where-Object { $_.Name -Eq "Microsoft Store" }).Verbs() | `
+            Where-Object { $_.Name.replace('&', '') -Match "Unpin from taskbar" } | `
             ForEach-Object { $_.DoIt() }
-    } *> $Null
+    } Catch {}
+
+    # Change pinned applications
+    Get-Item "$Env:AppData\Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar\*.lnk" | Remove-Item -Force -EA SI
+    Invoke-Syspin "UnpinFromTaskbar" "$Env:ProgramData\Microsoft\Windows\Start Menu\Programs\Chromium.lnk"
+    Invoke-Syspin "UnpinFromTaskbar" "$Env:AppData\Microsoft\Windows\Start Menu\Programs\JDownloader\JDownloader 2.lnk"
+    Invoke-Syspin "UnpinFromTaskbar" "$Env:ProgramData\Microsoft\Windows\Start Menu\Programs\qBittorrent\qBittorrent.lnk"
+    Invoke-Syspin "UnpinFromTaskbar" "$Env:ProgramData\Microsoft\Windows\Start Menu\Programs\Visual Studio 2022 Preview.lnk"
+    Invoke-Syspin "UnpinFromTaskbar" "$Env:AppData\Microsoft\Windows\Start Menu\Programs\Visual Studio Code\Visual Studio Code.lnk"
+    Invoke-Syspin "UnpinFromTaskbar" "$Env:AppData\Microsoft\Windows\Start Menu\Programs\Spotify.lnk"
+    Invoke-Syspin "UnpinFromTaskbar" "$Env:AppData\Microsoft\Windows\Start Menu\Programs\Mpv.lnk"
+    Invoke-Syspin "UnpinFromTaskbar" "$Env:AppData\Microsoft\Windows\Start Menu\Programs\Figma.lnk"
+    Invoke-Syspin "PinToTaskbar" "$Env:ProgramData\Microsoft\Windows\Start Menu\Programs\Chromium.lnk"
+    Invoke-Syspin "PinToTaskbar" "$Env:AppData\Microsoft\Windows\Start Menu\Programs\JDownloader\JDownloader 2.lnk"
+    Invoke-Syspin "PinToTaskbar" "$Env:ProgramData\Microsoft\Windows\Start Menu\Programs\qBittorrent\qBittorrent.lnk"
+    Invoke-Syspin "PinToTaskbar" "$Env:ProgramData\Microsoft\Windows\Start Menu\Programs\Visual Studio 2022 Preview.lnk"
+    Invoke-Syspin "PinToTaskbar" "$Env:AppData\Microsoft\Windows\Start Menu\Programs\Visual Studio Code\Visual Studio Code.lnk"
+    Invoke-Syspin "PinToTaskbar" "$Env:AppData\Microsoft\Windows\Start Menu\Programs\Spotify.lnk"
+    Invoke-Syspin "PinToTaskbar" "$Env:AppData\Microsoft\Windows\Start Menu\Programs\Mpv.lnk"
+    Invoke-Syspin "PinToTaskbar" "$Env:AppData\Microsoft\Windows\Start Menu\Programs\Figma.lnk"
 
     # Reboot explorer
     Stop-Process -Name "explorer"
@@ -978,52 +999,17 @@ Function Update-Spotify {
 
 }
 
-Function Update-VisualStudioCode {
-
-    # Update package
-    $Address = "https://code.visualstudio.com/sha?build=stable"
-    $Version = (Invoke-Scraper "Json" "$Address").products[1].name
-    $Starter = "$Env:LocalAppData\Programs\Microsoft VS Code\Code.exe"
-    $Current = Expand-Version "$Starter"
-    $Updated = [Version] "$Current" -Ge [Version] "$Version"
-    If (-Not $Updated -And "$Env:TERM_PROGRAM" -Ne "Vscode") {
-        $Address = "https://aka.ms/win32-x64-user-stable"
-        $Fetched = Invoke-Fetcher "$Address" (Join-Path "$Env:Temp" "VSCodeUserSetup-x64-Latest.exe")
-        $ArgList = "/VERYSILENT /MERGETASKS=`"!runcode`""
-        Invoke-Gsudo { Stop-Process -Name "Code" ; Start-Process "$Using:Fetched" "$Using:ArgList" -Wait }
-        Update-SysPath "$Env:LocalAppData\Programs\Microsoft VS Code\bin" "Machine"
-    }
-
-    # Update extensions
-    Start-Process "code" "--install-extension github.github-vscode-theme --force" -WindowStyle Hidden -Wait
-    Start-Process "code" "--install-extension ms-vscode.powershell --force" -WindowStyle Hidden -Wait
-
-    # Change settings
-    $Configs = "$Env:AppData\Code\User\settings.json"
-    New-Item "$(Split-Path "$Configs")" -ItemType Directory -EA SI
-    New-Item "$Configs" -ItemType File -EA SI
-    $NewJson = New-Object PSObject
-    $NewJson | Add-Member -Type NoteProperty -Name "editor.fontSize" -Value 14 -Force
-    $NewJson | Add-Member -Type NoteProperty -Name "editor.lineHeight" -Value 28 -Force
-    $NewJson | Add-Member -Type NoteProperty -Name "security.workspace.trust.enabled" -Value $False -Force
-    $NewJson | Add-Member -Type NoteProperty -Name "telemetry.telemetryLevel" -Value "crash" -Force
-    $NewJson | Add-Member -Type NoteProperty -Name "update.mode" -Value "none" -Force
-    $NewJson | Add-Member -Type NoteProperty -Name "workbench.colorTheme" -Value "GitHub Dark" -Force
-    $NewJson | ConvertTo-Json | Set-Content "$Configs"
-
-}
-
-Function Update-VisualStudioEnterprise {
+Function Update-VisualStudio {
 
     Param(
         [String] $Deposit = "$Env:UserProfile\Projects",
-        [String] $Serials = "VHF9H-NXBBB-638P6-6JHCY-88JWH"
+        [String] $Serials = "TD244-P4NB7-YQ6XK-Y8MMM-YWV2J"
     )
 
     # Update software
-    $Starter = "$Env:ProgramFiles\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\devenv.exe"
+    $Starter = "$Env:ProgramFiles\Microsoft Visual Studio\2022\Professional\Common7\IDE\devenv.exe"
     $Present = Test-Path "$Starter"
-    Update-VisualStudioEnterpriseWorkload "Microsoft.VisualStudio.Workload.CoreEditor"
+    Update-VisualStudioWorkload "Microsoft.VisualStudio.Workload.CoreEditor"
 
     # Finish installation
     If (-Not $Present) {
@@ -1037,11 +1023,8 @@ Function Update-VisualStudioEnterprise {
     }
 
     # Change serials
-    $Program = "$Env:ProgramFiles\Microsoft Visual Studio\2022\Enterprise\Common7\IDE\StorePID.exe"
+    $Program = "$Env:ProgramFiles\Microsoft Visual Studio\2022\Professional\Common7\IDE\StorePID.exe"
     Invoke-Gsudo { Start-Process "$Using:Program" "$Using:Serials 09660" -WindowStyle Hidden -Wait }
-    
-    # Update workload
-    # Update-VisualStudioEnterpriseWorkload "Microsoft.VisualStudio.Workload.NetCrossPlat"
 
     # Change highlightcurrentline
     $Config1 = "$Env:LocalAppData\Microsoft\VisualStudio\17*\Settings\CurrentSettings.vssettings"
@@ -1094,14 +1077,59 @@ Function Update-VisualStudioEnterprise {
 
 }
 
-Function Update-VisualStudioEnterpriseWorkload {
+Function Update-VisualStudioWorkload {
 
     Param (
         [String] $Payload
     )
 
-    $Address = "https://aka.ms/vs/17/release/vs_enterprise.exe"
+    $Address = "https://aka.ms/vs/17/release/vs_professional.exe"
     $Fetched = Invoke-Fetcher "$Address"
+    Invoke-Gsudo {
+        Start-Process "$Using:Fetched" "update --wait --quiet --norestart" -WindowStyle Hidden -Wait
+        Start-Process "$Using:Fetched" "install --wait --quiet --norestart --add $Using:Payload" -WindowStyle Hidden -Wait
+        Start-Sleep 2 ; Start-Process "cmd" "/c taskkill /f /im devenv.exe /t 2>nul 1>nul" -WindowStyle Hidden -Wait
+    }
+    
+}
+
+Function Update-VisualStudioPreview {
+
+    Param(
+        [String] $Deposit = "$Env:UserProfile\Projects",
+        [String] $Serials = "TD244-P4NB7-YQ6XK-Y8MMM-YWV2J"
+    )
+
+    # Update software
+    $Starter = "$Env:ProgramFiles\Microsoft Visual Studio\2022\Preview\Common7\IDE\devenv.exe"
+    $Present = Test-Path "$Starter"
+    Update-VisualStudioPreviewWorkload "Microsoft.VisualStudio.Workload.CoreEditor"
+
+    # Finish installation
+    If (-Not $Present) {
+        Invoke-Gsudo { Start-Process "$Using:Starter" "/ResetUserData" -Wait }
+        Add-Type -AssemblyName "System.Windows.Forms"
+        Start-Process -FilePath "$Starter"
+        Start-Sleep 15 ; [Windows.Forms.SendKeys]::SendWait("{TAB}" * 4)
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{TAB}") ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+        Start-Sleep 20 ; [Windows.Forms.SendKeys]::SendWait("%{F4}") ; Start-Sleep 2
+    }
+
+    # Change serials
+    $Program = "$Env:ProgramFiles\Microsoft Visual Studio\2022\Preview\Common7\IDE\StorePID.exe"
+    Invoke-Gsudo { Start-Process "$Using:Program" "$Using:Serials 09660" -WindowStyle Hidden -Wait }
+
+}
+
+Function Update-VisualStudioPreviewWorkload {
+
+    Param (
+        [String] $Payload
+    )
+
+    $Address = "https://c2rsetup.officeapps.live.com/c2r/downloadVS.aspx?sku=professional&channel=Preview&version=VS2022"
+    $Fetched = Invoke-Fetcher "$Address" (Join-Path "$Env:Temp" "VisualStudioSetup.exe")
     Invoke-Gsudo {
         Start-Process "$Using:Fetched" "update --wait --quiet --norestart" -WindowStyle Hidden -Wait
         Start-Process "$Using:Fetched" "install --wait --quiet --norestart --add $Using:Payload" -WindowStyle Hidden -Wait
@@ -1159,6 +1187,41 @@ Function Update-VmwareWorkstation {
 
     # Remove tray
     Set-ItemProperty -Path "HKCU:\Software\VMware, Inc.\VMware Tray" -Name "TrayBehavior" -Type DWord -Value 2
+
+}
+
+Function Update-Vscode {
+
+    # Update package
+    $Address = "https://code.visualstudio.com/sha?build=stable"
+    $Version = (Invoke-Scraper "Json" "$Address").products[1].name
+    $Starter = "$Env:LocalAppData\Programs\Microsoft VS Code\Code.exe"
+    $Current = Expand-Version "$Starter"
+    $Updated = [Version] "$Current" -Ge [Version] "$Version"
+    If (-Not $Updated -And "$Env:TERM_PROGRAM" -Ne "Vscode") {
+        $Address = "https://aka.ms/win32-x64-user-stable"
+        $Fetched = Invoke-Fetcher "$Address" (Join-Path "$Env:Temp" "VSCodeUserSetup-x64-Latest.exe")
+        $ArgList = "/VERYSILENT /MERGETASKS=`"!runcode`""
+        Invoke-Gsudo { Stop-Process -Name "Code" ; Start-Process "$Using:Fetched" "$Using:ArgList" -Wait }
+        Update-SysPath "$Env:LocalAppData\Programs\Microsoft VS Code\bin" "Machine"
+    }
+
+    # Update extensions
+    Start-Process "code" "--install-extension github.github-vscode-theme --force" -WindowStyle Hidden -Wait
+    Start-Process "code" "--install-extension ms-vscode.powershell --force" -WindowStyle Hidden -Wait
+
+    # Change settings
+    $Configs = "$Env:AppData\Code\User\settings.json"
+    New-Item "$(Split-Path "$Configs")" -ItemType Directory -EA SI
+    New-Item "$Configs" -ItemType File -EA SI
+    $NewJson = New-Object PSObject
+    $NewJson | Add-Member -Type NoteProperty -Name "editor.fontSize" -Value 14 -Force
+    $NewJson | Add-Member -Type NoteProperty -Name "editor.lineHeight" -Value 28 -Force
+    $NewJson | Add-Member -Type NoteProperty -Name "security.workspace.trust.enabled" -Value $False -Force
+    $NewJson | Add-Member -Type NoteProperty -Name "telemetry.telemetryLevel" -Value "crash" -Force
+    $NewJson | Add-Member -Type NoteProperty -Name "update.mode" -Value "none" -Force
+    $NewJson | Add-Member -Type NoteProperty -Name "workbench.colorTheme" -Value "GitHub Dark" -Force
+    $NewJson | ConvertTo-Json | Set-Content "$Configs"
 
 }
 
@@ -1234,24 +1297,24 @@ Function Main {
         "Update-NvidiaDriver"
         "Update-Windows"
 
-        "Update-AndroidStudio"
+        # "Update-AndroidStudio"
         "Update-Chromium"
         "Update-Git -GitMail sharpordie@outlook.com -GitUser sharpordie"
         "Update-SevenZip"
-        "Update-VisualStudioCode"
-        "Update-VisualStudioEnterprise"
+        "Update-VisualStudioPreview"
+        "Update-Vscode"
 
         # "Update-Bluestacks"
         "Update-Figma"
-        "Update-Flutter"
+        # "Update-Flutter"
         "Update-Jdownloader"
         "Update-Keepassxc"
         "Update-Mpv"
         # "Update-PaintNet"
-        "Update-Python"
+        # "Update-Python"
         "Update-Qbittorrent"
-        "Update-Sizer"
-        # "Update-Spotify"
+        # "Update-Sizer"
+        "Update-Spotify"
         # "Update-VmwareWorkstation"
         "Update-YtDlg"
 
