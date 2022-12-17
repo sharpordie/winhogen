@@ -1134,6 +1134,12 @@ Function Update-VisualStudioPreview {
 
 }
 
+Function Update-VisualStudioPreviewExtension {
+
+    Return 0
+
+}
+
 Function Update-VisualStudioPreviewWorkload {
 
     Param (
