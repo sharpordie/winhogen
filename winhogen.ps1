@@ -773,6 +773,25 @@ Function Update-Ldplayer {
 
 }
 
+Function Update-Maui {
+
+    # Update package
+    Update-VisualStudioPreview
+    Update-VisualStudioPreviewWorkload "Microsoft.VisualStudio.Workload.NetCrossPlat"
+
+    # Finish installation
+    $Starter = (Get-Item "${Env:ProgramFiles(x86)}\Android\*\cmdline-tools\*\bin\sdkmanager*").FullName
+    If ($Null -Ne $Starter) {
+        Write-Output $("yes " * 10) | & "$Starter" 'build-tools;32.0.0'
+        Write-Output $("yes " * 10) | & "$Starter" 'platform-tools'
+        Write-Output $("yes " * 10) | & "$Starter" 'platforms;android-31'
+        Write-Output $("yes " * 10) | & "$Starter" 'platforms;android-33'
+    }
+
+    # TODO: Remove virtual machine service
+
+}
+
 Function Update-Mpv {
 
     # Update package
@@ -1344,6 +1363,8 @@ Function Main {
         # "Update-Flutter"
         "Update-Jdownloader"
         "Update-Keepassxc"
+        "Update-Ldplayer"
+        "Update-Maui"
         "Update-Mpv"
         # "Update-PaintNet"
         # "Update-Python"
