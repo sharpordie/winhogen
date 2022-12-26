@@ -786,18 +786,19 @@ Function Update-Maui {
     Update-VisualStudioPreviewWorkload "Microsoft.VisualStudio.Workload.NetCrossPlat"
 
     # Finish installation
+    $Creator = (Get-Item "${Env:ProgramFiles(x86)}\Android\*\cmdline-tools\*\bin\avdmanager*").FullName
     $Starter = (Get-Item "${Env:ProgramFiles(x86)}\Android\*\cmdline-tools\*\bin\sdkmanager*").FullName
     If ($Null -Ne $Starter) {
         Write-Output $("yes " * 10) | & "$Starter" 'build-tools;32.0.0'
         Write-Output $("yes " * 10) | & "$Starter" 'platform-tools'
         Write-Output $("yes " * 10) | & "$Starter" 'platforms;android-31'
         Write-Output $("yes " * 10) | & "$Starter" 'platforms;android-33'
+        Write-Output $("yes " * 10) | & "$Starter" 'system-images;android-31;google_apis;x86_64'
+        Write-Output $("yes " * 10) | & "$Creator" "create avd -n 'Pixel_3_API_31' -d 'pixel_3' -k 'system-images;android-31;google_apis;x86_64'"
     }
 
-    # TODO: Update visual studio
+    # Update visual studio
     Update-VisualStudioPreviewExtension "MattLaceyLtd.MauiAppAccelerator"
-
-    # TODO: Remove virtual machine service
 
 }
 
@@ -1153,12 +1154,61 @@ Function Update-VisualStudioPreview {
         Start-Sleep 15 ; [Windows.Forms.SendKeys]::SendWait("{TAB}" * 4)
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{TAB}") ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
-        Start-Sleep 20 ; [Windows.Forms.SendKeys]::SendWait("%{F4}") ; Start-Sleep 2
+        Start-Sleep 20 ; [Windows.Forms.SendKeys]::SendWait("%{F4}") ; Start-Sleep 10
     }
 
     # Change serials
     $Program = "$Env:ProgramFiles\Microsoft Visual Studio\2022\Preview\Common7\IDE\StorePID.exe"
-    Invoke-Gsudo { Start-Process "$Using:Program" "$Using:Serials 09660" -WindowStyle Hidden -Wait } ; Start-Sleep 8
+    Invoke-Gsudo { Start-Process "$Using:Program" "$Using:Serials 09662" -WindowStyle Hidden -Wait } ; Start-Sleep 8
+
+    # Change highlightcurrentline
+    $Config1 = "$Env:LocalAppData\Microsoft\VisualStudio\17*\Settings\CurrentSettings.vssettings"
+    $Config2 = "$Env:LocalAppData\Microsoft\VisualStudio\17*\Settings\CurrentSettings-*.vssettings"
+    If (Test-Path "$Config1") {
+        $Config1 = Get-Item "$Config1"
+        [Xml] $Content = Get-Content "$Config1"
+        $Content.SelectSingleNode("//*[@name='HighlightCurrentLine']").InnerText = "false"
+        $Content.Save("$Config1")
+    }
+    If (Test-Path "$Config2") {
+        $Config2 = Get-Item "$Config2"
+        [Xml] $Content = Get-Content "$Config2"
+        $Content.SelectSingleNode("//*[@name='HighlightCurrentLine']").InnerText = "false"
+        $Content.Save("$Config2")
+    }
+
+    # Change linespacing
+    If (Test-Path "$Config1") {
+        $Config1 = Get-Item "$Config1"
+        [Xml] $Content = Get-Content "$Config1"
+        $Content.SelectSingleNode("//*[@name='LineSpacing']").InnerText = "1.5"
+        $Content.Save($Config1)
+    }
+    If (Test-Path "$Config2") {
+        $Config2 = Get-Item "$Config2"
+        [Xml] $Content = Get-Content "$Config2"
+        $Content.SelectSingleNode("//*[@name='LineSpacing']").InnerText = "1.5"
+        $Content.Save($Config2)
+    }
+
+    # Change directory
+    Remove-Item "$Env:UserProfile\source" -Recurse -EA SI
+    New-Item "$Deposit" -ItemType Directory -EA SI | Out-Null
+    Invoke-Gsudo { Add-MpPreference -ExclusionPath "$Using:Deposit" *> $Null }
+    If (Test-Path "$Config1") {
+        $Config1 = Get-Item "$Config1"
+        [Xml] $Content = Get-Content "$Config1"
+        $Payload = $Deposit.Replace("${Env:UserProfile}", '%vsspv_user_appdata%') + "\"
+        $Content.SelectSingleNode("//*[@name='ProjectsLocation']").InnerText = "$Payload"
+        $Content.Save($Config1)
+    }
+    If (Test-Path "$Config2") {
+        $Config2 = Get-Item "$Config2"
+        [Xml] $Content = Get-Content "$Config2"
+        $Payload = $Deposit.Replace("${Env:UserProfile}", '%vsspv_user_appdata%') + "\"
+        $Content.SelectSingleNode("//*[@name='ProjectsLocation']").InnerText = "$Payload"
+        $Content.Save($Config2)
+    }
 
 }
 
@@ -1168,7 +1218,14 @@ Function Update-VisualStudioPreviewExtension {
         [String] $Payload
     )
 
-    $Address = "https://marketplace.visualstudio.com/items?itemName=$Payload"
+    $Website = "https://marketplace.visualstudio.com/items?itemName=$Payload"
+    $Content = Invoke-WebRequest -Uri $Website -UseBasicParsing -SessionVariable Session
+    $Address = $Content.Links | Where-Object { $_.class -Eq "install-button-container" } | Select-Object -ExpandProperty href
+    $Address = "https://marketplace.visualstudio.com" + "$Address"
+    $Package = "$Env:Temp\$([Guid]::NewGuid()).vsix"
+    Invoke-WebRequest "$Address" -OutFile "$Package" -WebSession $Session
+    $Updater = "$Env:ProgramFiles\Microsoft Visual Studio\2022\Preview\Common7\IDE\VSIXInstaller.exe"
+    Invoke-Gsudo { Start-Process "$Using:Updater" "/q /a `"$Using:Package`"" -WindowStyle Hidden -Wait }
 
 }
 
@@ -1361,31 +1418,31 @@ Function Main {
 
     # Handle functions
     $Factors = @(
-        "Update-NvidiaDriver"
-        "Update-Windows"
+        # "Update-NvidiaDriver"
+        # "Update-Windows"
 
-        "Update-AndroidStudio"
-        "Update-Chromium"
-        "Update-Git -GitMail sharpordie@outlook.com -GitUser sharpordie"
-        "Update-SevenZip"
+        # "Update-AndroidStudio"
+        # "Update-Chromium"
+        # "Update-Git -GitMail sharpordie@outlook.com -GitUser sharpordie"
+        # "Update-SevenZip"
         # "Update-VisualStudioPreview"
-        "Update-Vscode"
+        # "Update-Vscode"
 
         # "Update-Bluestacks"
         # "Update-Figma"
-        "Update-Flutter"
-        "Update-Jdownloader"
-        "Update-Keepassxc"
+        # "Update-Flutter"
+        # "Update-Jdownloader"
+        # "Update-Keepassxc"
         # "Update-Ldplayer"
         # "Update-Maui"
-        "Update-Mpv"
+        # "Update-Mpv"
         # "Update-PaintNet"
         # "Update-Python"
-        "Update-Qbittorrent"
-        "Update-Sizer"
+        # "Update-Qbittorrent"
+        # "Update-Sizer"
         # "Update-Spotify"
         # "Update-VmwareWorkstation"
-        "Update-YtDlg"
+        # "Update-YtDlg"
 
         # "Update-Appearance"
     )
