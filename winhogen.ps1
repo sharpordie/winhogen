@@ -247,15 +247,25 @@ Function Update-AndroidStudio {
 
     # Finish installation
     If (-Not $Present) {
+        Invoke-Expression "echo $("yes " * 10) | sdkmanager 'build-tools;30.0.3'"
+        Invoke-Expression "echo $("yes " * 10) | sdkmanager 'build-tools;32.0.0'"
         Invoke-Expression "echo $("yes " * 10) | sdkmanager 'build-tools;33.0.1'"
         Invoke-Expression "echo $("yes " * 10) | sdkmanager 'emulator'"
         Invoke-Expression "echo $("yes " * 10) | sdkmanager 'extras;intel;Hardware_Accelerated_Execution_Manager'"
         Invoke-Expression "echo $("yes " * 10) | sdkmanager 'platform-tools'"
+        Invoke-Expression "echo $("yes " * 10) | sdkmanager 'platforms;android-30'"
+        Invoke-Expression "echo $("yes " * 10) | sdkmanager 'platforms;android-31'"
         Invoke-Expression "echo $("yes " * 10) | sdkmanager 'platforms;android-32'"
         Invoke-Expression "echo $("yes " * 10) | sdkmanager 'platforms;android-33'"
         Invoke-Expression "echo $("yes " * 10) | sdkmanager 'sources;android-33'"
-        Invoke-Expression "echo $("yes " * 10) | sdkmanager 'system-images;android-33;google_apis;x86_64'"
-        Invoke-Expression "avdmanager create avd -n 'Pixel_3_API_33' -d 'pixel_3' -k 'system-images;android-33;google_apis;x86_64'"
+        Invoke-Expression "echo $("yes " * 10) | sdkmanager 'system-images;android-30;google_apis_playstore;x86_64'"
+        Invoke-Expression "echo $("yes`n" * 9) | sdkmanager --licenses"
+        $Configs = "$Env:UserProfile\.android\avd\pixel_3_-_api_30.avd\config.ini"
+        If (Test-Path $Configs) {
+            Invoke-Expression "avdmanager create avd -n 'pixel_3_-_api_30' -d 'pixel_3' -k 'system-images;android-30;google_apis_playstore;x86_64'"
+            $Altered = (Get-Content "$Configs" | ForEach-Object { $_ -Match "displayname" }) -Contains $True
+            If (-Not $Altered) { Add-Content "$Configs" "avd.ini.displayname=Pixel 3 - API 30" }
+        }
         Add-Type -AssemblyName System.Windows.Forms
         Start-Process "$Starter" ; Start-Sleep 10
         [Windows.Forms.SendKeys]::SendWait("{TAB}") ; Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}") ; Start-Sleep 20
@@ -319,7 +329,7 @@ Function Update-Appearance {
     Invoke-Syspin "UnpinFromTaskbar" "$Env:ProgramData\Microsoft\Windows\Start Menu\Programs\qBittorrent\qBittorrent.lnk"
     Invoke-Syspin "UnpinFromTaskbar" "$Env:AppData\Microsoft\Windows\Start Menu\Programs\Visual Studio Code\Visual Studio Code.lnk"
     Invoke-Syspin "UnpinFromTaskbar" "$Env:ProgramData\Microsoft\Windows\Start Menu\Programs\Visual Studio 2022 Preview.lnk"
-    Invoke-Syspin "UnpinFromTaskbar" "$Env:AppData\Microsoft\Windows\Start Menu\LDPlayer9.lnk"
+    # Invoke-Syspin "UnpinFromTaskbar" "$Env:AppData\Microsoft\Windows\Start Menu\LDPlayer9.lnk"
     Invoke-Syspin "UnpinFromTaskbar" "$Env:AppData\Microsoft\Windows\Start Menu\Programs\Spotify.lnk"
     Invoke-Syspin "UnpinFromTaskbar" "$Env:AppData\Microsoft\Windows\Start Menu\Programs\Mpv.lnk"
     Invoke-Syspin "UnpinFromTaskbar" "$Env:AppData\Microsoft\Windows\Start Menu\Programs\Figma.lnk"
@@ -328,7 +338,7 @@ Function Update-Appearance {
     Invoke-Syspin "PinToTaskbar" "$Env:ProgramData\Microsoft\Windows\Start Menu\Programs\qBittorrent\qBittorrent.lnk"
     Invoke-Syspin "PinToTaskbar" "$Env:AppData\Microsoft\Windows\Start Menu\Programs\Visual Studio Code\Visual Studio Code.lnk"
     Invoke-Syspin "PinToTaskbar" "$Env:ProgramData\Microsoft\Windows\Start Menu\Programs\Visual Studio 2022 Preview.lnk"
-    Invoke-Syspin "PinToTaskbar" "$Env:AppData\Microsoft\Windows\Start Menu\LDPlayer9.lnk"
+    # Invoke-Syspin "PinToTaskbar" "$Env:AppData\Microsoft\Windows\Start Menu\LDPlayer9.lnk"
     Invoke-Syspin "PinToTaskbar" "$Env:AppData\Microsoft\Windows\Start Menu\Programs\Spotify.lnk"
     Invoke-Syspin "PinToTaskbar" "$Env:AppData\Microsoft\Windows\Start Menu\Programs\Mpv.lnk"
     Invoke-Syspin "PinToTaskbar" "$Env:AppData\Microsoft\Windows\Start Menu\Programs\Figma.lnk"
@@ -632,18 +642,19 @@ Function Update-Flutter {
     Invoke-Expression "flutter upgrade"
     Invoke-Expression "flutter config --no-analytics"
     Invoke-Expression "echo $("yes " * 10) | flutter doctor --android-licenses"
+    Invoke-Expression "dart --disable-analytics"
 
     # Update visual studio
-    $Present = Test-Path "$Env:ProgramFiles\Microsoft Visual Studio\2022\Professional\Common7\IDE\devenv.exe"
-    If ($Present) {
-        Update-VisualStudioWorkload "Microsoft.VisualStudio.Workload.NativeDesktop"
-    }
+    # $Present = Test-Path "$Env:ProgramFiles\Microsoft Visual Studio\2022\Professional\Common7\IDE\devenv.exe"
+    # If ($Present) {
+    #     Update-VisualStudioWorkload "Microsoft.VisualStudio.Workload.NativeDesktop"
+    # }
 
     # Update visual studio preview
-    $Present = Test-Path "$Env:ProgramFiles\Microsoft Visual Studio\2022\Preview\Common7\IDE\devenv.exe"
-    If ($Present) {
-        Update-VisualStudioPreviewWorkload "Microsoft.VisualStudio.Workload.NativeDesktop"
-    }
+    # $Present = Test-Path "$Env:ProgramFiles\Microsoft Visual Studio\2022\Preview\Common7\IDE\devenv.exe"
+    # If ($Present) {
+    #     Update-VisualStudioPreviewWorkload "Microsoft.VisualStudio.Workload.NativeDesktop"
+    # }
 
     # # Update vscode
     # If ($Null -Ne (Get-Command "code" -EA SI)) {
@@ -771,14 +782,6 @@ Function Update-Keepassxc {
 
 }
 
-Function Update-Ldplayer {
-
-    # TODO: Enable bridge network
-    # TODO: Remove bloatware
-    Return 0
-
-}
-
 Function Update-Maui {
 
     # Update package
@@ -786,15 +789,28 @@ Function Update-Maui {
     Update-VisualStudioPreviewWorkload "Microsoft.VisualStudio.Workload.NetCrossPlat"
 
     # Finish installation
-    $Creator = (Get-Item "${Env:ProgramFiles(x86)}\Android\*\cmdline-tools\*\bin\avdmanager*").FullName
-    $Starter = (Get-Item "${Env:ProgramFiles(x86)}\Android\*\cmdline-tools\*\bin\sdkmanager*").FullName
-    If ($Null -Ne $Starter) {
-        Write-Output $("yes " * 10) | & "$Starter" 'build-tools;32.0.0'
-        Write-Output $("yes " * 10) | & "$Starter" 'platform-tools'
-        Write-Output $("yes " * 10) | & "$Starter" 'platforms;android-31'
-        Write-Output $("yes " * 10) | & "$Starter" 'platforms;android-33'
-        Write-Output $("yes " * 10) | & "$Starter" 'system-images;android-31;google_apis;x86_64'
-        Write-Output $("yes " * 10) | & "$Creator" "create avd -n 'Pixel_3_API_31' -d 'pixel_3' -k 'system-images;android-31;google_apis;x86_64'"
+    Invoke-Gsudo {
+        $SdkRoot = "${Env:ProgramFiles(x86)}\Android\android-sdk"
+        $Creator = (Get-Item "$SdkRoot\cmdline-tools\*\bin\avdmanager*").FullName
+        $Starter = (Get-Item "$SdkRoot\cmdline-tools\*\bin\sdkmanager*").FullName
+        If ($Null -Ne $Starter) {
+            Write-Output $("yes " * 10) | & "$Starter" --sdk_root="$SdkRoot" "build-tools;30.0.3"
+            Write-Output $("yes " * 10) | & "$Starter" --sdk_root="$SdkRoot" "build-tools;32.0.0"
+            Write-Output $("yes " * 10) | & "$Starter" --sdk_root="$SdkRoot" "build-tools;33.0.1"
+            Write-Output $("yes " * 10) | & "$Starter" --sdk_root="$SdkRoot" "platform-tools"
+            Write-Output $("yes " * 10) | & "$Starter" --sdk_root="$SdkRoot" "platforms;android-30"
+            Write-Output $("yes " * 10) | & "$Starter" --sdk_root="$SdkRoot" "platforms;android-31"
+            Write-Output $("yes " * 10) | & "$Starter" --sdk_root="$SdkRoot" "platforms;android-32"
+            Write-Output $("yes " * 10) | & "$Starter" --sdk_root="$SdkRoot" "platforms;android-33"
+            Write-Output $("yes " * 10) | & "$Starter" --sdk_root="$SdkRoot" "system-images;android-30;google_apis_playstore;x86_64"
+            Write-Output $("yes`n" * 9) | & "$Starter" --licenses
+            $Configs = "$Env:UserProfile\.android\avd\pixel_3_-_api_30.avd\config.ini"
+            If (Test-Path $Configs) {
+                Write-Output $("yes " * 10) | & "$Creator" create avd -n "pixel_3_-_api_30" -d "pixel_3" -k "system-images;android-30;google_apis_playstore;x86_64"
+                $Altered = (Get-Content "$Configs" | ForEach-Object { $_ -Match "displayname" }) -Contains $True
+                If (-Not $Altered) { Add-Content "$Configs" "avd.ini.displayname=Pixel 3 - API 30" }
+            }
+        }
     }
 
     # Update visual studio
@@ -1065,7 +1081,7 @@ Function Update-VisualStudio {
 
     # Change serials
     $Program = "$Env:ProgramFiles\Microsoft Visual Studio\2022\Professional\Common7\IDE\StorePID.exe"
-    Invoke-Gsudo { Start-Process "$Using:Program" "$Using:Serials 09660" -WindowStyle Hidden -Wait }
+    Invoke-Gsudo { Start-Process "$Using:Program" "$Using:Serials 09662" -WindowStyle Hidden -Wait }
 
     # Change highlightcurrentline
     $Config1 = "$Env:LocalAppData\Microsoft\VisualStudio\17*\Settings\CurrentSettings.vssettings"
@@ -1418,33 +1434,33 @@ Function Main {
 
     # Handle functions
     $Factors = @(
-        # "Update-NvidiaDriver"
-        # "Update-Windows"
+        "Update-NvidiaDriver"
+        "Update-Windows"
 
-        # "Update-AndroidStudio"
-        # "Update-Chromium"
-        # "Update-Git -GitMail sharpordie@outlook.com -GitUser sharpordie"
-        # "Update-SevenZip"
-        # "Update-VisualStudioPreview"
-        # "Update-Vscode"
+        "Update-AndroidStudio"
+        "Update-Chromium"
+        "Update-Git -GitMail sharpordie@outlook.com -GitUser sharpordie"
+        "Update-SevenZip"
+        # "Update-VisualStudio"
+        "Update-VisualStudioPreview"
+        "Update-Vscode"
 
         # "Update-Bluestacks"
-        # "Update-Figma"
-        # "Update-Flutter"
-        # "Update-Jdownloader"
-        # "Update-Keepassxc"
-        # "Update-Ldplayer"
-        # "Update-Maui"
+        "Update-Figma"
+        "Update-Flutter"
+        "Update-Jdownloader"
+        "Update-Keepassxc"
+        "Update-Maui"
         # "Update-Mpv"
         # "Update-PaintNet"
         # "Update-Python"
-        # "Update-Qbittorrent"
+        "Update-Qbittorrent"
         # "Update-Sizer"
-        # "Update-Spotify"
-        # "Update-VmwareWorkstation"
-        # "Update-YtDlg"
+        "Update-Spotify"
+        "Update-VmwareWorkstation"
+        "Update-YtDlg"
 
-        # "Update-Appearance"
+        "Update-Appearance"
     )
     
     # Output progress
