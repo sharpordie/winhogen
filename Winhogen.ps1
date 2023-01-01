@@ -262,9 +262,10 @@ Function Update-AndroidStudio {
         Invoke-Expression "echo $("yes " * 10) | sdkmanager 'platforms;android-33'"
         Invoke-Expression "echo $("yes " * 10) | sdkmanager 'sources;android-33'"
         Invoke-Expression "echo $("yes " * 10) | sdkmanager 'system-images;android-30;google_apis_playstore;x86_64'"
+        Invoke-Expression "echo $("yes " * 10) | sdkmanager 'system-images;android-33;google_apis_playstore;x86_64'"
         Invoke-Expression "echo $("yes`n" * 9) | sdkmanager --licenses"
         $Configs = "$Env:UserProfile\.android\avd\Pixel_5_API_30.avd\config.ini"
-        If (Test-Path $Configs) {
+        If (-Not (Test-Path $Configs)) {
             Invoke-Expression "avdmanager create avd -n 'Pixel_5_API_30' -d 'pixel_5' -k 'system-images;android-30;google_apis_playstore;x86_64'"
             $Altered = (Get-Content "$Configs" | ForEach-Object { $_ -Match "displayname" }) -Contains $True
             If (-Not $Altered) { Add-Content "$Configs" "avd.ini.displayname=Pixel 5 - API 30" }
@@ -620,7 +621,7 @@ Function Update-DotnetMaui {
             Write-Output $("yes " * 10) | & "$Starter" --sdk_root="$SdkRoot" "system-images;android-30;google_apis_playstore;x86_64"
             Write-Output $("yes`n" * 9) | & "$Starter" --licenses
             $Configs = "$Env:UserProfile\.android\avd\Pixel_5_API_33.avd\config.ini"
-            If (Test-Path $Configs) {
+            If (-Not (Test-Path $Configs)) {
                 Write-Output $("yes " * 10) | & "$Creator" create avd -n "Pixel_5_API_33" -d "pixel_5" -k "system-images;android-30;google_apis_playstore;x86_64"
                 $Altered = (Get-Content "$Configs" | ForEach-Object { $_ -Match "displayname" }) -Contains $True
                 If (-Not $Altered) { Add-Content "$Configs" "avd.ini.displayname=Pixel 5 - API 30" }
@@ -657,7 +658,7 @@ Function Update-Figma {
     }
 
     # Remove tray
-    Start-Process "$Starter" ; Start-Sleep 5 ; Stop-Process -Name "Figma" ; Stop-Process -Name "figma_agent"
+    Start-Process "$Starter" ; Start-Sleep 5 ; Stop-Process -Name "Figma" ; Stop-Process -Name "figma_agent" ; Start-Sleep 5
     $Configs = Get-Content "$Env:AppData\Figma\settings.json" | ConvertFrom-Json
     Try { $Configs.showFigmaInMenuBar = $False } Catch { $Configs | Add-Member -Type NoteProperty -Name "showFigmaInMenuBar" -Value $False }
     $Configs | ConvertTo-Json | Set-Content "$Env:AppData\Figma\settings.json"
@@ -1391,7 +1392,12 @@ Function Update-Windows {
 
     # Change timezone
     Set-TimeZone -Name "Romance Standard Time"
-    Invoke-Gsudo { Start-Process "w32tm" "/resync /force" -WindowStyle Hidden }
+    Invoke-Gsudo {
+        Start-Process "w32tm" "/unregister" -WindowStyle Hidden -Wait
+        Start-Process "w32tm" "/register" -WindowStyle Hidden -Wait
+        Start-Process "net" "start w32time" -WindowStyle Hidden -Wait
+        Start-Process "w32tm" "/resync /force" -WindowStyle Hidden -Wait
+    }
 
     # Enable remove desktop
     Invoke-Gsudo { 
