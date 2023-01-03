@@ -620,9 +620,9 @@ Function Update-DotnetMaui {
             Write-Output $("yes " * 10) | & "$Starter" --sdk_root="$SdkRoot" "platforms;android-33"
             Write-Output $("yes " * 10) | & "$Starter" --sdk_root="$SdkRoot" "system-images;android-30;google_apis_playstore;x86_64"
             Write-Output $("yes`n" * 9) | & "$Starter" --licenses
-            $Configs = "$Env:UserProfile\.android\avd\Pixel_5_API_33.avd\config.ini"
+            $Configs = "$Env:UserProfile\.android\avd\Pixel_5_API_30.avd\config.ini"
             If (-Not (Test-Path $Configs)) {
-                Write-Output $("yes " * 10) | & "$Creator" create avd -n "Pixel_5_API_33" -d "pixel_5" -k "system-images;android-30;google_apis_playstore;x86_64"
+                Write-Output $("yes " * 10) | & "$Creator" create avd -n "Pixel_5_API_30" -d "pixel_5" -k "system-images;android-30;google_apis_playstore;x86_64"
                 $Altered = (Get-Content "$Configs" | ForEach-Object { $_ -Match "displayname" }) -Contains $True
                 If (-Not $Altered) { Add-Content "$Configs" "avd.ini.displayname=Pixel 5 - API 30" }
             }
@@ -701,9 +701,13 @@ Function Update-Flutter {
     #     Update-VisualStudio2022PreviewWorkload "Microsoft.VisualStudio.Workload.NativeDesktop"
     # }
 
-    # # Update visual studio code
+    # Update visual studio code
     If ($Null -Ne (Get-Command "code" -EA SI)) {
         Start-Process "code" "--install-extension Dart-Code.flutter --force" -WindowStyle Hidden -Wait
+        Start-Process "code" "--install-extension alexisvt.flutter-snippets --force" -WindowStyle Hidden -Wait
+        Start-Process "code" "--install-extension pflannery.vscode-versionlens --force" -WindowStyle Hidden -Wait
+        Start-Process "code" "--install-extension robert-brunhage.flutter-riverpod-snippets --force" -WindowStyle Hidden -Wait
+        Start-Process "code" "--install-extension usernamehw.errorlens --force" -WindowStyle Hidden -Wait
     }
 
 }
@@ -1297,6 +1301,42 @@ Function Update-VisualStudio2022PreviewWorkload {
     
 }
 
+Function Update-VisualStudioCode {
+
+    # Update package
+    $Address = "https://code.visualstudio.com/sha?build=stable"
+    $Version = (Invoke-Scraper "Json" "$Address").products[1].name
+    $Starter = "$Env:LocalAppData\Programs\Microsoft VS Code\Code.exe"
+    $Current = Expand-Version "$Starter"
+    $Updated = [Version] "$Current" -Ge [Version] "$Version"
+    If (-Not $Updated -And "$Env:TERM_PROGRAM" -Ne "Vscode") {
+        $Address = "https://aka.ms/win32-x64-user-stable"
+        $Fetched = Invoke-Fetcher "$Address" (Join-Path "$Env:Temp" "VSCodeUserSetup-x64-Latest.exe")
+        $ArgList = "/VERYSILENT /MERGETASKS=`"!runcode`""
+        Invoke-Gsudo { Stop-Process -Name "Code" ; Start-Process "$Using:Fetched" "$Using:ArgList" -Wait }
+        Update-SysPath "$Env:LocalAppData\Programs\Microsoft VS Code\bin" "Machine"
+    }
+
+    # Update extensions
+    Start-Process "code" "--install-extension github.github-vscode-theme --force" -WindowStyle Hidden -Wait
+    Start-Process "code" "--install-extension ms-vscode.powershell --force" -WindowStyle Hidden -Wait
+
+    # Change settings
+    $Configs = "$Env:AppData\Code\User\settings.json"
+    New-Item "$(Split-Path "$Configs")" -ItemType Directory -EA SI
+    New-Item "$Configs" -ItemType File -EA SI
+    $NewJson = New-Object PSObject
+    $NewJson | Add-Member -Type NoteProperty -Name "editor.bracketPairColorization.enabled" -Value $True -Force
+    $NewJson | Add-Member -Type NoteProperty -Name "editor.fontSize" -Value 14 -Force
+    $NewJson | Add-Member -Type NoteProperty -Name "editor.lineHeight" -Value 28 -Force
+    $NewJson | Add-Member -Type NoteProperty -Name "security.workspace.trust.enabled" -Value $False -Force
+    $NewJson | Add-Member -Type NoteProperty -Name "telemetry.telemetryLevel" -Value "crash" -Force
+    $NewJson | Add-Member -Type NoteProperty -Name "update.mode" -Value "none" -Force
+    $NewJson | Add-Member -Type NoteProperty -Name "workbench.colorTheme" -Value "GitHub Dark Default" -Force
+    $NewJson | ConvertTo-Json | Set-Content "$Configs"
+
+}
+
 Function Update-VmwareWorkstation {
 
     Param (
@@ -1346,42 +1386,6 @@ Function Update-VmwareWorkstation {
 
     # Remove tray
     Set-ItemProperty -Path "HKCU:\Software\VMware, Inc.\VMware Tray" -Name "TrayBehavior" -Type DWord -Value 2
-
-}
-
-Function Update-VisualStudioCode {
-
-    # Update package
-    $Address = "https://code.visualstudio.com/sha?build=stable"
-    $Version = (Invoke-Scraper "Json" "$Address").products[1].name
-    $Starter = "$Env:LocalAppData\Programs\Microsoft VS Code\Code.exe"
-    $Current = Expand-Version "$Starter"
-    $Updated = [Version] "$Current" -Ge [Version] "$Version"
-    If (-Not $Updated -And "$Env:TERM_PROGRAM" -Ne "Vscode") {
-        $Address = "https://aka.ms/win32-x64-user-stable"
-        $Fetched = Invoke-Fetcher "$Address" (Join-Path "$Env:Temp" "VSCodeUserSetup-x64-Latest.exe")
-        $ArgList = "/VERYSILENT /MERGETASKS=`"!runcode`""
-        Invoke-Gsudo { Stop-Process -Name "Code" ; Start-Process "$Using:Fetched" "$Using:ArgList" -Wait }
-        Update-SysPath "$Env:LocalAppData\Programs\Microsoft VS Code\bin" "Machine"
-    }
-
-    # Update extensions
-    Start-Process "code" "--install-extension github.github-vscode-theme --force" -WindowStyle Hidden -Wait
-    Start-Process "code" "--install-extension ms-vscode.powershell --force" -WindowStyle Hidden -Wait
-
-    # Change settings
-    $Configs = "$Env:AppData\Code\User\settings.json"
-    New-Item "$(Split-Path "$Configs")" -ItemType Directory -EA SI
-    New-Item "$Configs" -ItemType File -EA SI
-    $NewJson = New-Object PSObject
-    $NewJson | Add-Member -Type NoteProperty -Name "editor.fontSize" -Value 14 -Force
-    $NewJson | Add-Member -Type NoteProperty -Name "editor.lineHeight" -Value 28 -Force
-    $NewJson | Add-Member -Type NoteProperty -Name "security.workspace.trust.enabled" -Value $False -Force
-    $NewJson | Add-Member -Type NoteProperty -Name "telemetry.telemetryLevel" -Value "crash" -Force
-    $NewJson | Add-Member -Type NoteProperty -Name "update.mode" -Value "none" -Force
-    # $NewJson | Add-Member -Type NoteProperty -Name "workbench.colorTheme" -Value "GitHub Dark" -Force
-    $NewJson | Add-Member -Type NoteProperty -Name "workbench.colorTheme" -Value "GitHub Dark Default" -Force
-    $NewJson | ConvertTo-Json | Set-Content "$Configs"
 
 }
 
