@@ -204,23 +204,22 @@ Function Update-SysPath {
 Function Update-AndroidStudio {
     
     # Update package
-    $Address = "https://raw.githubusercontent.com/ScoopInstaller/extras/master/bucket/android-studio.json"
-    # $Address = "https://raw.githubusercontent.com/scoopinstaller/versions/master/bucket/android-studio-beta.json"
+    # $Address = "https://raw.githubusercontent.com/ScoopInstaller/extras/master/bucket/android-studio.json"
+    $Address = "https://raw.githubusercontent.com/scoopinstaller/versions/master/bucket/android-studio-beta.json"
     $Version = (Invoke-Scraper "Json" "$Address").version
     $Starter = "$Env:ProgramFiles\Android\Android Studio\bin\studio64.exe"
     $Present = Test-Path "$Starter"
     $Current = Expand-Version "$Starter"
     $Updated = [Version] "$Current" -Ge [Version] ($Version.SubString(0, 6))
     If (-Not $Updated) {
-        Update-IntelHaxm
         $Address = "https://redirector.gvt1.com/edgedl/android/studio/install/$Version/android-studio-$Version-windows.exe"
         $Fetched = Invoke-Fetcher "$Address"
         Invoke-Gsudo { Start-Process "$Using:Fetched" "/S" -Wait }
     }
     
     # Update cmdline
-    $JdkHome = "$Env:ProgramFiles\Android\Android Studio\jre"
-    # $JdkHome = "$Env:ProgramFiles\Android\Android Studio\jbr"
+    # $JdkHome = "$Env:ProgramFiles\Android\Android Studio\jre"
+    $JdkHome = "$Env:ProgramFiles\Android\Android Studio\jbr"
     $SdkHome = "$Env:LocalAppData\Android\Sdk"
     $Cmdline = "$SdkHome\cmdline-tools"
     $Address = "https://developer.android.com/studio#command-tools"
@@ -370,19 +369,19 @@ Function Update-Bluestacks {
     If (-Not $Updated) {
         $Address = "https://cdn3.bluestacks.com/downloads/windows/nxt/$Version/$Hashing/FullInstaller/x64/BlueStacksFullInstaller_${Version}_amd64_native.exe"
         $Fetched = Invoke-Fetcher "$Address"
-        # $ArgList = "-s --defaultImageName Nougat64 --imageToLaunch Nougat64 --defaultImageName Nougat64 --imageToLaunch Nougat64"
-        $ArgList = "-s --defaultImageName Nougat64 --imageToLaunch Nougat64 --defaultImageName Pie64 --imageToLaunch Pie64"
+        $ArgList = "-s --defaultImageName Nougat64 --imageToLaunch Nougat64 --defaultImageName Nougat64 --imageToLaunch Nougat64"
+        # $ArgList = "-s --defaultImageName Nougat64 --imageToLaunch Nougat64 --defaultImageName Pie64 --imageToLaunch Pie64"
         Invoke-Gsudo { Start-Process "$Using:Fetched" "$Using:ArgList" -Wait }
         Remove-Desktop "BlueStacks*.lnk"
     }
 
-    # # Update shortcut
-    # $Altered = (Get-Item "$Env:ProgramData\Microsoft\Windows\Start Menu\Programs\BlueStacks 5.lnk").FullName
-    # If ($Null -Ne $Altered) {
-    #     $Content = [IO.File]::ReadAllBytes("$Altered")
-    #     $Content[0x15] = $Content[0x15] -Bor 0x20
-    #     Invoke-Gsudo { [IO.File]::WriteAllBytes("$Using:Altered", $Using:Content) }
-    # }
+    # Update shortcut
+    $Altered = (Get-Item "$Env:ProgramData\Microsoft\Windows\Start Menu\Programs\BlueStacks 5.lnk").FullName
+    If ($Null -Ne $Altered) {
+        $Content = [IO.File]::ReadAllBytes("$Altered")
+        $Content[0x15] = $Content[0x15] -Bor 0x20
+        Invoke-Gsudo { [IO.File]::WriteAllBytes("$Using:Altered", $Using:Content) }
+    }
 
 }
 
@@ -601,7 +600,6 @@ Function Update-DotnetMaui {
 
     # Update package
     Update-VisualStudio2022
-    Update-IntelHaxm
     Update-VisualStudio2022Workload "Microsoft.VisualStudio.Workload.NetCrossPlat"
 
     # Finish installation
@@ -685,9 +683,15 @@ Function Update-Flutter {
 
     # Change settings
     Invoke-Expression "flutter upgrade"
-    Invoke-Expression "flutter config --no-analytics"
     Invoke-Expression "echo $("yes " * 10) | flutter doctor --android-licenses"
+    Invoke-Expression "flutter config --no-analytics"
     Invoke-Expression "dart --disable-analytics"
+
+    # Update android studio
+    $Present = Test-Path "$Env:ProgramFiles\Microsoft Visual Studio\2022\Professional\Common7\IDE\devenv.exe"
+    If ($Present) {
+        # Invoke-Expression "flutter config --android-studio-dir=`"$Env:ProgramFiles\Android\Android Studio`""
+    }
 
     # Update visual studio
     $Present = Test-Path "$Env:ProgramFiles\Microsoft Visual Studio\2022\Professional\Common7\IDE\devenv.exe"
@@ -766,16 +770,6 @@ Function Update-Gsudo {
     Catch { 
         Return $False
     }
-    
-}
-
-Function Update-IntelHaxm {
-
-    $Address = "https://api.github.com/repos/intel/haxm/releases"
-    $Address = (Invoke-Scraper "Json" "$Address")[0].assets.Where( { $_.browser_download_url -like "*windows**" } ).browser_download_url
-    $Fetched = Invoke-Fetcher "$Address"
-    $Deposit = Expand-Archive "$Fetched"
-    Invoke-Gsudo { Start-Process "$Using:Deposit\silent_install.bat" -WindowStyle Hidden -Wait }
     
 }
 
@@ -1480,33 +1474,33 @@ Function Main {
 
     # Handle functions
     $Factors = @(
-        "Update-NvidiaDriver"
-        "Update-Windows"
+        # "Update-NvidiaDriver"
+        # "Update-Windows"
 
-        "Update-AndroidStudio"
-        "Update-Chromium"
-        "Update-Git -GitMail sharpordie@outlook.com -GitUser sharpordie"
-        "Update-SevenZip"
-        "Update-VisualStudio2022"
+        # "Update-AndroidStudio"
+        # "Update-Chromium"
+        # "Update-Git -GitMail sharpordie@outlook.com -GitUser sharpordie"
+        # "Update-SevenZip"
+        # "Update-VisualStudio2022"
         # "Update-VisualStudio2022Preview"
-        "Update-VisualStudioCode"
+        # "Update-VisualStudioCode"
 
         # "Update-Bluestacks"
-        "Update-DotnetMaui"
-        "Update-Figma"
-        "Update-Flutter"
-        "Update-Jdownloader"
-        "Update-Keepassxc"
-        "Update-Mpv"
+        # "Update-DotnetMaui"
+        # "Update-Figma"
+        # "Update-Flutter"
+        # "Update-Jdownloader"
+        # "Update-Keepassxc"
+        # "Update-Mpv"
         # "Update-PaintNet"
         # "Update-Python"
-        "Update-Qbittorrent"
+        # "Update-Qbittorrent"
         # "Update-Sizer"
         # "Update-Spotify"
-        "Update-VmwareWorkstation"
-        "Update-YtDlg"
+        # "Update-VmwareWorkstation"
+        # "Update-YtDlg"
 
-        "Update-Appearance"
+        # "Update-Appearance"
     )
     
     # Output progress
