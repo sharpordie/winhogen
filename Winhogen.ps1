@@ -1104,30 +1104,30 @@ Function Update-VisualStudio2022 {
     $Config1 = "$Env:LocalAppData\Microsoft\VisualStudio\17*\Settings\CurrentSettings.vssettings"
     $Config2 = "$Env:LocalAppData\Microsoft\VisualStudio\17*\Settings\CurrentSettings-*.vssettings"
     If (Test-Path "$Config1") {
-        $Config1 = Get-Item "$Config1"
-        [Xml] $Content = Get-Content "$Config1"
+        $Configs = Get-Item "$Config1"
+        [Xml] $Content = Get-Content "$Configs"
         $Content.SelectSingleNode("//*[@name='HighlightCurrentLine']").InnerText = "false"
-        $Content.Save("$Config1")
+        $Content.Save("$Configs")
     }
     If (Test-Path "$Config2") {
-        $Config2 = Get-Item "$Config2"
-        [Xml] $Content = Get-Content "$Config2"
+        $Configs = Get-Item "$Config2"
+        [Xml] $Content = Get-Content "$Configs"
         $Content.SelectSingleNode("//*[@name='HighlightCurrentLine']").InnerText = "false"
-        $Content.Save("$Config2")
+        $Content.Save("$Configs")
     }
 
     # Change linespacing
     If (Test-Path "$Config1") {
-        $Config1 = Get-Item "$Config1"
-        [Xml] $Content = Get-Content "$Config1"
+        $Configs = Get-Item "$Config1"
+        [Xml] $Content = Get-Content "$Configs"
         $Content.SelectSingleNode("//*[@name='LineSpacing']").InnerText = "1.5"
-        $Content.Save($Config1)
+        $Content.Save($Configs)
     }
     If (Test-Path "$Config2") {
-        $Config2 = Get-Item "$Config2"
-        [Xml] $Content = Get-Content "$Config2"
+        $Configs = Get-Item "$Config2"
+        [Xml] $Content = Get-Content "$Configs"
         $Content.SelectSingleNode("//*[@name='LineSpacing']").InnerText = "1.5"
-        $Content.Save($Config2)
+        $Content.Save($Configs)
     }
 
     # Change directory
@@ -1135,18 +1135,18 @@ Function Update-VisualStudio2022 {
     New-Item "$Deposit" -ItemType Directory -EA SI | Out-Null
     Invoke-Gsudo { Add-MpPreference -ExclusionPath "$Using:Deposit" *> $Null }
     If (Test-Path "$Config1") {
-        $Config1 = Get-Item "$Config1"
-        [Xml] $Content = Get-Content "$Config1"
+        $Configs = Get-Item "$Config1"
+        [Xml] $Content = Get-Content "$Configs"
         $Payload = $Deposit.Replace("${Env:UserProfile}", '%vsspv_user_appdata%') + "\"
         $Content.SelectSingleNode("//*[@name='ProjectsLocation']").InnerText = "$Payload"
-        $Content.Save($Config1)
+        $Content.Save($Configs)
     }
     If (Test-Path "$Config2") {
-        $Config2 = Get-Item "$Config2"
-        [Xml] $Content = Get-Content "$Config2"
+        $Configs = Get-Item "$Config2"
+        [Xml] $Content = Get-Content "$Configs"
         $Payload = $Deposit.Replace("${Env:UserProfile}", '%vsspv_user_appdata%') + "\"
         $Content.SelectSingleNode("//*[@name='ProjectsLocation']").InnerText = "$Payload"
-        $Content.Save($Config2)
+        $Content.Save($Configs)
     }
 
 }
@@ -1210,55 +1210,6 @@ Function Update-VisualStudio2022Preview {
     # Change serials
     $Program = "$Env:ProgramFiles\Microsoft Visual Studio\2022\Preview\Common7\IDE\StorePID.exe"
     Invoke-Gsudo { Start-Process "$Using:Program" "$Using:Serials 09662" -WindowStyle Hidden -Wait } ; Start-Sleep 8
-
-    # Change highlightcurrentline
-    $Config1 = "$Env:LocalAppData\Microsoft\VisualStudio\17*\Settings\CurrentSettings.vssettings"
-    $Config2 = "$Env:LocalAppData\Microsoft\VisualStudio\17*\Settings\CurrentSettings-*.vssettings"
-    If (Test-Path "$Config1") {
-        $Config1 = Get-Item "$Config1"
-        [Xml] $Content = Get-Content "$Config1"
-        $Content.SelectSingleNode("//*[@name='HighlightCurrentLine']").InnerText = "false"
-        $Content.Save("$Config1")
-    }
-    If (Test-Path "$Config2") {
-        $Config2 = Get-Item "$Config2"
-        [Xml] $Content = Get-Content "$Config2"
-        $Content.SelectSingleNode("//*[@name='HighlightCurrentLine']").InnerText = "false"
-        $Content.Save("$Config2")
-    }
-
-    # Change linespacing
-    If (Test-Path "$Config1") {
-        $Config1 = Get-Item "$Config1"
-        [Xml] $Content = Get-Content "$Config1"
-        $Content.SelectSingleNode("//*[@name='LineSpacing']").InnerText = "1.5"
-        $Content.Save($Config1)
-    }
-    If (Test-Path "$Config2") {
-        $Config2 = Get-Item "$Config2"
-        [Xml] $Content = Get-Content "$Config2"
-        $Content.SelectSingleNode("//*[@name='LineSpacing']").InnerText = "1.5"
-        $Content.Save($Config2)
-    }
-
-    # Change directory
-    Remove-Item "$Env:UserProfile\source" -Recurse -EA SI
-    New-Item "$Deposit" -ItemType Directory -EA SI | Out-Null
-    Invoke-Gsudo { Add-MpPreference -ExclusionPath "$Using:Deposit" *> $Null }
-    If (Test-Path "$Config1") {
-        $Config1 = Get-Item "$Config1"
-        [Xml] $Content = Get-Content "$Config1"
-        $Payload = $Deposit.Replace("${Env:UserProfile}", '%vsspv_user_appdata%') + "\"
-        $Content.SelectSingleNode("//*[@name='ProjectsLocation']").InnerText = "$Payload"
-        $Content.Save($Config1)
-    }
-    If (Test-Path "$Config2") {
-        $Config2 = Get-Item "$Config2"
-        [Xml] $Content = Get-Content "$Config2"
-        $Payload = $Deposit.Replace("${Env:UserProfile}", '%vsspv_user_appdata%') + "\"
-        $Content.SelectSingleNode("//*[@name='ProjectsLocation']").InnerText = "$Payload"
-        $Content.Save($Config2)
-    }
 
 }
 
@@ -1481,7 +1432,7 @@ Function Main {
         # "Update-Chromium"
         # "Update-Git -GitMail sharpordie@outlook.com -GitUser sharpordie"
         # "Update-SevenZip"
-        # "Update-VisualStudio2022"
+        "Update-VisualStudio2022"
         # "Update-VisualStudio2022Preview"
         # "Update-VisualStudioCode"
 
