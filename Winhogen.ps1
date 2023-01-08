@@ -152,6 +152,36 @@ Function Remove-Desktop {
 
 }
 
+Function Remove-Feature {
+
+    Param(
+        [ValidateSet("HyperV")] [String] $Feature
+    )
+
+    Switch ($Feature) {
+        HyperV { 
+            $Address = "https://cdn3.bluestacks.com/support_files/HD-DisableHyperV_native_v2.exe"
+            $Fetched = Invoke-Fetcher "$Address"
+            Invoke-Gsudo {
+                Start-Process "$Using:Fetched"
+                Start-Sleep 10 ; Stop-Process -Name "HD-DisableHyperV"
+            }
+            # Add-Type -AssemblyName System.Windows.Forms
+            # Start-Sleep 8 ; [Windows.Forms.SendKeys]::SendWait("%+{TAB}")
+            # Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{TAB}")
+            # Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+        }
+        Default { Return 0 }
+    }
+
+    # Reboot computer if required
+    Invoke-Gsudo { Install-PackageProvider -Name NuGet -Force }
+    Invoke-Gsudo { Install-Module -Name PendingReboot -Force }
+    Invoke-Restart -Removed
+    If ((Test-PendingReboot -Detailed).IsRebootPending -Eq $True) { Invoke-Restart }
+
+}
+
 Function Update-LnkFile {
 
     Param(
@@ -204,8 +234,8 @@ Function Update-SysPath {
 Function Update-AndroidStudio {
     
     # Update package
-    # $Address = "https://raw.githubusercontent.com/ScoopInstaller/extras/master/bucket/android-studio.json"
-    $Address = "https://raw.githubusercontent.com/scoopinstaller/versions/master/bucket/android-studio-beta.json"
+    $Address = "https://raw.githubusercontent.com/ScoopInstaller/extras/master/bucket/android-studio.json"
+    # $Address = "https://raw.githubusercontent.com/scoopinstaller/versions/master/bucket/android-studio-beta.json"
     $Version = (Invoke-Scraper "Json" "$Address").version
     $Starter = "$Env:ProgramFiles\Android\Android Studio\bin\studio64.exe"
     $Present = Test-Path "$Starter"
@@ -218,8 +248,8 @@ Function Update-AndroidStudio {
     }
     
     # Update cmdline
-    # $JdkHome = "$Env:ProgramFiles\Android\Android Studio\jre"
-    $JdkHome = "$Env:ProgramFiles\Android\Android Studio\jbr"
+    $JdkHome = "$Env:ProgramFiles\Android\Android Studio\jre"
+    # $JdkHome = "$Env:ProgramFiles\Android\Android Studio\jbr"
     $SdkHome = "$Env:LocalAppData\Android\Sdk"
     $Cmdline = "$SdkHome\cmdline-tools"
     $Address = "https://developer.android.com/studio#command-tools"
@@ -249,26 +279,15 @@ Function Update-AndroidStudio {
 
     # Finish installation
     If (-Not $Present) {
-        Invoke-Expression "echo $("yes " * 10) | sdkmanager 'build-tools;30.0.3'"
-        # Invoke-Expression "echo $("yes " * 10) | sdkmanager 'build-tools;32.0.0'"
         Invoke-Expression "echo $("yes " * 10) | sdkmanager 'build-tools;33.0.1'"
         Invoke-Expression "echo $("yes " * 10) | sdkmanager 'emulator'"
         Invoke-Expression "echo $("yes " * 10) | sdkmanager 'extras;intel;Hardware_Accelerated_Execution_Manager'"
         Invoke-Expression "echo $("yes " * 10) | sdkmanager 'platform-tools'"
-        Invoke-Expression "echo $("yes " * 10) | sdkmanager 'platforms;android-30'"
-        # Invoke-Expression "echo $("yes " * 10) | sdkmanager 'platforms;android-31'"
-        # Invoke-Expression "echo $("yes " * 10) | sdkmanager 'platforms;android-32'"
         Invoke-Expression "echo $("yes " * 10) | sdkmanager 'platforms;android-33'"
         Invoke-Expression "echo $("yes " * 10) | sdkmanager 'sources;android-33'"
-        Invoke-Expression "echo $("yes " * 10) | sdkmanager 'system-images;android-30;google_apis_playstore;x86_64'"
-        Invoke-Expression "echo $("yes " * 10) | sdkmanager 'system-images;android-33;google_apis_playstore;x86_64'"
-        Invoke-Expression "echo $("yes`n" * 9) | sdkmanager --licenses"
-        $Configs = "$Env:UserProfile\.android\avd\Pixel_5_API_30.avd\config.ini"
-        If (-Not (Test-Path $Configs)) {
-            Invoke-Expression "avdmanager create avd -n 'Pixel_5_API_30' -d 'pixel_5' -k 'system-images;android-30;google_apis_playstore;x86_64'"
-            $Altered = (Get-Content "$Configs" | ForEach-Object { $_ -Match "displayname" }) -Contains $True
-            If (-Not $Altered) { Add-Content "$Configs" "avd.ini.displayname=Pixel 5 - API 30" }
-        }
+        Invoke-Expression "echo $("yes " * 10) | sdkmanager 'system-images;android-33;google_apis;x86_64'"
+        Invoke-Expression "echo $("yes " * 10) | sdkmanager --licenses"
+        Invoke-Expression "avdmanager create avd -n 'Pixel_3_API_33' -d 'pixel_3' -k 'system-images;android-33;google_apis;x86_64'"
         Add-Type -AssemblyName System.Windows.Forms
         Start-Process "$Starter" ; Start-Sleep 10
         [Windows.Forms.SendKeys]::SendWait("{TAB}") ; Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}") ; Start-Sleep 20
@@ -281,6 +300,11 @@ Function Update-AndroidStudio {
         [Windows.Forms.SendKeys]::SendWait("%{F4}") ; Start-Sleep 2
     }
 
+    # Update intel haxm
+    # # $Dummies = [String] $(Invoke-Expression "cmd /c sc query intelhaxm") -NotMatch "FAILED"
+    Remove-Feature -Feature HyperV
+    Invoke-Gsudo { Invoke-Expression "$Using:SdkHome\extras\intel\Hardware_Accelerated_Execution_Manager\silent_install.bat" }
+    
 }
 
 Function Update-Appearance {
@@ -688,7 +712,7 @@ Function Update-Flutter {
     Invoke-Expression "dart --disable-analytics"
 
     # Update android studio
-    $Present = Test-Path "$Env:ProgramFiles\Microsoft Visual Studio\2022\Professional\Common7\IDE\devenv.exe"
+    $Present = Test-Path "$Env:ProgramFiles\Android\Android Studio\bin\studio64.exe"
     If ($Present) {
         # Invoke-Expression "flutter config --android-studio-dir=`"$Env:ProgramFiles\Android\Android Studio`""
     }
@@ -1432,14 +1456,14 @@ Function Main {
         # "Update-Chromium"
         # "Update-Git -GitMail sharpordie@outlook.com -GitUser sharpordie"
         # "Update-SevenZip"
-        "Update-VisualStudio2022"
+        # "Update-VisualStudio2022"
         # "Update-VisualStudio2022Preview"
         # "Update-VisualStudioCode"
 
         # "Update-Bluestacks"
         # "Update-DotnetMaui"
         # "Update-Figma"
-        # "Update-Flutter"
+        "Update-Flutter"
         # "Update-Jdownloader"
         # "Update-Keepassxc"
         # "Update-Mpv"
