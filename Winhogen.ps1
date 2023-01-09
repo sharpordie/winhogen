@@ -332,12 +332,6 @@ Function Update-AndroidStudio {
     # Update-SysPath "$SdkHome\emulator" "Machine"
     # Update-SysPath "$SdkHome\platform-tools" "Machine"
 
-    # Update intel haxm
-    # # $Dummies = [String] $(Invoke-Expression "cmd /c sc query intelhaxm") -NotMatch "FAILED"
-    # Remove-Feature -Feature HyperV
-    # Invoke-Gsudo { Invoke-Expression "$Using:SdkHome\extras\intel\Hardware_Accelerated_Execution_Manager\silent_install.bat" }
-    Update-IntelHaxm
-
     # Finish installation
     If (-Not $Present) {
         Update-AndroidCmdline
@@ -361,6 +355,9 @@ Function Update-AndroidStudio {
         [Windows.Forms.SendKeys]::SendWait("{ENTER}") ; Start-Sleep 6
         [Windows.Forms.SendKeys]::SendWait("%{F4}") ; Start-Sleep 2
     }
+
+    # Update intel haxm
+    Update-IntelHaxm
     
 }
 
@@ -1537,6 +1534,7 @@ Function Main {
     # Handle elements
     $Factors = @(
         # "Update-NvidiaDriver"
+        # "Update-IntelHaxm"
         # "Update-Windows"
 
         # "Update-AndroidCmdline"
