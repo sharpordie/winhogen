@@ -23,6 +23,19 @@ Function Enable-PowPlan {
 
 }
 
+Function Enable-Prompts {
+
+    $Created = [IO.Path]::ChangeExtension([IO.Path]::GetTempFileName(), "ps1")
+    [IO.File]::WriteAllText("$Created", @(
+            '$KeyPath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System"'
+            'Set-ItemProperty -Path "$KeyPath" -Name ConsentPromptBehaviorAdmin -Value 5'
+            'Set-ItemProperty -Path "$KeyPath" -Name PromptOnSecureDesktop -Value 1'
+        ) -Join "`n")
+    Start-Process "powershell" "-ExecutionPolicy Bypass -File `"$Created`"" -Verb RunAs -WindowStyle Hidden -Wait
+    Remove-Item "$Created" -Force
+
+}
+
 Function Expand-Archive {
 
     Param (
@@ -182,6 +195,19 @@ Function Remove-Feature {
 
 }
 
+Function Remove-Prompts {
+
+    $Created = [IO.Path]::ChangeExtension([IO.Path]::GetTempFileName(), "ps1")
+    [IO.File]::WriteAllText("$Created", @(
+            '$KeyPath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System"'
+            'Set-ItemProperty -Path "$KeyPath" -Name ConsentPromptBehaviorAdmin -Value 0'
+            'Set-ItemProperty -Path "$KeyPath" -Name PromptOnSecureDesktop -Value 0'
+        ) -Join "`n")
+    Start-Process "powershell" "-ExecutionPolicy Bypass -File `"$Created`"" -Verb RunAs -WindowStyle Hidden -Wait
+    Remove-Item "$Created" -Force
+
+}
+
 Function Update-LnkFile {
 
     Param(
@@ -231,6 +257,35 @@ Function Update-SysPath {
 
 #EndRegion
 
+Function Update-AndroidCmdline {
+
+    # Gather current
+    $SdkHome = "$Env:LocalAppData\Android\Sdk"
+    $Starter = "$SdkHome\cmdline-tools\latest\bin\sdkmanager.bat"
+
+    # Update package
+    $Updated = Test-Path "$Starter" -NewerThan (Get-Date).AddDays(-90)
+    If (-Not $Updated) {
+        $Address = "https://developer.android.com/studio#command-tools"
+        $Pattern = "commandlinetools-win-(\d+)"
+        $Results = Invoke-Scraper "Html" "$Address" "$Pattern"
+        $Release = $Results.Groups[1].Value
+        $Address = "https://dl.google.com/android/repository/commandlinetools-win-${Release}_latest.zip"
+        $Fetched = Invoke-Fetcher "$Address"
+        $Deposit = Expand-Archive "$Fetched"
+        Update-Temurin ; $Manager = "$Deposit\cmdline-tools\bin\sdkmanager"
+        Invoke-Expression "echo $("yes " * 10) | $Manager 'cmdline-tools;latest'"
+    }
+
+    # Change environ
+    Invoke-Gsudo { [Environment]::SetEnvironmentVariable("ANDROID_HOME", "$Using:SdkHome", "Machine") }
+    [Environment]::SetEnvironmentVariable("ANDROID_HOME", "$SdkHome", "Process")
+    Update-SysPath "$SdkHome\cmdline-tools\latest\bin" "Machine"
+    Update-SysPath "$SdkHome\emulator" "Machine"
+    Update-SysPath "$SdkHome\platform-tools" "Machine"
+
+}
+
 Function Update-AndroidStudio {
     
     # Update package
@@ -248,37 +303,44 @@ Function Update-AndroidStudio {
     }
     
     # Update cmdline
-    $JdkHome = "$Env:ProgramFiles\Android\Android Studio\jre"
-    # $JdkHome = "$Env:ProgramFiles\Android\Android Studio\jbr"
-    $SdkHome = "$Env:LocalAppData\Android\Sdk"
-    $Cmdline = "$SdkHome\cmdline-tools"
-    $Address = "https://developer.android.com/studio#command-tools"
-    $Pattern = "commandlinetools-win-(\d+)"
-    $Results = Invoke-Scraper "Html" "$Address" "$Pattern"
-    $Release = $Results.Groups[1].Value
-    If (-Not (Test-Path "$Cmdline")) {
-        New-Item "$Cmdline" -ItemType Directory -EA SI
-        $Address = "https://dl.google.com/android/repository/commandlinetools-win-${Release}_latest.zip"
-        $Fetched = Invoke-Fetcher "$Address"
-        Expand-Archive "$Fetched" "$Cmdline"
-        [Environment]::SetEnvironmentVariable("JAVA_HOME", "$JdkHome", "Process")
-        $Updater = "$Cmdline\cmdline-tools\bin\sdkmanager"
-        Invoke-Expression "echo yes | $Updater 'cmdline-tools;latest'"
-        Remove-Item "$Cmdline\cmdline-tools" -Recurse -EA Ignore
-    }
+    # $JdkHome = "$Env:ProgramFiles\Android\Android Studio\jre"
+    # # $JdkHome = "$Env:ProgramFiles\Android\Android Studio\jbr"
+    # $SdkHome = "$Env:LocalAppData\Android\Sdk"
+    # $Cmdline = "$SdkHome\cmdline-tools"
+    # $Address = "https://developer.android.com/studio#command-tools"
+    # $Pattern = "commandlinetools-win-(\d+)"
+    # $Results = Invoke-Scraper "Html" "$Address" "$Pattern"
+    # $Release = $Results.Groups[1].Value
+    # If (-Not (Test-Path "$Cmdline")) {
+    #     New-Item "$Cmdline" -ItemType Directory -EA SI
+    #     $Address = "https://dl.google.com/android/repository/commandlinetools-win-${Release}_latest.zip"
+    #     $Fetched = Invoke-Fetcher "$Address"
+    #     Expand-Archive "$Fetched" "$Cmdline"
+    #     [Environment]::SetEnvironmentVariable("JAVA_HOME", "$JdkHome", "Process")
+    #     $Updater = "$Cmdline\cmdline-tools\bin\sdkmanager"
+    #     Invoke-Expression "echo yes | $Updater 'cmdline-tools;latest'"
+    #     Remove-Item "$Cmdline\cmdline-tools" -Recurse -EA Ignore
+    # }
 
-    # Adjust environment
-    Invoke-Gsudo { [Environment]::SetEnvironmentVariable("ANDROID_HOME", "$Using:SdkHome", "Machine") }
-    Invoke-Gsudo { [Environment]::SetEnvironmentVariable("JAVA_HOME", "$Using:JdkHome", "Machine") }
-    [Environment]::SetEnvironmentVariable("ANDROID_HOME", "$SdkHome", "Process")
-    [Environment]::SetEnvironmentVariable("JAVA_HOME", "$JdkHome", "Process")
-    Update-SysPath "$JdkHome\bin" "Machine"
-    Update-SysPath "$SdkHome\cmdline-tools\latest\bin" "Machine"
-    Update-SysPath "$SdkHome\emulator" "Machine"
-    Update-SysPath "$SdkHome\platform-tools" "Machine"
+    # # Adjust environment
+    # Invoke-Gsudo { [Environment]::SetEnvironmentVariable("ANDROID_HOME", "$Using:SdkHome", "Machine") }
+    # Invoke-Gsudo { [Environment]::SetEnvironmentVariable("JAVA_HOME", "$Using:JdkHome", "Machine") }
+    # [Environment]::SetEnvironmentVariable("ANDROID_HOME", "$SdkHome", "Process")
+    # [Environment]::SetEnvironmentVariable("JAVA_HOME", "$JdkHome", "Process")
+    # Update-SysPath "$JdkHome\bin" "Machine"
+    # Update-SysPath "$SdkHome\cmdline-tools\latest\bin" "Machine"
+    # Update-SysPath "$SdkHome\emulator" "Machine"
+    # Update-SysPath "$SdkHome\platform-tools" "Machine"
+
+    # Update intel haxm
+    # # $Dummies = [String] $(Invoke-Expression "cmd /c sc query intelhaxm") -NotMatch "FAILED"
+    # Remove-Feature -Feature HyperV
+    # Invoke-Gsudo { Invoke-Expression "$Using:SdkHome\extras\intel\Hardware_Accelerated_Execution_Manager\silent_install.bat" }
+    Update-IntelHaxm
 
     # Finish installation
     If (-Not $Present) {
+        Update-AndroidCmdline
         Invoke-Expression "echo $("yes " * 10) | sdkmanager 'build-tools;33.0.1'"
         Invoke-Expression "echo $("yes " * 10) | sdkmanager 'emulator'"
         Invoke-Expression "echo $("yes " * 10) | sdkmanager 'extras;intel;Hardware_Accelerated_Execution_Manager'"
@@ -299,11 +361,6 @@ Function Update-AndroidStudio {
         [Windows.Forms.SendKeys]::SendWait("{ENTER}") ; Start-Sleep 6
         [Windows.Forms.SendKeys]::SendWait("%{F4}") ; Start-Sleep 2
     }
-
-    # Update intel haxm
-    # # $Dummies = [String] $(Invoke-Expression "cmd /c sc query intelhaxm") -NotMatch "FAILED"
-    Remove-Feature -Feature HyperV
-    Invoke-Gsudo { Invoke-Expression "$Using:SdkHome\extras\intel\Hardware_Accelerated_Execution_Manager\silent_install.bat" }
     
 }
 
@@ -351,27 +408,20 @@ Function Update-Appearance {
 
     # Change pinned applications
     Get-Item "$Env:AppData\Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar\*.lnk" | Remove-Item -Force -EA SI
-    Invoke-Syspin "UnpinFromTaskbar" "$Env:ProgramData\Microsoft\Windows\Start Menu\Programs\Chromium.lnk"
-    Invoke-Syspin "UnpinFromTaskbar" "$Env:AppData\Microsoft\Windows\Start Menu\Programs\JDownloader\JDownloader 2.lnk"
-    Invoke-Syspin "UnpinFromTaskbar" "$Env:ProgramData\Microsoft\Windows\Start Menu\Programs\qBittorrent\qBittorrent.lnk"
-    Invoke-Syspin "UnpinFromTaskbar" "$Env:AppData\Microsoft\Windows\Start Menu\Programs\Visual Studio Code\Visual Studio Code.lnk"
-    # Invoke-Syspin "UnpinFromTaskbar" "$Env:ProgramData\Microsoft\Windows\Start Menu\Programs\Visual Studio 2022 Preview.lnk"
-    Invoke-Syspin "UnpinFromTaskbar" "$Env:ProgramData\Microsoft\Windows\Start Menu\Programs\Visual Studio 2022.lnk"
-    Invoke-Syspin "UnpinFromTaskbar" "$Env:ProgramData\Microsoft\Windows\Start Menu\Programs\VMware\VMware Workstation Pro.lnk"
-    Invoke-Syspin "UnpinFromTaskbar" "$Env:AppData\Microsoft\Windows\Start Menu\Programs\Spotify.lnk"
-    Invoke-Syspin "UnpinFromTaskbar" "$Env:AppData\Microsoft\Windows\Start Menu\Programs\Mpv.lnk"
-    Invoke-Syspin "UnpinFromTaskbar" "$Env:AppData\Microsoft\Windows\Start Menu\Programs\Figma.lnk"
-
-    Invoke-Syspin "PinToTaskbar" "$Env:ProgramData\Microsoft\Windows\Start Menu\Programs\Chromium.lnk"
-    Invoke-Syspin "PinToTaskbar" "$Env:AppData\Microsoft\Windows\Start Menu\Programs\JDownloader\JDownloader 2.lnk"
-    Invoke-Syspin "PinToTaskbar" "$Env:ProgramData\Microsoft\Windows\Start Menu\Programs\qBittorrent\qBittorrent.lnk"
-    Invoke-Syspin "PinToTaskbar" "$Env:AppData\Microsoft\Windows\Start Menu\Programs\Visual Studio Code\Visual Studio Code.lnk"
-    # Invoke-Syspin "PinToTaskbar" "$Env:ProgramData\Microsoft\Windows\Start Menu\Programs\Visual Studio 2022 Preview.lnk"
-    Invoke-Syspin "PinToTaskbar" "$Env:ProgramData\Microsoft\Windows\Start Menu\Programs\Visual Studio 2022.lnk"
-    Invoke-Syspin "PinToTaskbar" "$Env:ProgramData\Microsoft\Windows\Start Menu\Programs\VMware\VMware Workstation Pro.lnk"
-    Invoke-Syspin "PinToTaskbar" "$Env:AppData\Microsoft\Windows\Start Menu\Programs\Spotify.lnk"
-    Invoke-Syspin "PinToTaskbar" "$Env:AppData\Microsoft\Windows\Start Menu\Programs\Mpv.lnk"
-    Invoke-Syspin "PinToTaskbar" "$Env:AppData\Microsoft\Windows\Start Menu\Programs\Figma.lnk"
+    $Folder1 = "$Env:ProgramData\Microsoft\Windows\Start Menu\Programs"
+    $Folder2 = "$Env:AppData\Microsoft\Windows\Start Menu\Programs"
+    $Factors = @(
+        "$Folder2\JDownloader\JDownloader 2.lnk"
+        "$Folder1\qBittorrent\qBittorrent.lnk"
+        "$Folder2\Visual Studio Code\Visual Studio Code.lnk"
+        "$Folder1\Visual Studio 2022.lnk"
+        "$Folder1\VMware\VMware Workstation Pro.lnk"
+        "$Folder2\Spotify.lnk"
+        "$Folder2\Mpv.lnk"
+        "$Folder2\Figma.lnk"
+    )
+    Foreach ($Element In $Factors) { Invoke-Syspin "UnpinFromTaskbar" "$Element" }
+    Foreach ($Element In $Factors) { Invoke-Syspin "PinToTaskbar" "$Element" }
 
     # Reboot explorer
     Stop-Process -Name "explorer"
@@ -797,6 +847,27 @@ Function Update-Gsudo {
     
 }
 
+Function Update-IntelHaxm {
+
+    # Remove hyper-v
+    Remove-Feature -Feature HyperV
+
+    # Gather current
+    $Current = (Get-Package "Inte*Hard*Acce*" -EA SI).Version
+
+    # Update package
+    $Address = "https://api.github.com/repos/intel/haxm/releases"
+    $Address = (Invoke-Scraper "Json" "$Address")[0].assets.Where( { $_.browser_download_url -like "*windows**" } ).browser_download_url
+    $Version = [Regex]::Matches("$Address", "v([\d.]+)").Groups[1].Value
+    $Updated = $Null -Ne $Current -And [Version] ($Current.SubString(0, 1)) -Ge [Version] "$Version"
+    If (-Not $Updated) {
+        $Fetched = Invoke-Fetcher "$Address"
+        $Deposit = Expand-Archive "$Fetched"
+        Invoke-Gsudo { Start-Process "$Using:Deposit\silent_install.bat" -WindowStyle Hidden -Wait }
+    }
+
+}
+
 Function Update-Jdownloader {
 
     Param (
@@ -926,9 +997,7 @@ Function Update-NvidiaDriver {
     $Pattern = "NVidia Display Driver ([\d.]+)</title>"
     $Version = (Invoke-Scraper "Html" "$Address" "$Pattern").Groups[1].Value
     $Current = (Get-Package "NVIDIA Graphics Driver*" -EA SI).Version
-    $Present = $Null -Ne $Current
-    $Current = If (-Not $Present) { "0.0.0.0" } Else { $Current }
-    $Updated = [Version] "$Current" -Ge [Version] "$Version"
+    $Updated = $Null -Ne $Current -And [Version] "$Current" -Ge [Version] "$Version"
     If (-Not $Updated) {
         $Address = "https://us.download.nvidia.com/Windows/$Version/$Version-desktop-win10-win11-64bit-international-dch-whql.exe"
         $Fetched = Invoke-Fetcher "$Address"
@@ -1094,6 +1163,26 @@ Function Update-Spotify {
 
     # Remove autorun
     Remove-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Name "Spotify" -EA SI
+
+}
+
+Function Update-Temurin {
+
+    # Gather current
+    $Current = (Get-Package "*Temurin*" -EA SI).Version
+
+    # Update package
+    $Address = "https://api.github.com/repos/adoptium/temurin19-binaries/releases/latest"
+    $Results = (Invoke-Scraper "Json" "$Address")[0].assets
+    $Address = $Results.Where( { $_.browser_download_url -Like "*jdk_x64_windows*.msi" } ).browser_download_url
+    $Version = [Regex]::Matches("$Address", ".*jdk-([\d.]+)").Groups[1].Value
+    $Updated = $Null -Ne $Current -And [Version] "$Current" -Ge [Version] "$Version"
+    If (-Not $Updated) {
+        $Fetched = Invoke-Fetcher "$Address"
+        $Adjunct = If ($Present) { "REINSTALL=ALL REINSTALLMODE=amus" } Else { "INSTALLLEVEL=1" }
+        Invoke-Gsudo { Start-Process "msiexec" "/i `"$Using:Fetched`" $Using:Adjunct /quiet" -Wait }
+        Update-SysPath -Deposit "" -Section "Machine"
+    }
 
 }
 
@@ -1426,11 +1515,11 @@ Function Update-YtDlg {
 
 Function Main {
 
-    # Change title
+    # Change headline
     $Current = "$($Script:MyInvocation.MyCommand.Path)"
     $Host.UI.RawUI.WindowTitle = (Get-Item "$Current").BaseName
 
-    # Output welcome
+    # Output greeting
     Clear-Host ; $ProgressPreference = "SilentlyContinue"
     Write-Host "+----------------------------------------------------------+"
     Write-Host "|                                                          |"
@@ -1440,18 +1529,19 @@ Function Main {
     Write-Host "|                                                          |"
     Write-Host "+----------------------------------------------------------+"
     
-    # Remove restrictions
+    # Remove security
     $Loading = "`nTHE UPDATING DEPENDENCIES PROCESS HAS LAUNCHED"
     $Failure = "`rTHE UPDATING DEPENDENCIES PROCESS WAS CANCELED"
-    Write-Host "$Loading" -FO DarkYellow -NoNewline ; Enable-PowPlan "Ultimate"
+    Write-Host "$Loading" -FO DarkYellow -NoNewline ; Remove-Prompts ; Enable-PowPlan "Ultimate"
     $Correct = (Update-Gsudo) -And -Not (gsudo cache on -d -1 2>&1).ToString().Contains("Error")
     If (-Not $Correct) { Write-Host "$Failure" -FO Red ; Write-Host ; Exit }
 
-    # Handle functions
+    # Handle elements
     $Factors = @(
         # "Update-NvidiaDriver"
         # "Update-Windows"
 
+        # "Update-AndroidCmdline"
         # "Update-AndroidStudio"
         # "Update-Chromium"
         # "Update-Git -GitMail sharpordie@outlook.com -GitUser sharpordie"
@@ -1463,7 +1553,7 @@ Function Main {
         # "Update-Bluestacks"
         # "Update-DotnetMaui"
         # "Update-Figma"
-        "Update-Flutter"
+        # "Update-Flutter"
         # "Update-Jdownloader"
         # "Update-Keepassxc"
         # "Update-Mpv"
@@ -1472,7 +1562,7 @@ Function Main {
         # "Update-Qbittorrent"
         # "Update-Sizer"
         # "Update-Spotify"
-        # "Update-VmwareWorkstation"
+        "Update-VmwareWorkstation"
         # "Update-YtDlg"
 
         # "Update-Appearance"
@@ -1504,10 +1594,10 @@ Function Main {
         }
     }
     
-    # Revert restrictions
-    Invoke-Expression "gsudo -k" *> $Null
+    # Revert security
+    Invoke-Expression "gsudo -k" *> $Null ; Enable-Prompts
     
-    # Output newline
+    # Output new line
     Write-Host "`n"
 
 }
