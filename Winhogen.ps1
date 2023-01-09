@@ -743,40 +743,38 @@ Function Update-Flutter {
     $Deposit = "$Env:LocalAppData\Android\Flutter"
     $Starter = "$Deposit\bin\flutter"
     $Present = Test-Path "$Starter"
-    If (-Not $Present) {
-        New-Item "$Deposit" -ItemType Directory -EA SI
-        $Address = "https://storage.googleapis.com/flutter_infra_release/releases/releases_windows.json"
-        $Address = (Invoke-Scraper "Json" "$Address")[0].releases[0].archive
-        $Address = "https://storage.googleapis.com/flutter_infra_release/releases/$Address"
-        $Fetched = Invoke-Fetcher "$Address"        
-        $Extract = Expand-Archive "$Fetched"
-        $Topmost = (Get-ChildItem "$Extract" -Directory | Select-Object -First 1).FullName
-        Copy-Item "$Topmost\*" -Destination "$Deposit" -Recurse -Force
-        Update-SysPath "$Deposit\bin" "Machine"
-    }
+    Update-Git ; Invoke-Expression "git clone https://github.com/flutter/flutter.git -b stable $Deposit"
+    Update-SysPath "$Deposit\bin" "Machine"
+    # If (-Not $Present) {
+    #     New-Item "$Deposit" -ItemType Directory -EA SI
+    #     $Address = "https://storage.googleapis.com/flutter_infra_release/releases/releases_windows.json"
+    #     $Address = (Invoke-Scraper "Json" "$Address")[0].releases[0].archive
+    #     $Address = "https://storage.googleapis.com/flutter_infra_release/releases/$Address"
+    #     $Fetched = Invoke-Fetcher "$Address"        
+    #     $Extract = Expand-Archive "$Fetched"
+    #     $Topmost = (Get-ChildItem "$Extract" -Directory | Select-Object -First 1).FullName
+    #     Copy-Item "$Topmost\*" -Destination "$Deposit" -Recurse -Force
+    #     Update-SysPath "$Deposit\bin" "Machine"
+    # }
 
     # Change settings
-    Invoke-Expression "flutter upgrade"
+    Invoke-Expression "flutter channel stable"
+    Invoke-Expression "flutter precache" ; Invoke-Expression "flutter upgrade"
     Invoke-Expression "echo $("yes " * 10) | flutter doctor --android-licenses"
-    Invoke-Expression "flutter config --no-analytics"
     Invoke-Expression "dart --disable-analytics"
+    Invoke-Expression "flutter config --no-analytics"
 
     # Update android studio
     $Present = Test-Path "$Env:ProgramFiles\Android\Android Studio\bin\studio64.exe"
-    If ($Present) {
-        # Invoke-Expression "flutter config --android-studio-dir=`"$Env:ProgramFiles\Android\Android Studio`""
-    }
-
-    # Update visual studio
-    $Present = Test-Path "$Env:ProgramFiles\Microsoft Visual Studio\2022\Professional\Common7\IDE\devenv.exe"
-    If ($Present) {
-        Update-VisualStudio2022Workload "Microsoft.VisualStudio.Workload.NativeDesktop"
-    }
-
-    # Update visual studio preview
-    # $Present = Test-Path "$Env:ProgramFiles\Microsoft Visual Studio\2022\Preview\Common7\IDE\devenv.exe"
     # If ($Present) {
-    #     Update-VisualStudio2022PreviewWorkload "Microsoft.VisualStudio.Workload.NativeDesktop"
+    #     Update-JetbrainsPlugin "AndroidStudio" "6351"  # Dart
+	#     Update-JetbrainsPlugin "AndroidStudio" "9212"  # Flutter
+    # }
+
+    # Update visual studio 2022
+    # $Present = Test-Path "$Env:ProgramFiles\Microsoft Visual Studio\2022\Professional\Common7\IDE\devenv.exe"
+    # If ($Present) {
+    #     Update-VisualStudio2022Workload "Microsoft.VisualStudio.Workload.NativeDesktop"
     # }
 
     # Update visual studio code
@@ -794,8 +792,8 @@ Function Update-Git {
 
     Param (
         [String] $Default = "main",
-        [String] $GitMail = "anonymous@example.org",
-        [String] $GitUser = "anonymous"
+        [String] $GitMail,
+        [String] $GitUser
     )
     
     # Update package
@@ -815,10 +813,10 @@ Function Update-Git {
     
     # Change settings
     Update-SysPath "$Env:ProgramFiles\Git\cmd" "Process"
+    If ($Null -Ne $GitMail) { Invoke-Expression "git config --global user.email '$GitMail'" }
+    If ($Null -Ne $GitUser) { Invoke-Expression "git config --global user.name '$GitUser'" }
     Invoke-Expression "git config --global http.postBuffer 1048576000"
     Invoke-Expression "git config --global init.defaultBranch '$Default'"
-    Invoke-Expression "git config --global user.email '$GitMail'"
-    Invoke-Expression "git config --global user.name '$GitUser'"
     
 }
 
@@ -1542,7 +1540,7 @@ Function Main {
         # "Update-Windows"
 
         # "Update-AndroidCmdline"
-        # "Update-AndroidStudio"
+        "Update-AndroidStudio"
         # "Update-Chromium"
         # "Update-Git -GitMail sharpordie@outlook.com -GitUser sharpordie"
         # "Update-SevenZip"
@@ -1553,7 +1551,7 @@ Function Main {
         # "Update-Bluestacks"
         # "Update-DotnetMaui"
         # "Update-Figma"
-        # "Update-Flutter"
+        "Update-Flutter"
         # "Update-Jdownloader"
         # "Update-Keepassxc"
         # "Update-Mpv"
@@ -1562,7 +1560,7 @@ Function Main {
         # "Update-Qbittorrent"
         # "Update-Sizer"
         # "Update-Spotify"
-        "Update-VmwareWorkstation"
+        # "Update-VmwareWorkstation"
         # "Update-YtDlg"
 
         # "Update-Appearance"
