@@ -273,8 +273,9 @@ Function Update-AndroidCmdline {
         $Address = "https://dl.google.com/android/repository/commandlinetools-win-${Release}_latest.zip"
         $Fetched = Invoke-Fetcher "$Address"
         $Deposit = Expand-Archive "$Fetched"
+        New-Item "$SdkHome" -ItemType Directory -EA SI
         Update-Temurin ; $Manager = "$Deposit\cmdline-tools\bin\sdkmanager.bat"
-        Write-Output $("yes " * 10) | & "$Manager" --sdk_root="$SdkRoot" "cmdline-tools;latest"
+        Invoke-Expression "echo $("yes " * 10) | & `"$Manager`" --sdk_root=`"$SdkHome`" `"cmdline-tools;latest`""
     }
 
     # Change environ
@@ -301,36 +302,6 @@ Function Update-AndroidStudio {
         $Fetched = Invoke-Fetcher "$Address"
         Invoke-Gsudo { Start-Process "$Using:Fetched" "/S" -Wait }
     }
-    
-    # Update cmdline
-    # $JdkHome = "$Env:ProgramFiles\Android\Android Studio\jre"
-    # # $JdkHome = "$Env:ProgramFiles\Android\Android Studio\jbr"
-    # $SdkHome = "$Env:LocalAppData\Android\Sdk"
-    # $Cmdline = "$SdkHome\cmdline-tools"
-    # $Address = "https://developer.android.com/studio#command-tools"
-    # $Pattern = "commandlinetools-win-(\d+)"
-    # $Results = Invoke-Scraper "Html" "$Address" "$Pattern"
-    # $Release = $Results.Groups[1].Value
-    # If (-Not (Test-Path "$Cmdline")) {
-    #     New-Item "$Cmdline" -ItemType Directory -EA SI
-    #     $Address = "https://dl.google.com/android/repository/commandlinetools-win-${Release}_latest.zip"
-    #     $Fetched = Invoke-Fetcher "$Address"
-    #     Expand-Archive "$Fetched" "$Cmdline"
-    #     [Environment]::SetEnvironmentVariable("JAVA_HOME", "$JdkHome", "Process")
-    #     $Updater = "$Cmdline\cmdline-tools\bin\sdkmanager"
-    #     Invoke-Expression "echo yes | $Updater 'cmdline-tools;latest'"
-    #     Remove-Item "$Cmdline\cmdline-tools" -Recurse -EA Ignore
-    # }
-
-    # # Adjust environment
-    # Invoke-Gsudo { [Environment]::SetEnvironmentVariable("ANDROID_HOME", "$Using:SdkHome", "Machine") }
-    # Invoke-Gsudo { [Environment]::SetEnvironmentVariable("JAVA_HOME", "$Using:JdkHome", "Machine") }
-    # [Environment]::SetEnvironmentVariable("ANDROID_HOME", "$SdkHome", "Process")
-    # [Environment]::SetEnvironmentVariable("JAVA_HOME", "$JdkHome", "Process")
-    # Update-SysPath "$JdkHome\bin" "Machine"
-    # Update-SysPath "$SdkHome\cmdline-tools\latest\bin" "Machine"
-    # Update-SysPath "$SdkHome\emulator" "Machine"
-    # Update-SysPath "$SdkHome\platform-tools" "Machine"
 
     # Finish installation
     If (-Not $Present) {
@@ -670,31 +641,47 @@ Function Update-ChromiumExtension {
 Function Update-DotnetMaui {
 
     # Update package
-    Update-VisualStudio2022
+    Update-VisualStudio2022 ; Update-IntelHaxm
     Update-VisualStudio2022Workload "Microsoft.VisualStudio.Workload.NetCrossPlat"
 
     # Finish installation
     Invoke-Gsudo {
-        $SdkRoot = "${Env:ProgramFiles(x86)}\Android\android-sdk"
-        $Creator = (Get-Item "$SdkRoot\cmdline-tools\*\bin\avdmanager*").FullName
-        $Starter = (Get-Item "$SdkRoot\cmdline-tools\*\bin\sdkmanager*").FullName
+        $SdkHome = "${Env:ProgramFiles(x86)}\Android\android-sdk"
+        $Creator = (Get-Item "$SdkHome\cmdline-tools\*\bin\avdmanager*").FullName
+        $Starter = (Get-Item "$SdkHome\cmdline-tools\*\bin\sdkmanager*").FullName
         If ($Null -Ne $Starter) {
-            Write-Output $("yes " * 10) | & "$Starter" --sdk_root="$SdkRoot" "build-tools;30.0.3"
-            # Write-Output $("yes " * 10) | & "$Starter" --sdk_root="$SdkRoot" "build-tools;32.0.0"
-            Write-Output $("yes " * 10) | & "$Starter" --sdk_root="$SdkRoot" "build-tools;33.0.1"
-            Write-Output $("yes " * 10) | & "$Starter" --sdk_root="$SdkRoot" "platform-tools"
-            Write-Output $("yes " * 10) | & "$Starter" --sdk_root="$SdkRoot" "platforms;android-30"
-            # Write-Output $("yes " * 10) | & "$Starter" --sdk_root="$SdkRoot" "platforms;android-31"
-            # Write-Output $("yes " * 10) | & "$Starter" --sdk_root="$SdkRoot" "platforms;android-32"
-            Write-Output $("yes " * 10) | & "$Starter" --sdk_root="$SdkRoot" "platforms;android-33"
-            Write-Output $("yes " * 10) | & "$Starter" --sdk_root="$SdkRoot" "system-images;android-30;google_apis_playstore;x86_64"
-            Write-Output $("yes`n" * 9) | & "$Starter" --licenses
-            $Configs = "$Env:UserProfile\.android\avd\Pixel_5_API_30.avd\config.ini"
-            If (-Not (Test-Path $Configs)) {
-                Write-Output $("yes " * 10) | & "$Creator" create avd -n "Pixel_5_API_30" -d "pixel_5" -k "system-images;android-30;google_apis_playstore;x86_64"
-                $Altered = (Get-Content "$Configs" | ForEach-Object { $_ -Match "displayname" }) -Contains $True
-                If (-Not $Altered) { Add-Content "$Configs" "avd.ini.displayname=Pixel 5 - API 30" }
-            }
+            Invoke-Expression "echo $("yes " * 10) | & `"$Starter`" --sdk_root=`"$SdkHome`" `"build-tools;30.0.3`""
+            Invoke-Expression "echo $("yes " * 10) | & `"$Starter`" --sdk_root=`"$SdkHome`" `"build-tools;33.0.1`""
+            Invoke-Expression "echo $("yes " * 10) | & `"$Starter`" --sdk_root=`"$SdkHome`" `"emulator`""
+            Invoke-Expression "echo $("yes " * 10) | & `"$Starter`" --sdk_root=`"$SdkHome`" `"extras;intel;Hardware_Accelerated_Execution_Manager`""
+            Invoke-Expression "echo $("yes " * 10) | & `"$Starter`" --sdk_root=`"$SdkHome`" `"platform-tools`""
+            Invoke-Expression "echo $("yes " * 10) | & `"$Starter`" --sdk_root=`"$SdkHome`" `"platforms;android-30`""
+            Invoke-Expression "echo $("yes " * 10) | & `"$Starter`" --sdk_root=`"$SdkHome`" `"platforms;android-33`""
+            Invoke-Expression "echo $("yes " * 10) | & `"$Starter`" --sdk_root=`"$SdkHome`" `"system-images;android-30;google_apis;x86_64`""
+            Invoke-Expression "echo $("yes " * 10) | & `"$Starter`" --licenses"
+            Invoke-Expression "echo $("yes " * 10) | & `"$Creator`" create avd -n `"Pixel_3_API_30`" -d `"pixel_3`" -k `"system-images;android-30;google_apis;x86_64`""
+            # $Configs = "$Env:UserProfile\.android\avd\Pixel_5_API_30.avd\config.ini"
+            # If (-Not (Test-Path $Configs)) {
+            #     Write-Output $("yes " * 10) | & "$Creator" create avd -n "Pixel_5_API_30" -d "pixel_5" -k "system-images;android-30;google_apis;x86_64"
+            #     $Altered = (Get-Content "$Configs" | ForEach-Object { $_ -Match "displayname" }) -Contains $True
+            #     If (-Not $Altered) { Add-Content "$Configs" "avd.ini.displayname=Pixel 5 - API 30" }
+            # }
+            # Write-Output $("yes " * 10) | & "$Starter" --sdk_root="$SdkHome" "build-tools;30.0.3"
+            # # Write-Output $("yes " * 10) | & "$Starter" --sdk_root="$SdkHome" "build-tools;32.0.0"
+            # Write-Output $("yes " * 10) | & "$Starter" --sdk_root="$SdkHome" "build-tools;33.0.1"
+            # Write-Output $("yes " * 10) | & "$Starter" --sdk_root="$SdkHome" "platform-tools"
+            # Write-Output $("yes " * 10) | & "$Starter" --sdk_root="$SdkHome" "platforms;android-30"
+            # # Write-Output $("yes " * 10) | & "$Starter" --sdk_root="$SdkHome" "platforms;android-31"
+            # # Write-Output $("yes " * 10) | & "$Starter" --sdk_root="$SdkHome" "platforms;android-32"
+            # Write-Output $("yes " * 10) | & "$Starter" --sdk_root="$SdkHome" "platforms;android-33"
+            # Write-Output $("yes " * 10) | & "$Starter" --sdk_root="$SdkHome" "system-images;android-30;google_apis_playstore;x86_64"
+            # Write-Output $("yes`n" * 9) | & "$Starter" --licenses
+            # $Configs = "$Env:UserProfile\.android\avd\Pixel_5_API_30.avd\config.ini"
+            # If (-Not (Test-Path $Configs)) {
+            #     Write-Output $("yes " * 10) | & "$Creator" create avd -n "Pixel_5_API_30" -d "pixel_5" -k "system-images;android-30;google_apis_playstore;x86_64"
+            #     $Altered = (Get-Content "$Configs" | ForEach-Object { $_ -Match "displayname" }) -Contains $True
+            #     If (-Not $Altered) { Add-Content "$Configs" "avd.ini.displayname=Pixel 5 - API 30" }
+            # }
         }
     }
 
@@ -1228,13 +1215,16 @@ Function Update-VisualStudio2022 {
 
     Param(
         [String] $Deposit = "$Env:UserProfile\Projects",
-        [String] $Serials = "TD244-P4NB7-YQ6XK-Y8MMM-YWV2J"
+        [String] $Serials = "TD244-P4NB7-YQ6XK-Y8MMM-YWV2J",
+        [Switch] $Preview
     )
 
-    # Update software
-    $Starter = "$Env:ProgramFiles\Microsoft Visual Studio\2022\Professional\Common7\IDE\devenv.exe"
+    # Update package
+    $Adjunct = If($Preview) { "Preview" } Else { "Professional" }
+    $Storage = "$Env:ProgramFiles\Microsoft Visual Studio\2022\$Adjunct"
+    $Starter = "$Storage\Common7\IDE\devenv.exe"
     $Present = Test-Path "$Starter"
-    Update-VisualStudio2022Workload "Microsoft.VisualStudio.Workload.CoreEditor"
+    Update-VisualStudio2022Workload "Microsoft.VisualStudio.Workload.CoreEditor" -Preview:$Preview
 
     # Finish installation
     If (-Not $Present) {
@@ -1248,7 +1238,7 @@ Function Update-VisualStudio2022 {
     }
 
     # Change serials
-    $Program = "$Env:ProgramFiles\Microsoft Visual Studio\2022\Professional\Common7\IDE\StorePID.exe"
+    $Program = "$Storage\Common7\IDE\StorePID.exe"
     Invoke-Gsudo { Start-Process "$Using:Program" "$Using:Serials 09662" -WindowStyle Hidden -Wait }
 
     # Change highlightcurrentline
@@ -1305,7 +1295,8 @@ Function Update-VisualStudio2022 {
 Function Update-VisualStudio2022Extension {
 
     Param (
-        [String] $Payload
+        [String] $Payload,
+        [Switch] $Preview
     )
 
     $Website = "https://marketplace.visualstudio.com/items?itemName=$Payload"
@@ -1314,7 +1305,8 @@ Function Update-VisualStudio2022Extension {
     $Address = "https://marketplace.visualstudio.com" + "$Address"
     $Package = "$Env:Temp\$([Guid]::NewGuid()).vsix"
     Invoke-WebRequest "$Address" -OutFile "$Package" -WebSession $Session
-    $Updater = "$Env:ProgramFiles\Microsoft Visual Studio\2022\Professional\Common7\IDE\VSIXInstaller.exe"
+    $Adjunct = If($Preview) { "Preview" } Else { "Professional" }
+    $Updater = "$Env:ProgramFiles\Microsoft Visual Studio\2022\$Adjunct\Common7\IDE\VSIXInstaller.exe"
     Invoke-Gsudo { Start-Process "$Using:Updater" "/q /a `"$Using:Package`"" -WindowStyle Hidden -Wait }
 
 }
@@ -1322,72 +1314,12 @@ Function Update-VisualStudio2022Extension {
 Function Update-VisualStudio2022Workload {
 
     Param (
-        [String] $Payload
+        [String] $Payload,
+        [Switch] $Preview
     )
 
     $Address = "https://aka.ms/vs/17/release/vs_professional.exe"
-    $Fetched = Invoke-Fetcher "$Address"
-    Invoke-Gsudo {
-        Start-Process "$Using:Fetched" "update --wait --quiet --norestart" -WindowStyle Hidden -Wait
-        Start-Process "$Using:Fetched" "install --wait --quiet --norestart --add $Using:Payload" -WindowStyle Hidden -Wait
-        Start-Sleep 2 ; Start-Process "cmd" "/c taskkill /f /im devenv.exe /t 2>nul 1>nul" -WindowStyle Hidden -Wait
-    }
-    
-}
-
-Function Update-VisualStudio2022Preview {
-
-    Param(
-        [String] $Deposit = "$Env:UserProfile\Projects",
-        [String] $Serials = "TD244-P4NB7-YQ6XK-Y8MMM-YWV2J"
-    )
-
-    # Update software
-    $Starter = "$Env:ProgramFiles\Microsoft Visual Studio\2022\Preview\Common7\IDE\devenv.exe"
-    $Present = Test-Path "$Starter"
-    Update-VisualStudio2022PreviewWorkload "Microsoft.VisualStudio.Workload.CoreEditor"
-
-    # Finish installation
-    If (-Not $Present) {
-        Invoke-Gsudo { Start-Process "$Using:Starter" "/ResetUserData" -Wait }
-        Add-Type -AssemblyName "System.Windows.Forms"
-        Start-Process -FilePath "$Starter"
-        Start-Sleep 15 ; [Windows.Forms.SendKeys]::SendWait("{TAB}" * 4)
-        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
-        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{TAB}") ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
-        Start-Sleep 20 ; [Windows.Forms.SendKeys]::SendWait("%{F4}") ; Start-Sleep 10
-    }
-
-    # Change serials
-    $Program = "$Env:ProgramFiles\Microsoft Visual Studio\2022\Preview\Common7\IDE\StorePID.exe"
-    Invoke-Gsudo { Start-Process "$Using:Program" "$Using:Serials 09662" -WindowStyle Hidden -Wait } ; Start-Sleep 8
-
-}
-
-Function Update-VisualStudio2022PreviewExtension {
-
-    Param (
-        [String] $Payload
-    )
-
-    $Website = "https://marketplace.visualstudio.com/items?itemName=$Payload"
-    $Content = Invoke-WebRequest -Uri $Website -UseBasicParsing -SessionVariable Session
-    $Address = $Content.Links | Where-Object { $_.class -Eq "install-button-container" } | Select-Object -ExpandProperty href
-    $Address = "https://marketplace.visualstudio.com" + "$Address"
-    $Package = "$Env:Temp\$([Guid]::NewGuid()).vsix"
-    Invoke-WebRequest "$Address" -OutFile "$Package" -WebSession $Session
-    $Updater = "$Env:ProgramFiles\Microsoft Visual Studio\2022\Preview\Common7\IDE\VSIXInstaller.exe"
-    Invoke-Gsudo { Start-Process "$Using:Updater" "/q /a `"$Using:Package`"" -WindowStyle Hidden -Wait }
-
-}
-
-Function Update-VisualStudio2022PreviewWorkload {
-
-    Param (
-        [String] $Payload
-    )
-
-    $Address = "https://c2rsetup.officeapps.live.com/c2r/downloadVS.aspx?sku=professional&channel=Preview&version=VS2022"
+    If ($Preview) { $Address = "https://c2rsetup.officeapps.live.com/c2r/downloadVS.aspx?sku=professional&channel=Preview&version=VS2022" }
     $Fetched = Invoke-Fetcher "$Address" (Join-Path "$Env:Temp" "VisualStudioSetup.exe")
     Invoke-Gsudo {
         Start-Process "$Using:Fetched" "update --wait --quiet --norestart" -WindowStyle Hidden -Wait
@@ -1397,41 +1329,67 @@ Function Update-VisualStudio2022PreviewWorkload {
     
 }
 
-Function Update-VisualStudioCode {
+# Function Update-VisualStudio2022Preview {
 
-    # Update package
-    $Address = "https://code.visualstudio.com/sha?build=stable"
-    $Version = (Invoke-Scraper "Json" "$Address").products[1].name
-    $Starter = "$Env:LocalAppData\Programs\Microsoft VS Code\Code.exe"
-    $Current = Expand-Version "$Starter"
-    $Updated = [Version] "$Current" -Ge [Version] "$Version"
-    If (-Not $Updated -And "$Env:TERM_PROGRAM" -Ne "Vscode") {
-        $Address = "https://aka.ms/win32-x64-user-stable"
-        $Fetched = Invoke-Fetcher "$Address" (Join-Path "$Env:Temp" "VSCodeUserSetup-x64-Latest.exe")
-        $ArgList = "/VERYSILENT /MERGETASKS=`"!runcode`""
-        Invoke-Gsudo { Stop-Process -Name "Code" ; Start-Process "$Using:Fetched" "$Using:ArgList" -Wait }
-        Update-SysPath "$Env:LocalAppData\Programs\Microsoft VS Code\bin" "Machine"
-    }
+#     Param(
+#         [String] $Deposit = "$Env:UserProfile\Projects",
+#         [String] $Serials = "TD244-P4NB7-YQ6XK-Y8MMM-YWV2J"
+#     )
 
-    # Update extensions
-    Start-Process "code" "--install-extension github.github-vscode-theme --force" -WindowStyle Hidden -Wait
-    Start-Process "code" "--install-extension ms-vscode.powershell --force" -WindowStyle Hidden -Wait
+#     # Update software
+#     $Starter = "$Env:ProgramFiles\Microsoft Visual Studio\2022\Preview\Common7\IDE\devenv.exe"
+#     $Present = Test-Path "$Starter"
+#     Update-VisualStudio2022PreviewWorkload "Microsoft.VisualStudio.Workload.CoreEditor"
 
-    # Change settings
-    $Configs = "$Env:AppData\Code\User\settings.json"
-    New-Item "$(Split-Path "$Configs")" -ItemType Directory -EA SI
-    New-Item "$Configs" -ItemType File -EA SI
-    $NewJson = New-Object PSObject
-    $NewJson | Add-Member -Type NoteProperty -Name "editor.bracketPairColorization.enabled" -Value $True -Force
-    $NewJson | Add-Member -Type NoteProperty -Name "editor.fontSize" -Value 14 -Force
-    $NewJson | Add-Member -Type NoteProperty -Name "editor.lineHeight" -Value 28 -Force
-    $NewJson | Add-Member -Type NoteProperty -Name "security.workspace.trust.enabled" -Value $False -Force
-    $NewJson | Add-Member -Type NoteProperty -Name "telemetry.telemetryLevel" -Value "crash" -Force
-    $NewJson | Add-Member -Type NoteProperty -Name "update.mode" -Value "none" -Force
-    $NewJson | Add-Member -Type NoteProperty -Name "workbench.colorTheme" -Value "GitHub Dark Default" -Force
-    $NewJson | ConvertTo-Json | Set-Content "$Configs"
+#     # Finish installation
+#     If (-Not $Present) {
+#         Invoke-Gsudo { Start-Process "$Using:Starter" "/ResetUserData" -Wait }
+#         Add-Type -AssemblyName "System.Windows.Forms"
+#         Start-Process -FilePath "$Starter"
+#         Start-Sleep 15 ; [Windows.Forms.SendKeys]::SendWait("{TAB}" * 4)
+#         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+#         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{TAB}") ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+#         Start-Sleep 20 ; [Windows.Forms.SendKeys]::SendWait("%{F4}") ; Start-Sleep 10
+#     }
 
-}
+#     # Change serials
+#     $Program = "$Env:ProgramFiles\Microsoft Visual Studio\2022\Preview\Common7\IDE\StorePID.exe"
+#     Invoke-Gsudo { Start-Process "$Using:Program" "$Using:Serials 09662" -WindowStyle Hidden -Wait } ; Start-Sleep 8
+
+# }
+
+# Function Update-VisualStudio2022PreviewExtension {
+
+#     Param (
+#         [String] $Payload
+#     )
+
+#     $Website = "https://marketplace.visualstudio.com/items?itemName=$Payload"
+#     $Content = Invoke-WebRequest -Uri $Website -UseBasicParsing -SessionVariable Session
+#     $Address = $Content.Links | Where-Object { $_.class -Eq "install-button-container" } | Select-Object -ExpandProperty href
+#     $Address = "https://marketplace.visualstudio.com" + "$Address"
+#     $Package = "$Env:Temp\$([Guid]::NewGuid()).vsix"
+#     Invoke-WebRequest "$Address" -OutFile "$Package" -WebSession $Session
+#     $Updater = "$Env:ProgramFiles\Microsoft Visual Studio\2022\Preview\Common7\IDE\VSIXInstaller.exe"
+#     Invoke-Gsudo { Start-Process "$Using:Updater" "/q /a `"$Using:Package`"" -WindowStyle Hidden -Wait }
+
+# }
+
+# Function Update-VisualStudio2022PreviewWorkload {
+
+#     Param (
+#         [String] $Payload
+#     )
+
+#     $Address = "https://c2rsetup.officeapps.live.com/c2r/downloadVS.aspx?sku=professional&channel=Preview&version=VS2022"
+#     $Fetched = Invoke-Fetcher "$Address" (Join-Path "$Env:Temp" "VisualStudioSetup.exe")
+#     Invoke-Gsudo {
+#         Start-Process "$Using:Fetched" "update --wait --quiet --norestart" -WindowStyle Hidden -Wait
+#         Start-Process "$Using:Fetched" "install --wait --quiet --norestart --add $Using:Payload" -WindowStyle Hidden -Wait
+#         Start-Sleep 2 ; Start-Process "cmd" "/c taskkill /f /im devenv.exe /t 2>nul 1>nul" -WindowStyle Hidden -Wait
+#     }
+    
+# }
 
 Function Update-VmwareWorkstation {
 
@@ -1482,6 +1440,42 @@ Function Update-VmwareWorkstation {
 
     # Remove tray
     Set-ItemProperty -Path "HKCU:\Software\VMware, Inc.\VMware Tray" -Name "TrayBehavior" -Type DWord -Value 2
+
+}
+
+Function Update-Vscode {
+
+    # Update package
+    $Address = "https://code.visualstudio.com/sha?build=stable"
+    $Version = (Invoke-Scraper "Json" "$Address").products[1].name
+    $Starter = "$Env:LocalAppData\Programs\Microsoft VS Code\Code.exe"
+    $Current = Expand-Version "$Starter"
+    $Updated = [Version] "$Current" -Ge [Version] "$Version"
+    If (-Not $Updated -And "$Env:TERM_PROGRAM" -Ne "Vscode") {
+        $Address = "https://aka.ms/win32-x64-user-stable"
+        $Fetched = Invoke-Fetcher "$Address" (Join-Path "$Env:Temp" "VSCodeUserSetup-x64-Latest.exe")
+        $ArgList = "/VERYSILENT /MERGETASKS=`"!runcode`""
+        Invoke-Gsudo { Stop-Process -Name "Code" ; Start-Process "$Using:Fetched" "$Using:ArgList" -Wait }
+        Update-SysPath "$Env:LocalAppData\Programs\Microsoft VS Code\bin" "Machine"
+    }
+
+    # Update extensions
+    Start-Process "code" "--install-extension github.github-vscode-theme --force" -WindowStyle Hidden -Wait
+    Start-Process "code" "--install-extension ms-vscode.powershell --force" -WindowStyle Hidden -Wait
+
+    # Change settings
+    $Configs = "$Env:AppData\Code\User\settings.json"
+    New-Item "$(Split-Path "$Configs")" -ItemType Directory -EA SI
+    New-Item "$Configs" -ItemType File -EA SI
+    $NewJson = New-Object PSObject
+    $NewJson | Add-Member -Type NoteProperty -Name "editor.bracketPairColorization.enabled" -Value $True -Force
+    $NewJson | Add-Member -Type NoteProperty -Name "editor.fontSize" -Value 14 -Force
+    $NewJson | Add-Member -Type NoteProperty -Name "editor.lineHeight" -Value 28 -Force
+    $NewJson | Add-Member -Type NoteProperty -Name "security.workspace.trust.enabled" -Value $False -Force
+    $NewJson | Add-Member -Type NoteProperty -Name "telemetry.telemetryLevel" -Value "crash" -Force
+    $NewJson | Add-Member -Type NoteProperty -Name "update.mode" -Value "none" -Force
+    $NewJson | Add-Member -Type NoteProperty -Name "workbench.colorTheme" -Value "GitHub Dark Default" -Force
+    $NewJson | ConvertTo-Json | Set-Content "$Configs"
 
 }
 
@@ -1585,12 +1579,11 @@ Function Main {
         # "Update-Chromium"
         # "Update-Git -GitMail sharpordie@outlook.com -GitUser sharpordie"
         # "Update-SevenZip"
-        # "Update-VisualStudio2022"
-        # "Update-VisualStudio2022Preview"
-        # "Update-VisualStudioCode"
+        "Update-VisualStudio2022"
+        # "Update-Vscode"
 
         # "Update-Bluestacks"
-        # "Update-DotnetMaui"
+        "Update-DotnetMaui"
         # "Update-Figma"
         # "Update-Flutter"
         # "Update-Jdownloader"
@@ -1598,7 +1591,7 @@ Function Main {
         # "Update-Keepassxc"
         # "Update-Mpv"
         # "Update-PaintNet"
-        "Update-Postgresql"
+        # "Update-Postgresql"
         # "Update-Python"
         # "Update-Qbittorrent"
         # "Update-Sizer"
