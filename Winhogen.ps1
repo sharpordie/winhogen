@@ -1,5 +1,26 @@
 #Region Services
 
+Function Assert-Pending {
+
+    $Operations = (Get-Item "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\").GetValue("PendingFileRenameOperations")
+    If ($Null -Eq $Operations) { $False }
+    Else {
+        $TrueOperationsCount = $Operations.Length / 2
+        $TrueRenames = [Collections.Generic.Dictionary[String, String]]::New($TrueOperationsCount)
+        For ($I = 0; $I -Ne $TrueOperationsCount; $I++) {
+            $OperationSource = $Operations[$I * 2]
+            $OperationDestination = $Operations[$I * 2 + 1]
+            If ($OperationDestination.Length -eq 0) { Write-Verbose "Ignoring pending file delete '$OperationSource'" }
+            Else {
+                Write-Host "Found a true pending file rename (as opposed to delete). Source '$OperationSource'; Dest '$OperationDestination'"
+                $TrueRenames[$OperationSource] = $OperationDestination
+            }
+        }
+        $TrueRenames.Count -Gt 0
+    }
+    
+}
+
 Function Enable-PowPlan {
 
     Param (
@@ -179,19 +200,12 @@ Function Remove-Feature {
                 Start-Process "$Using:Fetched"
                 Start-Sleep 10 ; Stop-Process -Name "HD-DisableHyperV"
             }
-            # Add-Type -AssemblyName System.Windows.Forms
-            # Start-Sleep 8 ; [Windows.Forms.SendKeys]::SendWait("%+{TAB}")
-            # Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{TAB}")
-            # Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
         }
         Default { Return 0 }
     }
 
-    # Reboot computer if required
-    Invoke-Gsudo { Install-PackageProvider -Name NuGet -Force }
-    Invoke-Gsudo { Install-Module -Name PendingReboot -Force }
-    Invoke-Restart -Removed
-    If ((Test-PendingReboot -Detailed).IsRebootPending -Eq $True) { Invoke-Restart }
+    # Reboot computer
+    Invoke-Restart -Removed ; If (Assert-Pending -Eq $True) { Invoke-Restart }
 
 }
 
@@ -932,6 +946,48 @@ Function Update-Keepassxc {
 
 }
 
+Function Update-Mambaforge {
+
+    # Gather current
+    $Present = $Null -Ne (Get-Command "mamba" -EA SI)
+
+    # Update package
+    If (-Not $Present) {
+        $Address = "https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-Windows-x86_64.exe"
+        $Fetched = Invoke-Fetcher "$Address"
+        $Deposit = "$Env:localAppData\Programs\Mambaforge"
+        $ArgList = "/S /InstallationType=JustMe /RegisterPython=0 /AddToPath=1 /NoRegistry=1 /D=$Deposit"
+        Start-Process "$Fetched" "$ArgList" -Wait
+        Update-SysPath -Deposit "" -Section "User"
+    }
+
+    # Change settings
+    Invoke-Expression "conda config --set auto_activate_base false"
+    # Invoke-Expression "conda update --all -y"
+
+}
+
+Function Update-Miniconda {
+
+    # Gather current
+    $Present = $Null -Ne (Get-Command "conda" -EA SI)
+
+    # Update package
+    If (-Not $Present) {
+        $Address = "https://repo.anaconda.com/miniconda/Miniconda3-latest-Windows-x86_64.exe"
+        $Fetched = Invoke-Fetcher "$Address"
+        $Deposit = "$Env:localAppData\Programs\Miniconda"
+        $ArgList = "/S /InstallationType=JustMe /RegisterPython=0 /AddToPath=1 /NoRegistry=1 /D=$Deposit"
+        Start-Process "$Fetched" "$ArgList" -Wait
+        Update-SysPath -Deposit "" -Section "User"
+    }
+
+    # Change settings
+    Invoke-Expression "conda config --set auto_activate_base false"
+    # Invoke-Expression "conda update --all -y"
+    
+}
+
 Function Update-Mpv {
 
     # Update package
@@ -1220,7 +1276,7 @@ Function Update-VisualStudio2022 {
     )
 
     # Update package
-    $Adjunct = If($Preview) { "Preview" } Else { "Professional" }
+    $Adjunct = If ($Preview) { "Preview" } Else { "Professional" }
     $Storage = "$Env:ProgramFiles\Microsoft Visual Studio\2022\$Adjunct"
     $Starter = "$Storage\Common7\IDE\devenv.exe"
     $Present = Test-Path "$Starter"
@@ -1305,7 +1361,7 @@ Function Update-VisualStudio2022Extension {
     $Address = "https://marketplace.visualstudio.com" + "$Address"
     $Package = "$Env:Temp\$([Guid]::NewGuid()).vsix"
     Invoke-WebRequest "$Address" -OutFile "$Package" -WebSession $Session
-    $Adjunct = If($Preview) { "Preview" } Else { "Professional" }
+    $Adjunct = If ($Preview) { "Preview" } Else { "Professional" }
     $Updater = "$Env:ProgramFiles\Microsoft Visual Studio\2022\$Adjunct\Common7\IDE\VSIXInstaller.exe"
     Invoke-Gsudo { Start-Process "$Using:Updater" "/q /a `"$Using:Package`"" -WindowStyle Hidden -Wait }
 
@@ -1579,16 +1635,18 @@ Function Main {
         # "Update-Chromium"
         # "Update-Git -GitMail sharpordie@outlook.com -GitUser sharpordie"
         # "Update-SevenZip"
-        "Update-VisualStudio2022"
+        # "Update-VisualStudio2022"
         # "Update-Vscode"
 
         # "Update-Bluestacks"
-        "Update-DotnetMaui"
+        # "Update-DotnetMaui"
         # "Update-Figma"
         # "Update-Flutter"
         # "Update-Jdownloader"
         # "Update-JoalDesktop"
         # "Update-Keepassxc"
+        "Update-Mambaforge"
+        # "Update-Miniconda"
         # "Update-Mpv"
         # "Update-PaintNet"
         # "Update-Postgresql"
