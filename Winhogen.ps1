@@ -273,8 +273,8 @@ Function Update-AndroidCmdline {
         $Address = "https://dl.google.com/android/repository/commandlinetools-win-${Release}_latest.zip"
         $Fetched = Invoke-Fetcher "$Address"
         $Deposit = Expand-Archive "$Fetched"
-        Update-Temurin ; $Manager = "$Deposit\cmdline-tools\bin\sdkmanager"
-        Invoke-Expression "echo $("yes " * 10) | $Manager 'cmdline-tools;latest'"
+        Update-Temurin ; $Manager = "$Deposit\cmdline-tools\bin\sdkmanager.bat"
+        Write-Output $("yes " * 10) | & "$Manager" --sdk_root="$SdkRoot" "cmdline-tools;latest"
     }
 
     # Change environ
@@ -287,7 +287,7 @@ Function Update-AndroidCmdline {
 }
 
 Function Update-AndroidStudio {
-    
+
     # Update package
     $Address = "https://raw.githubusercontent.com/ScoopInstaller/extras/master/bucket/android-studio.json"
     # $Address = "https://raw.githubusercontent.com/scoopinstaller/versions/master/bucket/android-studio-beta.json"
@@ -765,7 +765,7 @@ Function Update-Flutter {
     $Present = Test-Path "$Env:ProgramFiles\Android\Android Studio\bin\studio64.exe"
     # If ($Present) {
     #     Update-JetbrainsPlugin "AndroidStudio" "6351"  # Dart
-	#     Update-JetbrainsPlugin "AndroidStudio" "9212"  # Flutter
+    #     Update-JetbrainsPlugin "AndroidStudio" "9212"  # Flutter
     # }
 
     # Update visual studio 2022
@@ -852,10 +852,11 @@ Function Update-IntelHaxm {
 
     # Update package
     $Address = "https://api.github.com/repos/intel/haxm/releases"
-    $Address = (Invoke-Scraper "Json" "$Address")[0].assets.Where( { $_.browser_download_url -like "*windows**" } ).browser_download_url
-    $Version = [Regex]::Matches("$Address", "v([\d.]+)").Groups[1].Value
+    $Version = (Invoke-Scraper "Json" "$Address")[0].tag_name.Replace("v", "")
+    # $Version = [Regex]::Matches("$Address", "v([\d.]+)").Groups[1].Value
     $Updated = $Null -Ne $Current -And [Version] ($Current.SubString(0, 1)) -Ge [Version] "$Version"
     If (-Not $Updated) {
+        $Address = (Invoke-Scraper "Json" "$Address")[0].assets.Where( { $_.browser_download_url -like "*windows*" } ).browser_download_url
         $Fetched = Invoke-Fetcher "$Address"
         $Deposit = Expand-Archive "$Fetched"
         Invoke-Gsudo { Start-Process "$Using:Deposit\silent_install.bat" -WindowStyle Hidden -Wait }
@@ -902,6 +903,25 @@ Function Update-Jdownloader {
         Try { $Configs.myjdownloaderviewvisible = $False } Catch { $Configs | Add-Member -Type NoteProperty -Name "myjdownloaderviewvisible" -Value $False }
         Try { $Configs.speedmetervisible = $False } Catch { $Configs | Add-Member -Type NoteProperty -Name "speedmetervisible" -Value $False }
         Invoke-Gsudo { $Using:Configs | ConvertTo-Json | Set-Content "$Using:Config2" }
+    }
+
+}
+
+Function Update-JoalDesktop {
+
+    # Gather current
+    $Starter = "$Env:LocalAppData\Programs\joal-desktop\JoalDesktop.exe"
+    $Current = Expand-Version "$Starter"
+
+    # Update package
+    $Address = "https://api.github.com/repos/anthonyraymond/joal-desktop/releases"
+    $Version = (Invoke-Scraper "Json" "$Address")[0].tag_name.Replace("v", "")
+    $Updated = [Version] "$Current" -Ge [Version] "$Version"
+    If (-Not $Updated) {
+        $Address = (Invoke-Scraper "Json" "$Address")[0].assets.Where( { $_.browser_download_url -like "*win-x64.exe" } ).browser_download_url
+        $Fetched = Invoke-Fetcher "$Address"
+        Invoke-Gsudo { Start-Process "$Using:Fetched" "/S" -Wait }
+        Remove-Desktop "*Joal*.lnk"
     }
 
 }
@@ -1015,6 +1035,29 @@ Function Update-PaintNet {
         $Fetched = Invoke-Fetcher "$Address"
         Invoke-Gsudo { Start-Process "msiexec" "/i `"$Using:Fetched`" /qn" -Wait }
         Remove-Desktop "paint*.lnk"
+    }
+
+}
+
+Function Update-Postgresql {
+
+    Param (
+        [Int] $Leading = 14
+    )
+
+    # Gather current
+    $Starter = "$Env:ProgramFiles\PostgreSQL\$Leading\bin\psql.exe"
+    $Current = Expand-Version "$Starter"
+
+    # Update package
+    $Address = "https://raw.githubusercontent.com/scoopinstaller/versions/master/bucket/postgresql$Leading.json"
+    $Version = (Invoke-Scraper "Json" "$Address").version
+    $Updated = [Version] "$Current" -Ge [Version] "$Version"
+    If (-Not $Updated) {
+        $Address = "https://get.enterprisedb.com/postgresql/postgresql-$Version-1-windows-x64.exe"
+        $Fetched = Invoke-Fetcher "$Address"
+        $ArgList = '--unattendedmodeui none --mode unattended --superpassword "password" --servicename "PostgreSQL" --servicepassword "password" --serverport 5432'
+        Invoke-Gsudo { Start-Process "$Using:Fetched" "$Using:ArgList" -Wait }
     }
 
 }
@@ -1520,7 +1563,7 @@ Function Main {
     Write-Host "|                                                          |"
     Write-Host "|  > WINHOGEN                                              |"
     Write-Host "|                                                          |"
-    Write-Host "|  > CONFIGURATION SCRIPT FOR WINDOWS                      |"
+    Write-Host "|  > CONFIGURATION SCRIPT FOR WINDOWS 11                   |"
     Write-Host "|                                                          |"
     Write-Host "+----------------------------------------------------------+"
     
@@ -1538,7 +1581,7 @@ Function Main {
         # "Update-Windows"
 
         # "Update-AndroidCmdline"
-        "Update-AndroidStudio"
+        # "Update-AndroidStudio"
         # "Update-Chromium"
         # "Update-Git -GitMail sharpordie@outlook.com -GitUser sharpordie"
         # "Update-SevenZip"
@@ -1549,11 +1592,13 @@ Function Main {
         # "Update-Bluestacks"
         # "Update-DotnetMaui"
         # "Update-Figma"
-        "Update-Flutter"
+        # "Update-Flutter"
         # "Update-Jdownloader"
+        # "Update-JoalDesktop"
         # "Update-Keepassxc"
         # "Update-Mpv"
         # "Update-PaintNet"
+        "Update-Postgresql"
         # "Update-Python"
         # "Update-Qbittorrent"
         # "Update-Sizer"
