@@ -1629,38 +1629,38 @@ Function Main {
 
     # Handle elements
     $Factors = @(
-        # "Update-NvidiaDriver"
+        "Update-NvidiaDriver"
         # "Update-IntelHaxm"
-        # "Update-Windows"
+        "Update-Windows"
 
         # "Update-AndroidCmdline"
         # "Update-AndroidStudio"
-        # "Update-Chromium"
-        # "Update-Git -GitMail sharpordie@outlook.com -GitUser sharpordie"
-        # "Update-SevenZip"
+        "Update-Chromium"
+        "Update-Git -GitMail sharpordie@outlook.com -GitUser sharpordie"
+        "Update-SevenZip"
         # "Update-VisualStudio2022"
-        # "Update-Vscode"
+        "Update-Vscode"
 
         # "Update-Bluestacks"
         # "Update-DotnetMaui"
         # "Update-Figma"
         # "Update-Flutter"
-        # "Update-Jdownloader"
-        # "Update-JoalDesktop"
-        # "Update-Keepassxc"
+        "Update-Jdownloader"
+        "Update-JoalDesktop"
+        "Update-Keepassxc"
         "Update-Mambaforge"
         # "Update-Miniconda"
-        # "Update-Mpv"
+        "Update-Mpv"
         # "Update-PaintNet"
         # "Update-Postgresql"
-        # "Update-Python"
-        # "Update-Qbittorrent"
+        "Update-Python"
+        "Update-Qbittorrent"
         # "Update-Sizer"
         # "Update-Spotify"
         # "Update-VmwareWorkstation"
-        # "Update-YtDlg"
+        "Update-YtDlg"
 
-        # "Update-Appearance"
+        "Update-Appearance"
     )
     
     # Output progress
