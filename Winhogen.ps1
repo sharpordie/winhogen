@@ -664,16 +664,19 @@ Function Update-DotnetMaui {
         $Creator = (Get-Item "$SdkHome\cmdline-tools\*\bin\avdmanager*").FullName
         $Starter = (Get-Item "$SdkHome\cmdline-tools\*\bin\sdkmanager*").FullName
         If ($Null -Ne $Starter) {
-            Invoke-Expression "echo $("yes " * 10) | & `"$Starter`" --sdk_root=`"$SdkHome`" `"build-tools;30.0.3`""
-            Invoke-Expression "echo $("yes " * 10) | & `"$Starter`" --sdk_root=`"$SdkHome`" `"build-tools;33.0.1`""
+            # Invoke-Expression "echo $("yes " * 10) | & `"$Starter`" --sdk_root=`"$SdkHome`" `"build-tools;30.0.3`""
+            Invoke-Expression "echo $("yes " * 10) | & `"$Starter`" --sdk_root=`"$SdkHome`" `"build-tools;32.0.0`""
+            # Invoke-Expression "echo $("yes " * 10) | & `"$Starter`" --sdk_root=`"$SdkHome`" `"build-tools;33.0.1`""
+            Invoke-Expression "echo $("yes " * 10) | & `"$Starter`" --sdk_root=`"$SdkHome`" `"cmdline-tools;7.0`""
             Invoke-Expression "echo $("yes " * 10) | & `"$Starter`" --sdk_root=`"$SdkHome`" `"emulator`""
             Invoke-Expression "echo $("yes " * 10) | & `"$Starter`" --sdk_root=`"$SdkHome`" `"extras;intel;Hardware_Accelerated_Execution_Manager`""
             Invoke-Expression "echo $("yes " * 10) | & `"$Starter`" --sdk_root=`"$SdkHome`" `"platform-tools`""
-            Invoke-Expression "echo $("yes " * 10) | & `"$Starter`" --sdk_root=`"$SdkHome`" `"platforms;android-30`""
-            Invoke-Expression "echo $("yes " * 10) | & `"$Starter`" --sdk_root=`"$SdkHome`" `"platforms;android-33`""
-            Invoke-Expression "echo $("yes " * 10) | & `"$Starter`" --sdk_root=`"$SdkHome`" `"system-images;android-30;google_apis;x86_64`""
+            # Invoke-Expression "echo $("yes " * 10) | & `"$Starter`" --sdk_root=`"$SdkHome`" `"platforms;android-30`""
+            # Invoke-Expression "echo $("yes " * 10) | & `"$Starter`" --sdk_root=`"$SdkHome`" `"platforms;android-33`""
+            Invoke-Expression "echo $("yes " * 10) | & `"$Starter`" --sdk_root=`"$SdkHome`" `"platforms;android-32`""
+            Invoke-Expression "echo $("yes " * 10) | & `"$Starter`" --sdk_root=`"$SdkHome`" `"system-images;android-32;google_apis;x86_64`""
             Invoke-Expression "echo $("yes " * 10) | & `"$Starter`" --licenses"
-            Invoke-Expression "echo $("yes " * 10) | & `"$Creator`" create avd -n `"Pixel_3_API_30`" -d `"pixel_3`" -k `"system-images;android-30;google_apis;x86_64`""
+            Invoke-Expression "echo $("yes " * 10) | & `"$Creator`" create avd -n `"Pixel_3_API_32`" -d `"pixel_3`" -k `"system-images;android-32;google_apis;x86_64`""
             # $Configs = "$Env:UserProfile\.android\avd\Pixel_5_API_30.avd\config.ini"
             # If (-Not (Test-Path $Configs)) {
             #     Write-Output $("yes " * 10) | & "$Creator" create avd -n "Pixel_5_API_30" -d "pixel_5" -k "system-images;android-30;google_apis;x86_64"
