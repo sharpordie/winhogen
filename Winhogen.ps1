@@ -27,6 +27,10 @@ Function Enable-PowPlan {
         [ValidateSet("Balanced", "High", "Power", "Ultimate")] [String] $Element = "Balanced"
     )
 
+    # Remove dummies
+    # $Factors = (powercfg /L | ForEach-Object { If ($_.Contains("(Ultimate")) { $_.Split()[3] } })
+    # foreach($Segment in $Factors) { Invoke-Expression "powercfg.exe /DELETE $Segment" }
+
     # Active ultimate
     $Picking = (powercfg /L | ForEach-Object { If ($_.Contains("($Element")) { $_.Split()[3] } })
     If ([String]::IsNullOrEmpty("$Picking")) { Start-Process "powercfg.exe" "/DUPLICATESCHEME e9a42b02-d5df-448d-aa00-03f14749eb61" -NoNewWindow -Wait }
@@ -317,7 +321,7 @@ Function Update-AndroidStudio {
         Invoke-Gsudo { Start-Process "$Using:Fetched" "/S" -Wait }
     }
 
-    # Finish installation
+    # Finish install
     If (-Not $Present) {
         Update-AndroidCmdline
         Invoke-Expression "echo $("yes " * 10) | sdkmanager 'build-tools;33.0.1'"
@@ -340,9 +344,6 @@ Function Update-AndroidStudio {
         [Windows.Forms.SendKeys]::SendWait("{ENTER}") ; Start-Sleep 6
         [Windows.Forms.SendKeys]::SendWait("%{F4}") ; Start-Sleep 2
     }
-
-    # Update intel haxm
-    Update-IntelHaxm
     
 }
 
@@ -425,19 +426,19 @@ Function Update-Bluestacks {
     If (-Not $Updated) {
         $Address = "https://cdn3.bluestacks.com/downloads/windows/nxt/$Version/$Hashing/FullInstaller/x64/BlueStacksFullInstaller_${Version}_amd64_native.exe"
         $Fetched = Invoke-Fetcher "$Address"
-        $ArgList = "-s --defaultImageName Nougat64 --imageToLaunch Nougat64 --defaultImageName Nougat64 --imageToLaunch Nougat64"
-        # $ArgList = "-s --defaultImageName Nougat64 --imageToLaunch Nougat64 --defaultImageName Pie64 --imageToLaunch Pie64"
+        # $ArgList = "-s --defaultImageName Nougat64 --imageToLaunch Nougat64 --defaultImageName Nougat64 --imageToLaunch Nougat64"
+        $ArgList = "-s --defaultImageName Nougat64 --imageToLaunch Nougat64 --defaultImageName Pie64 --imageToLaunch Pie64"
         Invoke-Gsudo { Start-Process "$Using:Fetched" "$Using:ArgList" -Wait }
         Remove-Desktop "BlueStacks*.lnk"
     }
 
     # Update shortcut
-    $Altered = (Get-Item "$Env:ProgramData\Microsoft\Windows\Start Menu\Programs\BlueStacks 5.lnk").FullName
-    If ($Null -Ne $Altered) {
-        $Content = [IO.File]::ReadAllBytes("$Altered")
-        $Content[0x15] = $Content[0x15] -Bor 0x20
-        Invoke-Gsudo { [IO.File]::WriteAllBytes("$Using:Altered", $Using:Content) }
-    }
+    # $Altered = (Get-Item "$Env:ProgramData\Microsoft\Windows\Start Menu\Programs\BlueStacks 5.lnk").FullName
+    # If ($Null -Ne $Altered) {
+    #     $Content = [IO.File]::ReadAllBytes("$Altered")
+    #     $Content[0x15] = $Content[0x15] -Bor 0x20
+    #     Invoke-Gsudo { [IO.File]::WriteAllBytes("$Using:Altered", $Using:Content) }
+    # }
 
 }
 
@@ -461,8 +462,9 @@ Function Update-Chromium {
         Invoke-Gsudo { Start-Process "$Using:Fetched" "--system-level --do-not-launch-chrome" -Wait }
     }
 
-    # Finish installation
+    # Finish install
     If (-Not $Present) {
+        # Change deposit
         Add-Type -AssemblyName System.Windows.Forms
         New-Item "$Deposit" -ItemType Directory -EA SI
         Start-Process "$Starter" "--lang=en --start-maximized"
@@ -479,6 +481,8 @@ Function Update-Chromium {
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{TAB}")
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("%{F4}") ; Start-Sleep 2
+
+        # Change custom-ntp
         Start-Process "$Starter" "--lang=en --start-maximized"
         Start-Sleep 4 ; [Windows.Forms.SendKeys]::SendWait("^l")
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("chrome://flags/")
@@ -493,6 +497,8 @@ Function Update-Chromium {
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{DOWN}")
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("%{F4}") ; Start-Sleep 2
+
+        # Change search engine
         Start-Process "$Starter" "--lang=en --start-maximized"
         Start-Sleep 4 ; [Windows.Forms.SendKeys]::SendWait("^l")
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("chrome://settings/")
@@ -504,6 +510,8 @@ Function Update-Chromium {
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("duckduckgo")
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("%{F4}") ; Start-Sleep 2
+
+        # Change extension-mime-request-handling
         Start-Process "$Starter" "--lang=en --start-maximized"
         Start-Sleep 4 ; [Windows.Forms.SendKeys]::SendWait("^l")
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("chrome://flags/")
@@ -515,17 +523,8 @@ Function Update-Chromium {
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{DOWN}" * 2)
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("%{F4}") ; Start-Sleep 2
-        # Start-Process "$Starter" "--lang=en --start-maximized"
-        # Start-Sleep 4 ; [Windows.Forms.SendKeys]::SendWait("^l")
-        # Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("chrome://flags/")
-        # Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
-        # Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("hide-extensions-menu")
-        # Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
-        # Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{TAB}" * 6)
-        # Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
-        # Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{DOWN}" * 2)
-        # Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
-        # Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("%{F4}") ; Start-Sleep 2
+
+        # Change hide-sidepanel-button
         Start-Process "$Starter" "--lang=en --start-maximized"
         Start-Sleep 4 ; [Windows.Forms.SendKeys]::SendWait("^l")
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("chrome://flags/")
@@ -537,6 +536,8 @@ Function Update-Chromium {
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{DOWN}")
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("%{F4}") ; Start-Sleep 2
+
+        # Change remove-tabsearch-button
         Start-Process "$Starter" "--lang=en --start-maximized"
         Start-Sleep 4 ; [Windows.Forms.SendKeys]::SendWait("^l")
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("chrome://flags/")
@@ -548,6 +549,8 @@ Function Update-Chromium {
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{DOWN}")
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("%{F4}") ; Start-Sleep 2
+
+        # Change win-10-tab-search-caption-button
         Start-Process "$Starter" "--lang=en --start-maximized"
         Start-Sleep 4 ; [Windows.Forms.SendKeys]::SendWait("^l")
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("chrome://flags/")
@@ -559,6 +562,8 @@ Function Update-Chromium {
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{DOWN}" * 2)
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("%{F4}") ; Start-Sleep 2
+
+        # Change show-avatar-button
         Start-Process "$Starter" "--lang=en --start-maximized"
         Start-Sleep 4 ; [Windows.Forms.SendKeys]::SendWait("^l")
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("chrome://flags/")
@@ -575,9 +580,14 @@ Function Update-Chromium {
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("^+b")
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("%{F4}") ; Start-Sleep 2
         Remove-Desktop "Chromium*.lnk"
+
+        # Update chromium-web-store
         $Address = "https://api.github.com/repos/NeverDecaf/chromium-web-store/releases/latest"
         $Version = [Regex]::Match((Invoke-Scraper "Json" "$Address")[0].tag_name, "[\d.]+").Value
         Update-ChromiumExtension "https://github.com/NeverDecaf/chromium-web-store/releases/download/v$Version/Chromium.Web.Store.crx"
+
+        # Update extensions
+        Update-ChromiumExtension "omoinegiohhgbikclijaniebjpkeopip" # clickbait-remover-for-you
         Update-ChromiumExtension "ibplnjkanclpjokhdolnendpplpjiace" # simple-translate
         Update-ChromiumExtension "mnjggcdmjocbbbhaepdhchncahnbgone" # sponsorblock-for-youtube
         Update-ChromiumExtension "cjpalhdlnbpafiamejdnhcphjbkeiagm" # ublock-origin
@@ -655,28 +665,39 @@ Function Update-ChromiumExtension {
 Function Update-DotnetMaui {
 
     # Update package
-    Update-VisualStudio2022 ; Update-IntelHaxm
+    Update-VisualStudio2022
     Update-VisualStudio2022Workload "Microsoft.VisualStudio.Workload.NetCrossPlat"
 
-    # Finish installation
+    # Finish install
     Invoke-Gsudo {
         $SdkHome = "${Env:ProgramFiles(x86)}\Android\android-sdk"
         $Creator = (Get-Item "$SdkHome\cmdline-tools\*\bin\avdmanager*").FullName
         $Starter = (Get-Item "$SdkHome\cmdline-tools\*\bin\sdkmanager*").FullName
+        & "$Starter" --list_available
         If ($Null -Ne $Starter) {
-            # Invoke-Expression "echo $("yes " * 10) | & `"$Starter`" --sdk_root=`"$SdkHome`" `"build-tools;30.0.3`""
-            Invoke-Expression "echo $("yes " * 10) | & `"$Starter`" --sdk_root=`"$SdkHome`" `"build-tools;32.0.0`""
-            # Invoke-Expression "echo $("yes " * 10) | & `"$Starter`" --sdk_root=`"$SdkHome`" `"build-tools;33.0.1`""
+            Invoke-Expression "echo $("yes " * 10) | & `"$Starter`" --sdk_root=`"$SdkHome`" `"build-tools;31.0.0`""
             Invoke-Expression "echo $("yes " * 10) | & `"$Starter`" --sdk_root=`"$SdkHome`" `"cmdline-tools;7.0`""
             Invoke-Expression "echo $("yes " * 10) | & `"$Starter`" --sdk_root=`"$SdkHome`" `"emulator`""
             Invoke-Expression "echo $("yes " * 10) | & `"$Starter`" --sdk_root=`"$SdkHome`" `"extras;intel;Hardware_Accelerated_Execution_Manager`""
             Invoke-Expression "echo $("yes " * 10) | & `"$Starter`" --sdk_root=`"$SdkHome`" `"platform-tools`""
-            # Invoke-Expression "echo $("yes " * 10) | & `"$Starter`" --sdk_root=`"$SdkHome`" `"platforms;android-30`""
-            # Invoke-Expression "echo $("yes " * 10) | & `"$Starter`" --sdk_root=`"$SdkHome`" `"platforms;android-33`""
-            Invoke-Expression "echo $("yes " * 10) | & `"$Starter`" --sdk_root=`"$SdkHome`" `"platforms;android-32`""
-            Invoke-Expression "echo $("yes " * 10) | & `"$Starter`" --sdk_root=`"$SdkHome`" `"system-images;android-32;google_apis;x86_64`""
-            Invoke-Expression "echo $("yes " * 10) | & `"$Starter`" --licenses"
-            Invoke-Expression "echo $("yes " * 10) | & `"$Creator`" create avd -n `"Pixel_3_API_32`" -d `"pixel_3`" -k `"system-images;android-32;google_apis;x86_64`""
+            Invoke-Expression "echo $("yes " * 10) | & `"$Starter`" --sdk_root=`"$SdkHome`" `"platforms;android-31`""
+            Invoke-Expression "echo $("yes " * 10) | & `"$Starter`" --sdk_root=`"$SdkHome`" `"system-images;android-31;google_apis;x86_64`""
+            Invoke-Expression "echo $("yes " * 10) | & `"$Starter`" --sdk_root=`"$SdkHome`" --licenses"
+            Invoke-Expression "echo $("yes " * 10) | & `"$Creator`" create avd -n `"Pixel_3_API_31`" -d `"pixel_3`" -k `"system-images;android-31;google_apis;x86_64`""
+
+            # # Invoke-Expression "echo $("yes " * 10) | & `"$Starter`" --sdk_root=`"$SdkHome`" `"build-tools;30.0.3`""
+            # Invoke-Expression "echo $("yes " * 10) | & `"$Starter`" --sdk_root=`"$SdkHome`" `"build-tools;32.0.0`""
+            # # Invoke-Expression "echo $("yes " * 10) | & `"$Starter`" --sdk_root=`"$SdkHome`" `"build-tools;33.0.1`""
+            # Invoke-Expression "echo $("yes " * 10) | & `"$Starter`" --sdk_root=`"$SdkHome`" `"cmdline-tools;7.0`""
+            # Invoke-Expression "echo $("yes " * 10) | & `"$Starter`" --sdk_root=`"$SdkHome`" `"emulator`""
+            # Invoke-Expression "echo $("yes " * 10) | & `"$Starter`" --sdk_root=`"$SdkHome`" `"extras;intel;Hardware_Accelerated_Execution_Manager`""
+            # Invoke-Expression "echo $("yes " * 10) | & `"$Starter`" --sdk_root=`"$SdkHome`" `"platform-tools`""
+            # # Invoke-Expression "echo $("yes " * 10) | & `"$Starter`" --sdk_root=`"$SdkHome`" `"platforms;android-30`""
+            # # Invoke-Expression "echo $("yes " * 10) | & `"$Starter`" --sdk_root=`"$SdkHome`" `"platforms;android-33`""
+            # Invoke-Expression "echo $("yes " * 10) | & `"$Starter`" --sdk_root=`"$SdkHome`" `"platforms;android-32`""
+            # Invoke-Expression "echo $("yes " * 10) | & `"$Starter`" --sdk_root=`"$SdkHome`" `"system-images;android-32;google_apis;x86_64`""
+            # Invoke-Expression "echo $("yes " * 10) | & `"$Starter`" --licenses"
+            # Invoke-Expression "echo $("yes " * 10) | & `"$Creator`" create avd -n `"Pixel_3_API_32`" -d `"pixel_3`" -k `"system-images;android-32;google_apis;x86_64`""
             # $Configs = "$Env:UserProfile\.android\avd\Pixel_5_API_30.avd\config.ini"
             # If (-Not (Test-Path $Configs)) {
             #     Write-Output $("yes " * 10) | & "$Creator" create avd -n "Pixel_5_API_30" -d "pixel_5" -k "system-images;android-30;google_apis;x86_64"
@@ -1051,6 +1072,25 @@ Function Update-Mpv {
 
 }
 
+Function Update-Nanazip {
+
+    # Gather current
+    $Current = (Get-AppxPackage "*Nanazip*" -EA SI).Version
+
+    # Update package
+    $Address = "https://api.github.com/repos/M2Team/NanaZip/releases"
+    $Version = (Invoke-Scraper "Json" "$Address")[0].tag_name.Replace("v", "")
+    $Updated = $Null -Ne $Current -And [Version] "$Current" -Ge [Version] "$Version"
+    If (-Not $Updated) {
+        $Address = (Invoke-Scraper "Json" "$Address")[0].assets.Where( { $_.browser_download_url -like "*.msixbundle" } ).browser_download_url
+        $Fetched = Invoke-Fetcher "$Address"
+        Add-AppxPackage -DeferRegistrationWhenPackagesAreInUse -ForceUpdateFromAnyVersion -Path "$Fetched"
+        # $Deposit = Expand-Archive "$Fetched"
+        # Invoke-Gsudo { Start-Process "$Using:Deposit\silent_install.bat" -WindowStyle Hidden -Wait }
+    }
+
+}
+
 Function Update-NvidiaDriver {
 
     # Update package
@@ -1208,10 +1248,11 @@ Function Update-SevenZip {
     }
     
     # Adjust association
-    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-    $Address = "https://raw.githubusercontent.com/DanysysTeam/PS-SFTA/master/SFTA.ps1"
-    Invoke-Expression ((New-Object Net.WebClient).DownloadString("$Address"))
-    Register-FTA "$Starter" -Extension ".7z"
+    # Replaced by NanaZip
+    # [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+    # $Address = "https://raw.githubusercontent.com/DanysysTeam/PS-SFTA/master/SFTA.ps1"
+    # Invoke-Expression ((New-Object Net.WebClient).DownloadString("$Address"))
+    # Register-FTA "$Starter" -Extension ".7z"
 
 }
 
@@ -1285,7 +1326,7 @@ Function Update-VisualStudio2022 {
     $Present = Test-Path "$Starter"
     Update-VisualStudio2022Workload "Microsoft.VisualStudio.Workload.CoreEditor" -Preview:$Preview
 
-    # Finish installation
+    # Finish install
     If (-Not $Present) {
         Invoke-Gsudo { Start-Process "$Using:Starter" "/ResetUserData" -Wait }
         Add-Type -AssemblyName "System.Windows.Forms"
@@ -1630,21 +1671,21 @@ Function Main {
     # Handle elements
     $Factors = @(
         "Update-NvidiaDriver"
-        # "Update-IntelHaxm"
+        "Update-IntelHaxm"
         "Update-Windows"
 
-        # "Update-AndroidCmdline"
-        # "Update-AndroidStudio"
+        "Update-AndroidCmdline"
+        "Update-AndroidStudio"
         "Update-Chromium"
-        "Update-Git -GitMail sharpordie@outlook.com -GitUser sharpordie"
-        "Update-SevenZip"
-        # "Update-VisualStudio2022"
+        "Update-VisualStudio2022"
         "Update-Vscode"
 
-        # "Update-Bluestacks"
-        # "Update-DotnetMaui"
-        # "Update-Figma"
-        # "Update-Flutter"
+        "Update-Git -GitMail sharpordie@outlook.com -GitUser sharpordie"
+        "Update-Bluestacks"
+        "Update-Nanazip"
+        "Update-DotnetMaui"
+        "Update-Figma"
+        "Update-Flutter"
         "Update-Jdownloader"
         "Update-JoalDesktop"
         "Update-Keepassxc"
@@ -1652,7 +1693,7 @@ Function Main {
         # "Update-Miniconda"
         "Update-Mpv"
         # "Update-PaintNet"
-        # "Update-Postgresql"
+        "Update-Postgresql"
         "Update-Python"
         "Update-Qbittorrent"
         # "Update-Sizer"
