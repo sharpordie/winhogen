@@ -224,24 +224,6 @@ Function Update-SysPath {
 
 #EndRegion
 
-Function Update-Lunacy {
-
-    # Update package
-    $Current = Expand-Version "*Lunacy*"
-    $Address = "https://docs.icons8.com/release-notes/"
-    $Version = Invoke-Scraper "HtmlContent" "$Address" "setup/LunacySetup_([\d.]+)\.exe"
-    $Updated = [Version] "$Current" -Ge [Version] "$Version"
-    If (-Not $Updated) {
-        $Address = "https://lun-eu.icons8.com/s/setup/LunacySetup_${Version}.exe"
-        $Fetched = Invoke-Fetcher "$Address"
-        Start-Process "$Fetched" "/VERYSILENT /NORESTART /SUPPRESSMSGBOXES /SP-"
-        $Started = Get-Date ; $Timeout = $Started.AddSeconds(30)
-        While (-Not (Get-Process "Lunacy" -EA SI) -And $Timeout -Gt (Get-Date)) { Start-Sleep 2 }
-        Stop-Process -Name "Lunacy" ; Remove-Desktop "*Lunacy*.lnk"
-    }
-
-}
-
 Function Update-Gsudo {
 
     # Update package
@@ -267,6 +249,24 @@ Function Update-Gsudo {
     
 }
 
+Function Update-Lunacy {
+
+    # Update package
+    $Current = Expand-Version "*Lunacy*"
+    $Address = "https://docs.icons8.com/release-notes/"
+    $Version = Invoke-Scraper "HtmlContent" "$Address" "setup/LunacySetup_([\d.]+)\.exe"
+    $Updated = [Version] "$Current" -Ge [Version] "$Version"
+    If (-Not $Updated) {
+        $Address = "https://lun-eu.icons8.com/s/setup/LunacySetup_${Version}.exe"
+        $Fetched = Invoke-Fetcher "$Address"
+        Start-Process "$Fetched" "/VERYSILENT /NORESTART /SUPPRESSMSGBOXES /SP-"
+        $Started = Get-Date ; $Timeout = $Started.AddSeconds(30)
+        While (-Not (Get-Process "Lunacy" -EA SI) -And $Timeout -Gt (Get-Date)) { Start-Sleep 2 }
+        Stop-Process -Name "Lunacy" ; Remove-Desktop "*Lunacy*.lnk"
+    }
+
+}
+
 Function Update-Mambaforge {
 
     # Update package
@@ -281,6 +281,8 @@ Function Update-Mambaforge {
 
     # Change settings
     Invoke-Expression "conda config --set auto_activate_base false"
+
+    # Update everything
     Invoke-Expression "conda update --all -y"
 
 }
@@ -319,7 +321,7 @@ Function Update-NvidiaCuda {
 Function Update-NvidiaDriver {
 
     # Update package
-    $Current = Expand-Version "NVIDIA Graphics Driver*"
+    $Current = Expand-Version "*NVIDIA Graphics Driver*"
     $Address = "https://community.chocolatey.org/packages/nvidia-display-driver"
     $Version = Invoke-Scraper "HtmlContent" "$Address" "NVidia Display Driver ([\d.]+)</title>"
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
