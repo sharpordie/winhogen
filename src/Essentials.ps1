@@ -62,9 +62,10 @@ Function Expand-Version {
         [String] $Payload
     )
 
+    If ([String]::IsNullOrWhiteSpace($Payload)) { Return "0.0.0.0" }
     $Version = (Get-Package "$Payload" -EA SI).Version
-    If ($Null -Eq $Version) { $Version = (Get-AppxPackage "$Payload" -EA SI).Version }
-    If ($Null -Eq $Version) { $Version = "0.0.0.0" }
+    If ([String]::IsNullOrWhiteSpace($Version)) { $Version = (Get-AppxPackage "$Payload" -EA SI).Version }
+    If ([String]::IsNullOrWhiteSpace($Version)) { $Version = "0.0.0.0" }
     If ($Version -Eq "0.0.0.0") { $Version = Try { (Get-Command "$Payload" -EA SI).Version.ToString() } Catch { $Version } }
     If ($Version -Eq "0.0.0.0") { $Version = Try { (Get-Item "$Payload" -EA SI).VersionInfo.FileVersion.ToString() } Catch { $Version } }
     If ($Version -Eq "0.0.0.0") { $Version = Try { Invoke-Expression "& `"$Payload`" --version" -EA SI } Catch { $Version } }
@@ -214,6 +215,26 @@ Function Update-SysPath {
 
 #EndRegion
 
+Function Update-Bluestacks {
+
+    # Update package
+    $Starter = (Get-Item "$Env:ProgramFiles\BlueStacks*\HD-Player.exe").FullName
+    $Current = Expand-Version "$Starter"
+    $Address = "https://webcache.googleusercontent.com/search?q=cache:https://support.bluestacks.com"
+    $Address = "$Address/hc/en-us/articles/4402611273485-BlueStacks-5-offline-installer"
+    $Version = Invoke-Scraper "HtmlContent" "$Address" "windows/nxt/([\d.]+)/(?<sha>[0-9a-f]+)/"
+    $Hashing = Invoke-Scraper "HtmlContent" "$Address" "windows/nxt/[\d.]+/(?<sha>[0-9a-f]+)/"
+    $Updated = [Version] "$Current" -Ge [Version] ($Version.SubString(0, 6))
+    If (-Not $Updated) {
+        $Address = "https://cdn3.bluestacks.com/downloads/windows/nxt/$Version/$Hashing/FullInstaller/x64/BlueStacksFullInstaller_${Version}_amd64_native.exe"
+        $Fetched = Invoke-Fetcher "$Address"
+        $ArgList = "-s --defaultImageName Nougat64 --imageToLaunch Nougat64 --defaultImageName Pie64 --imageToLaunch Pie64"
+        Invoke-Gsudo { Start-Process "$Using:Fetched" "$Using:ArgList" -Wait }
+        Remove-Desktop "BlueStacks*.lnk"
+    }
+
+}
+
 Function Update-Gsudo {
 
     # Update package
@@ -242,12 +263,12 @@ Function Update-Gsudo {
 Function Update-IntelHaxm {
 
     # Update package
-    Remove-Feature "HyperV"
     $Current = Expand-Version "*Inte*Hard*Acce*"
     $Address = "https://api.github.com/repos/intel/haxm/releases/latest"
     $Version = Invoke-Scraper "GithubVersion" "$Address"
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
     If (-Not $Updated) {
+        Remove-Feature "HyperV"
         $Address = Invoke-Scraper "GithubRelease" "$Address" "*windows*"
         $Fetched = Invoke-Fetcher "$Address"
         $Deposit = Expand-Archive "$Fetched"
@@ -368,12 +389,15 @@ Function Main {
     $Payload = (Get-Item "$Current").BaseName
     Invoke-Gsudo { Unregister-ScheduledTask -TaskName "$Using:Payload" -Confirm:$False -EA SI }
 
+    Update-Bluestacks ; exit
+
     # Handle elements
     $Factors = @(
         "Update-System"
         "Update-NvidiaDriver"
         "Update-IntelHaxm"
 
+        "Update-Bluestacks"
         "Update-NvidiaCuda"
         "Update-Lunacy"
         "Update-Mambaforge"
