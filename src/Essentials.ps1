@@ -186,17 +186,17 @@ Function Remove-Feature {
 Function Update-PowPlan {
 
     Param (
-        [ValidateSet("Balanced", "High", "Power", "Ultimate")] [String] $Element = "Balanced"
+        [ValidateSet("Balanced", "High", "Power", "Ultimate")] [String] $Payload = "Balanced"
     )
 
     $Program = "C:\Windows\System32\powercfg.exe"
     # $Factors = (Invoke-Expression "$Program /l" | ForEach-Object { If ($_.Contains("(Ultimate")) { $_.Split()[3] } })
-    # Foreach ($Segment In $Factors) { Invoke-Expression "$Program /DELETE $Segment" *> $Null }
-    $Picking = (Invoke-Expression "$Program /l" | ForEach-Object { If ($_.Contains("($Element")) { $_.Split()[3] } })
+    # Foreach ($Element In $Factors) { Invoke-Expression "$Program /delete $Element" *> $Null }
+    $Picking = (Invoke-Expression "$Program /l" | ForEach-Object { If ($_.Contains("($Payload")) { $_.Split()[3] } })
     If ([String]::IsNullOrEmpty("$Picking")) { Start-Process "$Program" "/duplicatescheme e9a42b02-d5df-448d-aa00-03f14749eb61" -NoNewWindow -Wait }
-    $Picking = (Invoke-Expression "$Program /l" | ForEach-Object { If ($_.Contains("($Element")) { $_.Split()[3] } })
+    $Picking = (Invoke-Expression "$Program /l" | ForEach-Object { If ($_.Contains("($Payload")) { $_.Split()[3] } })
     Start-Process "$Program" "/s $Picking" -NoNewWindow -Wait
-    If ($Element -Eq "Ultimate") {
+    If ($Payload -Eq "Ultimate") {
         $Desktop = $Null -Eq (Get-WmiObject Win32_SystemEnclosure -ComputerName "localhost" | Where-Object ChassisTypes -In "{9}", "{10}", "{14}")
         $Desktop = $Desktop -Or $Null -Eq (Get-WmiObject Win32_Battery -ComputerName "localhost")
         If (-Not $Desktop) { Start-Process "$Program" "/setacvalueindex $Picking sub_buttons lidaction 000" -NoNewWindow -Wait }
