@@ -662,6 +662,34 @@ Function Update-ChromiumExtension {
 
 }
 
+Function Update-DockerDesktop {
+
+    # Update package
+    $Starter = "$Env:ProgramFiles\Docker\Docker\Docker Desktop.exe"
+    $Current = Expand-Version "$Starter"
+    $Address = "https://community.chocolatey.org/packages/docker-desktop"
+    $Version = Invoke-Scraper "HtmlContent" "$Address" "Docker Desktop ([\d.]+)</title>"
+    $Updated = [Version] "$Current" -Ge [Version] "$Version"
+    If (-Not $Updated) {
+        $Address = "https://desktop.docker.com/win/stable/Docker Desktop Installer.exe"
+        $Fetched = Invoke-Fetcher "$Address"
+        Invoke-Gsudo { Start-Process "$Using:Fetched" "install --quiet" -Wait } ; Start-Sleep 10
+        Remove-Desktop "*Docker*.lnk" ; Invoke-Restart -Forcing
+    }
+
+    # Change settings
+    $Configs = "$Env:AppData\Docker\settings.json"
+    $Content = Get-Content "$Configs" | ConvertFrom-Json
+    $Content.analyticsEnabled = $False
+    $Content.autoStart = $False
+    $Content.disableTips = $True
+    $Content.disableUpdate = $True
+    $Content.licenseTermsVersion = 2
+    $Content.openUIOnStartupDisabled = $True
+    $Content | ConvertTo-Json | Set-Content "$Configs"
+
+}
+
 Function Update-DotnetMaui {
 
     # Update package

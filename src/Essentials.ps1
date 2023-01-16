@@ -36,7 +36,6 @@ Function Enable-Feature {
             Remove-Item "$Created" -Force
         }
     }
-    If (Assert-Pending -Eq $True) { Invoke-Restart }
 
 }
 
@@ -87,26 +86,19 @@ Function Invoke-Fetcher {
 
 Function Invoke-Restart {
 
-    Param(
-        [Switch] $Forcing
-    )
-
     $Current = "$($Script:MyInvocation.MyCommand.Path)"
     $Heading = (Get-Item "$Current").BaseName
-    Invoke-Gsudo { Unregister-ScheduledTask -TaskName "$Using:Heading" -Confirm:$False -EA SI }
-    If ($Forcing -Or (Assert-Pending) -Eq $True) {
-        $ArgList = "/c start /b wt --title `"$Heading`" powershell -ep bypass -noexit -nologo -f `"$Current`""
-        Invoke-Gsudo {
-            Register-ScheduledTask `
-                -TaskName "$Using:Heading" `
-                -Trigger (New-ScheduledTaskTrigger -AtLogOn) `
-                -User ($Env:Username) `
-                -Action (New-ScheduledTaskAction -Execute "cmd" -Argument "$Using:ArgList") `
-                -RunLevel Limited `
-                -Force *> $Null            
-        }
-        Restart-Computer -Force
+    $ArgList = "/c start /b wt --title `"$Heading`" powershell -ep bypass -noexit -nologo -f `"$Current`""
+    Invoke-Gsudo {
+        Register-ScheduledTask `
+            -TaskName "$Using:Heading" `
+            -Trigger (New-ScheduledTaskTrigger -AtLogOn) `
+            -User ($Env:Username) `
+            -Action (New-ScheduledTaskAction -Execute "cmd" -Argument "$Using:ArgList") `
+            -RunLevel Limited `
+            -Force *> $Null            
     }
+    Restart-Computer -Force
 
 }
 
@@ -163,10 +155,8 @@ Function Remove-Feature {
         "HyperV" { 
             $Address = "https://cdn3.bluestacks.com/support_files/HD-DisableHyperV_native_v2.exe"
             $Fetched = Invoke-Fetcher "$Address"
-            Invoke-Gsudo {
-                Start-Process "$Using:Fetched"
-                Start-Sleep 10 ; Stop-Process -Name "HD-DisableHyperV"
-            }
+            Invoke-Gsudo { Start-Process "$Using:Fetched" ; Start-Sleep 10 ; Stop-Process -Name "HD-DisableHyperV" }
+            If (Assert-Pending -Eq $True) { Invoke-Restart }
         }
         "Uac" {
             $Created = [IO.Path]::ChangeExtension([IO.Path]::GetTempFileName(), "ps1")
@@ -224,35 +214,6 @@ Function Update-SysPath {
 
 #EndRegion
 
-Function Update-DockerDesktop {
-
-    # Update package
-    $Starter = "$Env:ProgramFiles\Docker\Docker\Docker Desktop.exe"
-    $Current = Expand-Version "$Starter"
-    $Address = "https://community.chocolatey.org/packages/docker-desktop"
-    $Version = Invoke-Scraper "HtmlContent" "$Address" "Docker Desktop ([\d.]+)</title>"
-    $Updated = [Version] "$Current" -Ge [Version] "$Version"
-    If (-Not $Updated) {
-        $Address = "https://desktop.docker.com/win/stable/Docker Desktop Installer.exe"
-        # $Fetched = Invoke-Fetcher "$Address"
-        $Fetched = "C:\Users\Admin\AppData\Local\Temp\Docker Desktop Installer.exe"
-        Invoke-Gsudo { Start-Process "$Using:Fetched" "install --quiet" -Wait } ; Start-Sleep 10
-        Remove-Desktop "*Docker*.lnk" ; Invoke-Restart -Forcing
-    }
-
-    # Change settings
-    $Configs = "$Env:AppData\Docker\settings.json"
-    $Content = Get-Content "$Configs" | ConvertFrom-Json
-    $Content.analyticsEnabled = $False
-    $Content.autoStart = $False
-    $Content.disableTips = $True
-    $Content.disableUpdate = $True
-    $Content.licenseTermsVersion = 2
-    $Content.openUIOnStartupDisabled = $True
-    $Content | ConvertTo-Json | Set-Content "$Configs"
-
-}
-
 Function Update-Gsudo {
 
     # Update package
@@ -276,6 +237,23 @@ Function Update-Gsudo {
         Return $False
     }
     
+}
+
+Function Update-IntelHaxm {
+
+    # Update package
+    Remove-Feature "HyperV"
+    $Current = Expand-Version "*Inte*Hard*Acce*"
+    $Address = "https://api.github.com/repos/intel/haxm/releases/latest"
+    $Version = Invoke-Scraper "GithubVersion" "$Address"
+    $Updated = [Version] "$Current" -Ge [Version] "$Version"
+    If (-Not $Updated) {
+        $Address = Invoke-Scraper "GithubRelease" "$Address" "*windows*"
+        $Fetched = Invoke-Fetcher "$Address"
+        $Deposit = Expand-Archive "$Fetched"
+        Invoke-Gsudo { Start-Process "$Using:Deposit\silent_install.bat" -WindowStyle Hidden -Wait }
+    }
+
 }
 
 Function Update-Lunacy {
@@ -386,22 +364,29 @@ Function Main {
     $Correct = (Update-Gsudo) -And -Not (gsudo cache on -d -1 2>&1).ToString().Contains("Error")
     If (-Not $Correct) { Write-Host "$Failure" -FO Red ; Write-Host ; Exit }
 
+    # Remove schedule
+    $Payload = (Get-Item "$Current").BaseName
+    Invoke-Gsudo { Unregister-ScheduledTask -TaskName "$Using:Payload" -Confirm:$False -EA SI }
+
     # Handle elements
     $Factors = @(
+        "Update-System"
         "Update-NvidiaDriver"
-        "Update-NvidiaCuda"
+        "Update-IntelHaxm"
 
-        # "Update-DockerDesktop"
+        "Update-NvidiaCuda"
         "Update-Lunacy"
         "Update-Mambaforge"
         "Update-Nanazip"
+
+        "Update-Appearance"
     )
     
     # Output progress
     $Maximum = (60 - 20) * -1
     $Shaping = "`r{0,$Maximum}{1,-3}{2,-6}{3,-3}{4,-8}"
     $Heading = "$Shaping" -F "FUNCTION", " ", "STATUS", " ", "DURATION"
-    Write-Host "$heading"
+    Write-Host "$Heading"
     Foreach ($Element In $Factors) {
         $Started = Get-Date
         $Running = $Element.Split(' ')[0].ToUpper()
