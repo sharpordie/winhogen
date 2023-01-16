@@ -36,7 +36,6 @@ Function Enable-Feature {
             Remove-Item "$Created" -Force
         }
     }
-
     If (Assert-Pending -Eq $True) { Invoke-Restart }
 
 }
@@ -67,11 +66,9 @@ Function Expand-Version {
     $Version = (Get-Package "$Payload" -EA SI).Version
     If ($Null -Eq $Version) { $Version = (Get-AppxPackage "$Payload" -EA SI).Version }
     If ($Null -Eq $Version) { $Version = "0.0.0.0" }
-
     If ($Version -Eq "0.0.0.0") { $Version = Try { (Get-Command "$Payload" -EA SI).Version.ToString() } Catch { $Version } }
     If ($Version -Eq "0.0.0.0") { $Version = Try { (Get-Item "$Payload" -EA SI).VersionInfo.FileVersion.ToString() } Catch { $Version } }
     If ($Version -Eq "0.0.0.0") { $Version = Try { Invoke-Expression "& `"$Payload`" --version" -EA SI } Catch { $Version } }
-    
     Return [Regex]::Matches($Version, "([\d.]+)").Groups[1].Value
 
 }
@@ -97,7 +94,6 @@ Function Invoke-Restart {
     $Current = "$($Script:MyInvocation.MyCommand.Path)"
     $Heading = (Get-Item "$Current").BaseName
     Invoke-Gsudo { Unregister-ScheduledTask -TaskName "$Using:Heading" -Confirm:$False -EA SI }
-
     If ($Forcing -Or (Assert-Pending) -Eq $True) {
         $ArgList = "/c start /b wt --title `"$Heading`" powershell -ep bypass -noexit -nologo -f `"$Current`""
         Invoke-Gsudo {
@@ -126,7 +122,6 @@ Function Invoke-Scraper {
     $Manager = [Net.Http.HttpClient]::New()
     $UsAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/500.0 (KHTML, like Gecko) Chrome/100.0.0.0 Safari/500.0"
     $Manager.DefaultRequestHeaders.Add("User-Agent", "$UsAgent")
-
     Switch ($Scraper) {
         "HtmlContent" {
             $Content = $Manager.GetStringAsync("$Address").GetAwaiter().GetResult().ToString()
@@ -184,7 +179,6 @@ Function Remove-Feature {
             Remove-Item "$Created" -Force
         }
     }
-
     If (Assert-Pending -Eq $True) { Invoke-Restart }
 
 }
@@ -195,15 +189,17 @@ Function Update-PowPlan {
         [ValidateSet("Balanced", "High", "Power", "Ultimate")] [String] $Element = "Balanced"
     )
 
-    $Picking = (powercfg /L | ForEach-Object { If ($_.Contains("($Element")) { $_.Split()[3] } })
-    If ([String]::IsNullOrEmpty("$Picking")) { Start-Process "powercfg.exe" "/DUPLICATESCHEME e9a42b02-d5df-448d-aa00-03f14749eb61" -NoNewWindow -Wait }
-    $Picking = (powercfg /L | ForEach-Object { If ($_.Contains("($Element")) { $_.Split()[3] } })
-    Start-Process "powercfg.exe" "/S $Picking" -NoNewWindow -Wait
-
+    $Program = "C:\Windows\System32\powercfg.exe"
+    # $Factors = (Invoke-Expression "$Program /l" | ForEach-Object { If ($_.Contains("(Ultimate")) { $_.Split()[3] } })
+    # Foreach ($Segment In $Factors) { Invoke-Expression "$Program /DELETE $Segment" *> $Null }
+    $Picking = (Invoke-Expression "$Program /l" | ForEach-Object { If ($_.Contains("($Element")) { $_.Split()[3] } })
+    If ([String]::IsNullOrEmpty("$Picking")) { Start-Process "$Program" "/duplicatescheme e9a42b02-d5df-448d-aa00-03f14749eb61" -NoNewWindow -Wait }
+    $Picking = (Invoke-Expression "$Program /l" | ForEach-Object { If ($_.Contains("($Element")) { $_.Split()[3] } })
+    Start-Process "$Program" "/s $Picking" -NoNewWindow -Wait
     If ($Element -Eq "Ultimate") {
         $Desktop = $Null -Eq (Get-WmiObject Win32_SystemEnclosure -ComputerName "localhost" | Where-Object ChassisTypes -In "{9}", "{10}", "{14}")
         $Desktop = $Desktop -Or $Null -Eq (Get-WmiObject Win32_Battery -ComputerName "localhost")
-        If (-Not $Desktop) { Start-Process "powercfg.exe" "/SETACVALUEINDEX $Picking SUB_BUTTONS LIDACTION 000" -NoNewWindow -Wait }
+        If (-Not $Desktop) { Start-Process "$Program" "/setacvalueindex $Picking sub_buttons lidaction 000" -NoNewWindow -Wait }
     }
 
 }
@@ -228,16 +224,33 @@ Function Update-SysPath {
 
 #EndRegion
 
+Function Update-Lunacy {
+
+    # Update package
+    $Current = Expand-Version "*Lunacy*"
+    $Address = "https://docs.icons8.com/release-notes/"
+    $Version = Invoke-Scraper "HtmlContent" "$Address" "setup/LunacySetup_([\d.]+)\.exe"
+    $Updated = [Version] "$Current" -Ge [Version] "$Version"
+    If (-Not $Updated) {
+        $Address = "https://lun-eu.icons8.com/s/setup/LunacySetup_${Version}.exe"
+        $Fetched = Invoke-Fetcher "$Address"
+        Start-Process "$Fetched" "/VERYSILENT /NORESTART /SUPPRESSMSGBOXES /SP-"
+        $Started = Get-Date ; $Timeout = $Started.AddSeconds(30)
+        While (-Not (Get-Process "Lunacy" -EA SI) -And $Timeout -Gt (Get-Date)) { Start-Sleep 2 }
+        Stop-Process -Name "Lunacy" ; Remove-Desktop "*Lunacy*.lnk"
+    }
+
+}
+
 Function Update-Gsudo {
 
+    # Update package
     $Starter = "${Env:ProgramFiles(x86)}\gsudo\gsudo.exe"
     $Current = Expand-Version "$Starter"
     $Present = Test-Path "$Starter"
-
     $Address = "https://api.github.com/repos/gerardog/gsudo/releases/latest"
     $Version = Invoke-Scraper "GithubVersion" "$Address"
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
-
     Try {
         Update-SysPath "$(Split-Path "$Starter" -Parent)" "Process"
         If (-Not $Updated) {
@@ -254,14 +267,31 @@ Function Update-Gsudo {
     
 }
 
+Function Update-Mambaforge {
+
+    # Update package
+    If ($Null -Eq (Get-Command "mamba" -EA SI)) {
+        $Address = "https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-Windows-x86_64.exe"
+        $Fetched = Invoke-Fetcher "$Address"
+        $Deposit = "$Env:LocalAppData\Programs\Mambaforge"
+        $ArgList = "/S /InstallationType=JustMe /RegisterPython=0 /AddToPath=1 /NoRegistry=1 /D=$Deposit"
+        Start-Process "$Fetched" "$ArgList" -Wait
+        Update-SysPath -Section "User"
+    }
+
+    # Change settings
+    Invoke-Expression "conda config --set auto_activate_base false"
+    Invoke-Expression "conda update --all -y"
+
+}
+
 Function Update-Nanazip {
 
+    # Update package
     $Current = Expand-Version "*NanaZip*"
-
     $Address = "https://api.github.com/repos/M2Team/NanaZip/releases/latest"
     $Version = Invoke-Scraper "GithubVersion" "$Address"
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
-
     If (-Not $Updated) {
         $Address = Invoke-Scraper "GithubRelease" "$Address" "*.msixbundle"
         $Fetched = Invoke-Fetcher "$Address"
@@ -272,12 +302,11 @@ Function Update-Nanazip {
 
 Function Update-NvidiaCuda {
 
+    # Update package
     $Current = Expand-Version "*CUDA Runtime*"
-
     $Address = "https://raw.githubusercontent.com/scoopinstaller/main/master/bucket/cuda.json"
     $Version = (Invoke-Scraper "JsonContent" "$Address").version
     $Updated = [Version] "$Current" -Ge [Version] $Version.SubString(0, 4)
-
     If (-Not $Updated) {
         $Address = (Invoke-Scraper "JsonContent" "$Address").architecture."64bit".url.Replace("#/dl.7z", "")
         $Fetched = Invoke-Fetcher "$Address"
@@ -289,12 +318,11 @@ Function Update-NvidiaCuda {
 
 Function Update-NvidiaDriver {
 
+    # Update package
     $Current = Expand-Version "NVIDIA Graphics Driver*"
-
     $Address = "https://community.chocolatey.org/packages/nvidia-display-driver"
     $Version = Invoke-Scraper "HtmlContent" "$Address" "NVidia Display Driver ([\d.]+)</title>"
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
-
     If (-Not $Updated) {
         $Address = "https://us.download.nvidia.com/Windows/$Version/$Version-desktop-win10-win11-64bit-international-dch-whql.exe"
         $Fetched = Invoke-Fetcher "$Address"
@@ -332,6 +360,8 @@ Function Main {
         "Update-NvidiaDriver"
         "Update-NvidiaCuda"
 
+        "Update-Lunacy"
+        "Update-Mambaforge"
         "Update-Nanazip"
     )
     
