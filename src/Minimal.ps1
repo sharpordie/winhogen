@@ -183,6 +183,34 @@ Function Remove-Feature {
 
 }
 
+Function Update-LnkFile {
+
+    Param(
+        [String] $LnkFile,
+        [String] $Starter,
+        [String] $ArgList,
+        [String] $Message,
+        [String] $Picture,
+        [String] $WorkDir,
+        [Switch] $AsAdmin
+    )
+
+    $Wscript = New-Object -ComObject WScript.Shell
+    $Element = $Wscript.CreateShortcut("$LnkFile")
+    If ($Starter) { $Element.TargetPath = "$Starter" }
+    If ($ArgList) { $Element.Arguments = "$ArgList" }
+    If ($Message) { $Element.Description = "$Message" }
+    $Element.IconLocation = If ($Picture -And (Test-Path "$Picture")) { "$Picture" } Else { "$Starter" }
+    $Element.WorkingDirectory = If ($WorkDir -And (Test-Path "$WorkDir")) { "$WorkDir" } Else { Split-Path "$Starter" }
+    $Element.Save()
+    If ($AsAdmin) { 
+        $Content = [IO.File]::ReadAllBytes("$LnkFile")
+        $Content[0x15] = $Content[0x15] -Bor 0x20
+        [IO.File]::WriteAllBytes("$LnkFile", $Content)
+    }
+
+}
+
 Function Update-PowPlan {
 
     Param (
@@ -400,6 +428,60 @@ Function Update-JetbrainsPlugin {
 
 }
 
+Function Update-Mpv {
+
+    $Starter = "$Env:LocalAppData\Programs\Mpv\mpv.exe"
+    $Address = "https://sourceforge.net/projects/mpv-player-windows/files/64bit"
+    $Version = Invoke-Scraper "HtmlContent" "$Address" "mpv-x86_64-([\d]{8})-git-([\a-z]{7})\.7z"
+    $Release = Invoke-Scraper "HtmlContent" "$Address" "mpv-x86_64-[\d]{8}-git-([\a-z]{7})\.7z"
+    $Updated = Test-Path "$Starter" -NewerThan (Get-Date).AddDays(-10)
+    If (-Not $Updated) {
+        $Address = "https://sourceforge.net/projects/mpv-player-windows/files/64bit/mpv-x86_64-$Version-git-$Release.7z"
+        $Fetched = Invoke-Fetcher "$Address"
+        $Deposit = Split-Path "$Starter"
+        New-Item "$Deposit" -ItemType Directory -EA SI
+        Expand-Archive "$Fetched" "$Deposit"
+        $LnkFile = "$Env:AppData\Microsoft\Windows\Start Menu\Programs\Mpv.lnk"
+        $Picture = Invoke-Fetcher "https://github.com/mpvnet-player/mpv.net/raw/master/src/mpvnet.ico" "$Deposit\mpv.ico"
+        Update-LnkFile -LnkFile "$LnkFile" -Starter "$Starter" -Picture "$Picture"
+    }
+
+    $Shaders = Join-Path "$(Split-Path "$Starter")" "shaders"
+    New-Item "$Shaders" -ItemType Directory -EA SI
+    $Address = "https://github.com/igv/FSRCNN-TensorFlow/releases/download/1.1/FSRCNNX_x2_8-0-4-1.glsl"
+    $Fetched = Invoke-Fetcher "$Address" ; Move-Item "$Fetched" "$Shaders" -Force
+    $Address = "https://gist.githubusercontent.com/igv/36508af3ffc84410fe39761d6969be10/raw/6998ff663a135376dbaeb6f038e944d806a9b9d9/SSimDownscaler.glsl"
+    $Fetched = Invoke-Fetcher "$Address" ; Move-Item "$Fetched" "$Shaders" -Force
+
+    $Configs = Join-Path "$(Split-Path "$Starter")" "mpv\mpv.conf"
+    Set-Content -Path "$Configs" -Value "profile=gpu-hq"
+    Add-Content -Path "$Configs" -Value "vo=gpu-next"
+    Add-Content -Path "$Configs" -Value "hwdec=auto-copy"
+    Add-Content -Path "$Configs" -Value "keep-open=yes"
+    Add-Content -Path "$Configs" -Value "ytdl-format=`"bestvideo[height<=?2160]+bestaudio/best`""
+    Add-Content -Path "$Configs" -Value "glsl-shaders-clr"
+    Add-Content -Path "$Configs" -Value "glsl-shaders=`"~~/shaders/FSRCNNX_x2_8-0-4-1.glsl`""
+    Add-Content -Path "$Configs" -Value "scale=ewa_lanczos"
+    Add-Content -Path "$Configs" -Value "glsl-shaders-append=`"~~/shaders/SSimDownscaler.glsl`""
+    Add-Content -Path "$Configs" -Value "dscale=mitchell"
+    Add-Content -Path "$Configs" -Value "linear-downscaling=no"
+    Add-Content -Path "$Configs" -Value "[protocol.http]"
+    Add-Content -Path "$Configs" -Value "force-window=immediate"
+    Add-Content -Path "$Configs" -Value "hls-bitrate=max"
+    Add-Content -Path "$Configs" -Value "cache=yes"
+    Add-Content -Path "$Configs" -Value "[protocol.https]"
+    Add-Content -Path "$Configs" -Value "profile=protocol.http"
+    Add-Content -Path "$Configs" -Value "[protocol.ytdl]"
+    Add-Content -Path "$Configs" -Value "profile=protocol.http"
+
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+    $Address = "https://raw.githubusercontent.com/DanysysTeam/PS-SFTA/master/SFTA.ps1"
+    Invoke-Expression ((New-Object Net.WebClient).DownloadString("$Address"))
+    Register-FTA "$Starter" -Extension ".mkv"
+    Register-FTA "$Starter" -Extension ".mp4"
+
+}
+
 Function Update-Nanazip {
 
     $Current = Expand-Version "*NanaZip*"
@@ -481,6 +563,20 @@ Function Update-Wsa {
 
 }
 
+Function Update-YtDlg {
+
+    $Starter = "$Env:LocalAppData\Programs\YtDlp\yt-dlp.exe"
+    $Updated = Test-Path "$Starter" -NewerThan (Get-Date).AddDays(-10)
+    If (-Not $Updated) {
+        $Address = "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe"
+        $Deposit = Split-Path "$Starter"
+        New-Item "$Deposit" -ItemType Directory -EA SI
+        Invoke-Fetcher "$Address" "$Starter"
+        Update-SysPath "$Deposit" "Machine"
+    }
+
+}
+
 Function Main {
 
     # Change headline
@@ -510,11 +606,13 @@ Function Main {
 
     # Handle elements
     $Factors = @(
-        "Update-Nvidia Cuda"
-        "Update-Wsa"
-        "Update-AndroidStudio"
-        "Update-Git -GitMail 72373746+sharpordie@users.noreply.github.com -GitUser sharpordie"
-        "Update-Flutter"
+        # "Update-Nvidia Cuda"
+        # "Update-Wsa"
+        # "Update-AndroidStudio"
+        # "Update-Git -GitMail 72373746+sharpordie@users.noreply.github.com -GitUser sharpordie"
+        # "Update-Flutter"
+        "Update-Mpv"
+        "Update-YtDlg"
     )
     
     # Output progress
