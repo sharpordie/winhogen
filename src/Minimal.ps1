@@ -64,13 +64,12 @@ Function Expand-Version {
     )
 
     If ([String]::IsNullOrWhiteSpace($Payload)) { Return "0.0.0.0" }
-
     $Version = (Get-Package "$Payload" -EA SI).Version
     If ([String]::IsNullOrWhiteSpace($Version)) { $Version = (Get-AppxPackage "$Payload" -EA SI).Version }
     If ([String]::IsNullOrWhiteSpace($Version)) { $Version = "0.0.0.0" }
-    # If ($Version -Eq "0.0.0.0") { $Version = Try { (Get-Command "$Payload" -EA SI).Version.ToString() } Catch { $Version } }
+    If ($Version -Eq "0.0.0.0") { $Version = Try { (Get-Command "$Payload" -EA SI).Version.ToString() } Catch { $Version } }
     If ($Version -Eq "0.0.0.0") { $Version = Try { (Get-Item "$Payload" -EA SI).VersionInfo.FileVersion.ToString() } Catch { $Version } }
-    Return [Regex]::Matches($Version, "([\d.]+)").Groups[1].Value
+    Try { Return [Regex]::Matches($Version, "([\d.]+)").Groups[1].Value } Catch { Return "0.0.0.0" }
 
 }
 
@@ -100,7 +99,7 @@ Function Invoke-Restart {
             -RunLevel Limited `
             -Force *> $Null            
     }
-    Restart-Computer -Force
+    Start-Sleep 2 ; Restart-Computer -Force
 
 }
 
@@ -318,7 +317,7 @@ Function Update-AndroidStudio {
         [Windows.Forms.SendKeys]::SendWait("{ENTER}") ; Start-Sleep 6
         [Windows.Forms.SendKeys]::SendWait("%{F4}") ; Start-Sleep 2
     }
-    
+
 }
 
 Function Update-Chromium {
@@ -599,8 +598,8 @@ Function Update-Git {
     }
     
     Update-SysPath "$Env:ProgramFiles\Git\cmd" "Process"
-    If ($Null -Ne $GitMail) { Invoke-Expression "git config --global user.email '$GitMail'" }
-    If ($Null -Ne $GitUser) { Invoke-Expression "git config --global user.name '$GitUser'" }
+    If (-Not [String]::IsNullOrWhiteSpace($GitMail)) { Invoke-Expression "git config --global user.email '$GitMail'" }
+    If (-not [String]::IsNullOrWhiteSpace($GitUser)) { Invoke-Expression "git config --global user.name '$GitUser'" }
     Invoke-Expression "git config --global http.postBuffer 1048576000"
     Invoke-Expression "git config --global init.defaultBranch '$Default'"
     
@@ -651,7 +650,7 @@ Function Update-Jdownloader {
         $AppData = "$Env:ProgramFiles\JDownloader\cfg"
         $Config1 = "$AppData\org.jdownloader.settings.GeneralSettings.json"
         $Config2 = "$AppData\org.jdownloader.settings.GraphicalUserInterfaceSettings.json"
-        $Config3 = "$AppData\org.jdownloader.gui.jdtrayicon.TrayExtension.json"
+        # $Config3 = "$AppData\org.jdownloader.gui.jdtrayicon.TrayExtension.json"
         $Config4 = "$AppData\org.jdownloader.extensions.extraction.ExtractionExtension.json"
         Start-Process "$Starter" ; Start-Sleep 12 ; While (-Not (Test-Path -Path "$Config1")) { Start-Sleep 2 }
         Stop-Process -Name "JDownloader2" ; Start-Sleep 2
@@ -671,11 +670,11 @@ Function Update-Jdownloader {
         Try { $Configs.specialdealsenabled = $False } Catch { $Configs | Add-Member -Type NoteProperty -Name "specialdealsenabled" -Value $False }
         Try { $Configs.speedmetervisible = $False } Catch { $Configs | Add-Member -Type NoteProperty -Name "speedmetervisible" -Value $False }
         Invoke-Gsudo { $Using:Configs | ConvertTo-Json | Set-Content "$Using:Config2" }
-        $Configs = Get-Content "$Config3" | ConvertFrom-Json
-        Try { $Configs.enabled = "$Deposit" } Catch { $Configs | Add-Member -Type NoteProperty -Name "enabled" -Value "$Deposit" }
-        Invoke-Gsudo { $Using:Configs | ConvertTo-Json | Set-Content "$Using:Config3" }
+        # $Configs = Get-Content "$Config3" | ConvertFrom-Json
+        # Try { $Configs.enabled = $False } Catch { $Configs | Add-Member -Type NoteProperty -Name "enabled" -Value $False }
+        # Invoke-Gsudo { $Using:Configs | ConvertTo-Json | Set-Content "$Using:Config3" }
         $Configs = Get-Content "$Config4" | ConvertFrom-Json
-        Try { $Configs.enabled = "$Deposit" } Catch { $Configs | Add-Member -Type NoteProperty -Name "enabled" -Value "$Deposit" }
+        Try { $Configs.enabled = $False } Catch { $Configs | Add-Member -Type NoteProperty -Name "enabled" -Value $False }
         Invoke-Gsudo { $Using:Configs | ConvertTo-Json | Set-Content "$Using:Config4" }
     }
 
@@ -694,36 +693,71 @@ Function Update-JetbrainsPlugin {
     $DataDir = (Get-Content "$Deposit\product-info.json" | ConvertFrom-Json).dataDirectoryName
     $Adjunct = If ("$DataDir" -Like "AndroidStudio*") { "Google\$DataDir" } Else { "JetBrains\$DataDir" }
     $Plugins = "$Env:AppData\$Adjunct\plugins" ; New-Item "$Plugins" -ItemType Directory -EA SI
-    For ($I = 0; $I -Le 3; $I++) {
+    :Outer For ($I = 1; $I -Le 3; $I++) {
+        $Address = "https://plugins.jetbrains.com/api/plugins/$Element/updates?page=$I"
+        $Content = Invoke-Scraper "JsonContent" "$Address"
         For ($J = 0; $J -Le 19; $J++) {
-            $Address = "https://plugins.jetbrains.com/api/plugins/$Element/updates?page=$I"
-            $Content = Invoke-Scraper "JsonContent" "$Address"
             $Maximum = $Content["$J"].until.Replace("`"", "").Replace("*", "9999")
             $Minimum = $Content["$J"].since.Replace("`"", "").Replace("*", "9999")
+            If ([String]::IsNullOrWhiteSpace($Maximum)) { $Maximum = "9999.0" }
+            If ([String]::IsNullOrWhiteSpace($Minimum)) { $Maximum = "0000.0" }
             If ([Version] "$Minimum" -Le "$Release" -And "$Release" -Le "$Maximum") {
                 $Address = $Content["$J"].file.Replace("`"", "")
                 $Address = "https://plugins.jetbrains.com/files/$Address"
                 $Fetched = Invoke-Fetcher "$Address"
                 Expand-Archive "$Fetched" "$Plugins"
-                Break 2
+                Break Outer
             }
-            Start-Sleep 1
         }
+        Start-Sleep 1
+    }
+
+}
+
+Function Update-JoalDesktop {
+
+    $Starter = "$Env:LocalAppData\Programs\joal-desktop\JoalDesktop.exe"
+    $Current = Expand-Version "$Starter"
+    $Address = "https://api.github.com/repos/anthonyraymond/joal-desktop/releases/latest"
+    $Version = Invoke-Scraper "GithubVersion" "$Address"
+    $Updated = [Version] "$Current" -Ge [Version] "$Version"
+    If (-Not $Updated) {
+        $Address = Invoke-Scraper "GithubRelease" "$Address" "*win-x64.exe"
+        $Fetched = Invoke-Fetcher "$Address"
+        Invoke-Gsudo { Start-Process "$Using:Fetched" "/S" -Wait }
+        Remove-Desktop "*Joal*.lnk"
+    }
+
+}
+
+Function Update-Keepassxc {
+
+    $Starter = "$Env:ProgramFiles\KeePassXC\KeePassXC.exe"
+    $Current = Expand-Version "$Starter"
+    $Address = "https://raw.githubusercontent.com/scoopinstaller/extras/master/bucket/keepassxc.json"
+    $Version = (Invoke-Scraper "JsonContent" "$Address").version
+    $Updated = [Version] "$Current" -Ge [Version] "$Version"
+    If (-Not $Updated) {
+        $Address = "https://github.com/keepassxreboot/keepassxc/releases/download/$Version/KeePassXC-$Version-Win64.msi"
+        $Fetched = Invoke-Fetcher "$Address"
+        Invoke-Gsudo { Start-Process "msiexec" "/i `"$Using:Fetched`" /qn" -Wait }
+        Remove-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Name "KeePassXC" -EA SI
     }
 
 }
 
 Function Update-Mambaforge {
 
-    If ($Null -Eq (Get-Command "mamba" -EA SI)) {
+    $Deposit = "$Env:LocalAppData\Programs\Mambaforge"
+    $Present = Test-Path "$Deposit\Scripts\mamba.exe"
+    If (-Not $Present) {
         $Address = "https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-Windows-x86_64.exe"
         $Fetched = Invoke-Fetcher "$Address"
-        $Deposit = "$Env:LocalAppData\Programs\Mambaforge"
         $ArgList = "/S /InstallationType=JustMe /RegisterPython=0 /AddToPath=1 /NoRegistry=1 /D=$Deposit"
         Start-Process "$Fetched" "$ArgList" -Wait
-        Update-SysPath -Section "User"
     }
 
+    Update-SysPath -Section "User"
     Invoke-Expression "conda config --set auto_activate_base false"
     Invoke-Expression "conda update --all -y"
 
@@ -842,7 +876,7 @@ Function Update-Postgresql {
     $Current = Expand-Version "$Starter"
     $Address = "https://raw.githubusercontent.com/scoopinstaller/versions/master/bucket/postgresql$Leading.json"
     $Version = (Invoke-Scraper "JsonContent" "$Address").version
-    $Updated = [Version] "$Current" -Ge [Version] "$Version"
+    $Updated = [Version] "$Current" -Ge [Version] ($Version.SubString(0, 2) + ".0")
     If (-Not $Updated) {
         $Address = "https://get.enterprisedb.com/postgresql/postgresql-$Version-1-windows-x64.exe"
         $Fetched = Invoke-Fetcher "$Address"
@@ -877,18 +911,14 @@ Function Update-Python {
         Invoke-Gsudo { [Environment]::SetEnvironmentVariable("PYTHONDONTWRITEBYTECODE", "1", "Machine") }
     }
 
-    If ($Null -Eq (Get-Command "poetry" -EA SI)) {
-        New-Item "$Env:AppData\Python\Scripts" -ItemType Directory -EA SI
-        $Address = "https://install.python-poetry.org/"
-        $Fetched = Invoke-Fetcher "$Address" (Join-Path "$Env:Temp" "install-poetry.py")
-        Start-Process "python" "`"$Fetched`" --uninstall" -WindowStyle Hidden -Wait
-        Start-Process "python" "$Fetched" -WindowStyle Hidden -Wait
-        Update-SysPath "$Env:AppData\Python\Scripts" "Machine"
-        Start-Process "poetry" "config virtualenvs.in-project true" -WindowStyle Hidden -Wait
-    }
-    Else {
-        Start-Process "poetry" "self update" -WindowStyle Hidden -Wait
-    }
+    New-Item "$Env:AppData\Python\Scripts" -ItemType Directory -EA SI
+    $Address = "https://install.python-poetry.org/"
+    $Fetched = Invoke-Fetcher "$Address" (Join-Path "$Env:Temp" "install-poetry.py")
+    Start-Process "python" "`"$Fetched`" --uninstall" -WindowStyle Hidden -Wait
+    Start-Process "python" "$Fetched" -WindowStyle Hidden -Wait
+    Update-SysPath "$Env:AppData\Python\Scripts" "Machine"
+    Start-Process "poetry" "config virtualenvs.in-project true" -WindowStyle Hidden -Wait
+    Start-Process "poetry" "self update" -WindowStyle Hidden -Wait
 
 }
 
@@ -1051,13 +1081,15 @@ Function Main {
         "Update-Git -GitMail 72373746+sharpordie@users.noreply.github.com -GitUser sharpordie"
 
         "Update-Flutter"
+        "Update-Mambaforge"
         "Update-Postgresql"
         "Update-Python"
         "Update-Wsa"
 
         "Update-Figma"
         "Update-Jdownloader"
-        "Update-Mambaforge"
+        "Update-JoalDesktop"
+        "Update-Keepassxc"
         "Update-Mpv"
         "Update-Qbittorrent"
         "Update-VmwareWorkstation"
@@ -1091,7 +1123,7 @@ Function Main {
     }
     
     # Revert security
-    Invoke-Expression "gsudo -k" *> $Null ; Enable-Feature "Uac"
+    Enable-Feature "Uac" ; Invoke-Expression "gsudo -k" *> $Null
     
     # Output new line
     Write-Host "`n"
