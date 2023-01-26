@@ -6,10 +6,12 @@ Function Update-SysPath {
         [Switch] $Prepend
     )
 
-    $OldPath = [Environment]::GetEnvironmentVariable("PATH", "$Section")
-    $OldPath = $OldPath -Split ";" | Where-Object { $_ -NotMatch "^$([Regex]::Escape($Deposit))\\?" }
-    $NewPath = If ($Prepend) { ($Deposit + $OldPath) -Join ";" } Else { ($OldPath + $Deposit) -Join ";" }
-    Invoke-Gsudo { [Environment]::SetEnvironmentVariable("PATH", "$Using:NewPath", "$Using:Section") }
+    If ($Section -Ne "Process" ) {
+        $OldPath = [Environment]::GetEnvironmentVariable("PATH", "$Section")
+        $OldPath = $OldPath -Split ";" | Where-Object { $_ -NotMatch "^$([Regex]::Escape($Deposit))\\?" }
+        $NewPath = If ($Prepend) { ($Deposit + $OldPath) -Join ";" } Else { ($OldPath + $Deposit) -Join ";" }
+        Invoke-Gsudo { [Environment]::SetEnvironmentVariable("PATH", "$Using:NewPath", "$Using:Section") }
+    }
 
     $OldPath = $Env:Path -Split ";" | Where-Object { $_ -NotMatch "^$([Regex]::Escape($Deposit))\\?" }
     $NewPath = If ($Prepend) { ($Deposit + $OldPath) -Join ";" } Else { ($OldPath + $Deposit) -Join ";" }
@@ -149,9 +151,10 @@ Function Update-Gsudo {
             Else { Invoke-Gsudo { Start-Process "msiexec" "/i `"$Using:Fetched`" /qn" -Wait } }
             Start-Sleep 4
         }
-        $Deposit = "${Env:ProgramFiles(x86)}\gsudo"
-        $OldPath = $Env:Path -Split ";" | Where-Object { $_ -NotMatch "^$([Regex]::Escape($Deposit))\\?" }
-        $Env:Path = ($OldPath + $Deposit) -Join ";"
+        # $Deposit = "${Env:ProgramFiles(x86)}\gsudo"
+        # $OldPath = $Env:Path -Split ";" | Where-Object { $_ -NotMatch "^$([Regex]::Escape($Deposit))\\?" }
+        # $Env:Path = ($OldPath + $Deposit) -Join ";"
+        Update-SysPath -Payload "${Env:ProgramFiles(x86)}\gsudo" -Section "Process"
         Return $True
     }
     Catch { 
@@ -201,9 +204,11 @@ Function Update-Temurin {
         Start-Sleep 4
     }
 
+    # $Deposit = (Get-Item "$Env:ProgramFiles\Eclipse Adoptium\jdk-*\bin").FullName
+    # $OldPath = $Env:Path -Split ";" | Where-Object { $_ -NotMatch "^$([Regex]::Escape($Deposit))\\?" }
+    # $Env:Path = ($OldPath + $Deposit) -Join ";"
     $Deposit = (Get-Item "$Env:ProgramFiles\Eclipse Adoptium\jdk-*\bin").FullName
-    $OldPath = $Env:Path -Split ";" | Where-Object { $_ -NotMatch "^$([Regex]::Escape($Deposit))\\?" }
-    $Env:Path = ($OldPath + $Deposit) -Join ";"
+    Update-SysPath -Payload "$Deposit" -Section "Process"
 
 }
 
