@@ -8,13 +8,13 @@ Function Update-SysPath {
 
     If ($Section -Ne "Process" ) {
         $OldPath = [Environment]::GetEnvironmentVariable("PATH", "$Section")
-        $OldPath = $OldPath -Split ";" | Where-Object { $_ -NotMatch "^$([Regex]::Escape($Deposit))\\?" }
-        $NewPath = If ($Prepend) { ($Deposit + $OldPath) -Join ";" } Else { ($OldPath + $Deposit) -Join ";" }
+        $OldPath = $OldPath -Split ";" | Where-Object { $_ -NotMatch "^$([Regex]::Escape($Payload))\\?" }
+        $NewPath = If ($Prepend) { ($Payload + $OldPath) -Join ";" } Else { ($OldPath + $Payload) -Join ";" }
         Invoke-Gsudo { [Environment]::SetEnvironmentVariable("PATH", "$Using:NewPath", "$Using:Section") }
     }
 
-    $OldPath = $Env:Path -Split ";" | Where-Object { $_ -NotMatch "^$([Regex]::Escape($Deposit))\\?" }
-    $NewPath = If ($Prepend) { ($Deposit + $OldPath) -Join ";" } Else { ($OldPath + $Deposit) -Join ";" }
+    $OldPath = $Env:Path -Split ";" | Where-Object { $_ -NotMatch "^$([Regex]::Escape($Payload))\\?" }
+    $NewPath = If ($Prepend) { ($Payload + $OldPath) -Join ";" } Else { ($OldPath + $Payload) -Join ";" }
     $Env:Path = $NewPath -Join ";"
 
 }
