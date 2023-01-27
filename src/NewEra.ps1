@@ -131,6 +131,65 @@ Function Update-Figma {
 
 }
 
+Function Update-Flutter {
+
+    $Deposit = "$Env:LocalAppData\Android\Flutter"
+    Update-Git ; git clone "https://github.com/flutter/flutter.git" -b stable "$Deposit"
+    Start-Sleep 4
+
+    Update-SysPath "$Deposit\bin" "Machine"
+    flutter channel stable ; flutter precache ; flutter upgrade
+    Write-Output $("yes " * 10) | flutter doctor --android-licenses
+    dart --disable-analytics ; flutter config --no-analytics
+
+    $Product = "$Env:ProgramFiles\Android\Android Studio"
+    Update-JetbrainsPlugin "$Product" "6351"  # dart
+    Update-JetbrainsPlugin "$Product" "9212"  # flutter
+    Update-JetbrainsPlugin "$Product" "13666" # flutter-intl
+    Update-JetbrainsPlugin "$Product" "14641" # flutter-riverpod-snippets
+
+    # Start-Process "code" "--install-extension Dart-Code.flutter --force" -WindowStyle Hidden -Wait
+    # Start-Process "code" "--install-extension alexisvt.flutter-snippets --force" -WindowStyle Hidden -Wait
+    # Start-Process "code" "--install-extension pflannery.vscode-versionlens --force" -WindowStyle Hidden -Wait
+    # Start-Process "code" "--install-extension robert-brunhage.flutter-riverpod-snippets --force" -WindowStyle Hidden -Wait
+    # Start-Process "code" "--install-extension usernamehw.errorlens --force" -WindowStyle Hidden -Wait
+
+}
+
+Function Update-Git {
+
+    Param (
+        [String] $Default = "main",
+        [String] $GitMail,
+        [String] $GitUser
+    )
+
+    $Starter = "$Env:ProgramFiles\Git\git-bash.exe"
+    $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
+    $Present = $Current -Ne "0.0.0.0"
+
+    $Address = "https://api.github.com/repos/git-for-windows/git/releases/latest"
+    $Version = [Regex]::Match((Invoke-WebRequest "$Address" | ConvertFrom-Json).tag_name.Replace("windows.", ""), "[\d.]+").Value
+    $Updated = [Version] "$Current" -Ge [Version] "$Version"
+
+    If (-Not $Updated) {
+        $Results = (Invoke-WebRequest "$Address" | ConvertFrom-Json).assets
+        $Address = $Results.Where( { $_.browser_download_url -Like "*64-bit.exe" } ).browser_download_url
+        $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
+        (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
+        $ArgList = "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART, /NOCANCEL, /SP- /COMPONENTS=`"`""
+        Invoke-Gsudo { Start-Process "$Using:Fetched" "$Using:ArgList" -Wait }
+        Start-Sleep 4
+    }
+
+    Update-SysPath "$Env:ProgramFiles\Git\cmd" "Process"
+    If (-Not [String]::IsNullOrWhiteSpace($GitMail)) { git config --global user.email "$GitMail" }
+    If (-not [String]::IsNullOrWhiteSpace($GitUser)) { git config --global user.name "$GitUser" }
+    git config --global http.postBuffer 1048576000
+    git config --global init.defaultBranch "$Default"
+    
+}
+
 Function Update-Gsudo {
 
     $Current = (Get-Package "*gsudo*" -EA SI).Version
@@ -161,6 +220,42 @@ Function Update-Gsudo {
         Return $False
     }
     
+}
+
+Function Update-JetbrainsPlugin {
+
+    Param(
+        [String] $Deposit,
+        [String] $Element
+    )
+
+    If (-Not (Test-Path "$Deposit") -Or ([String]::IsNullOrWhiteSpace($Element))) { Return 0 }
+    $Release = (Get-Content "$Deposit\product-info.json" | ConvertFrom-Json).buildNumber
+    $Release = [Regex]::Matches("$Release", "([\d.]+)\.").Groups[1].Value
+    $DataDir = (Get-Content "$Deposit\product-info.json" | ConvertFrom-Json).dataDirectoryName
+    $Adjunct = If ("$DataDir" -Like "AndroidStudio*") { "Google\$DataDir" } Else { "JetBrains\$DataDir" }
+    $Plugins = "$Env:AppData\$Adjunct\plugins" ; New-Item "$Plugins" -ItemType Directory -EA SI
+    :Outer For ($I = 1; $I -Le 3; $I++) {
+        $Address = "https://plugins.jetbrains.com/api/plugins/$Element/updates?page=$I"
+        $Content = Invoke-WebRequest "$Address" | ConvertFrom-Json
+        For ($J = 0; $J -Le 19; $J++) {
+            $Maximum = $Content["$J"].until.Replace("`"", "").Replace("*", "9999")
+            $Minimum = $Content["$J"].since.Replace("`"", "").Replace("*", "9999")
+            If ([String]::IsNullOrWhiteSpace($Maximum)) { $Maximum = "9999.0" }
+            If ([String]::IsNullOrWhiteSpace($Minimum)) { $Maximum = "0000.0" }
+            If ([Version] "$Minimum" -Le "$Release" -And "$Release" -Le "$Maximum") {
+                $Address = $Content["$J"].file.Replace("`"", "")
+                $Address = "https://plugins.jetbrains.com/files/$Address"
+                $Fetched = Invoke-Fetcher "$Address"
+                $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
+                (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
+                Update-Nanazip ; Start-Process "7z.exe" "x `"$Fetched`" -o`"$Plugins`" -y -bso0 -bsp0" -WindowStyle Hidden -Wait
+                Break Outer
+            }
+        }
+        Start-Sleep 1
+    }
+
 }
 
 Function Update-Nanazip {
@@ -233,6 +328,43 @@ Write-Host "$Loading" -FO DarkYellow -NoNewline
 $Correct = (Update-Gsudo) -And -Not (gsudo cache on -d -1 2>&1).ToString().Contains("Error")
 If (-Not $Correct) { Write-Host "$Failure" -FO Red ; Write-Host ; Exit }
 
-# Update-Nanazip
-Update-AndroidStudio
-# Update-Figma
+# Handle elements
+$Factors = @(
+    "Update-AndroidStudio"
+    "Update-Git -GitMail 72373746+sharpordie@users.noreply.github.com -GitUser sharpordie"
+    "Update-Flutter"
+    "Update-Figma"
+)
+
+# Output progress
+$Maximum = (60 - 20) * -1
+$Shaping = "`r{0,$Maximum}{1,-3}{2,-6}{3,-3}{4,-8}"
+$Heading = "$Shaping" -F "FUNCTION", " ", "STATUS", " ", "DURATION"
+Write-Host "$Heading"
+Foreach ($Element In $Factors) {
+    $Started = Get-Date
+    $Running = $Element.Split(' ')[0].ToUpper()
+    $Shaping = "`n{0,$Maximum}{1,-3}{2,-6}{3,-3}{4,-8}"
+    $Loading = "$Shaping" -F "$Running", "", "ACTIVE", "", "--:--:--"
+    Write-Host "$Loading" -ForegroundColor DarkYellow -NoNewline
+    Try {
+        Invoke-Expression $Element *> $Null
+        $Elapsed = "{0:hh}:{0:mm}:{0:ss}" -F ($(Get-Date) - $Started)
+        $Shaping = "`r{0,$Maximum}{1,-3}{2,-6}{3,-3}{4,-8}"
+        $Success = "$Shaping" -F "$Running", "", "WORKED", "", "$Elapsed"
+        Write-Host "$Success" -ForegroundColor Green -NoNewLine
+    }
+    Catch {
+        $Elapsed = "{0:hh}:{0:mm}:{0:ss}" -F ($(Get-Date) - $Started)
+        $Shaping = "`r{0,$Maximum}{1,-3}{2,-6}{3,-3}{4,-8}"
+        $Failure = "$Shaping" -F "$Running", "", "FAILED", "", "$Elapsed"
+        Write-Host "$Failure" -ForegroundColor Red -NoNewLine
+    }
+}
+
+# Revert security
+Invoke-Expression "gsudo -k" *> $Null
+
+# Output new line
+Write-Host "`n"
+
