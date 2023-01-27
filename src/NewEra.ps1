@@ -123,7 +123,8 @@ Function Update-Figma {
     }
 
     If (-Not $Present) {
-        Start-Process "$Starter" ; Start-Sleep 8 ; Stop-Process -Name "Figma" -EA SI ; Stop-Process -Name "figma_agent" -EA SI ; Start-Sleep 4
+        Start-Sleep 4 ; Start-Process "$Starter" ; Start-Sleep 8
+        Stop-Process -Name "Figma" -EA SI ; Stop-Process -Name "figma_agent" -EA SI ; Start-Sleep 4
         $Configs = Get-Content "$Env:AppData\Figma\settings.json" | ConvertFrom-Json
         Try { $Configs.showFigmaInMenuBar = $False } Catch { $Configs | Add-Member -Type NoteProperty -Name "showFigmaInMenuBar" -Value $False }
         $Configs | ConvertTo-Json | Set-Content "$Env:AppData\Figma\settings.json"
@@ -246,7 +247,6 @@ Function Update-JetbrainsPlugin {
             If ([Version] "$Minimum" -Le "$Release" -And "$Release" -Le "$Maximum") {
                 $Address = $Content["$J"].file.Replace("`"", "")
                 $Address = "https://plugins.jetbrains.com/files/$Address"
-                $Fetched = Invoke-Fetcher "$Address"
                 $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
                 (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
                 Update-Nanazip ; Start-Process "7z.exe" "x `"$Fetched`" -o`"$Plugins`" -y -bso0 -bsp0" -WindowStyle Hidden -Wait
