@@ -1,3 +1,32 @@
+Function Update-LnkFile {
+
+	Param(
+		[String] $LnkFile,
+		[String] $Starter,
+		[String] $ArgList,
+		[String] $Message,
+		[String] $Picture,
+		[String] $WorkDir,
+		[Switch] $AsAdmin
+	)
+
+	$Wscript = New-Object -ComObject WScript.Shell
+	$Element = $Wscript.CreateShortcut("$LnkFile")
+	If ($Starter) { $Element.TargetPath = "$Starter" }
+	If ($ArgList) { $Element.Arguments = "$ArgList" }
+	If ($Message) { $Element.Description = "$Message" }
+	$Element.IconLocation = If ($Picture -And (Test-Path "$Picture")) { "$Picture" } Else { "$Starter" }
+	$Element.WorkingDirectory = If ($WorkDir -And (Test-Path "$WorkDir")) { "$WorkDir" } Else { Split-Path "$Starter" }
+	$Element.Save()
+
+	If ($AsAdmin) { 
+		$Content = [IO.File]::ReadAllBytes("$LnkFile")
+		$Content[0x15] = $Content[0x15] -Bor 0x20
+		[IO.File]::WriteAllBytes("$LnkFile", $Content)
+	}
+
+}
+
 Function Update-SysPath {
 
 	Param (
@@ -102,7 +131,7 @@ Function Update-Chromium {
 	)
 
 	$Starter = "$Env:ProgramFiles\Chromium\Application\chrome.exe"
-	$Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
+	$Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString().Replace(".0", "") } Catch { "0.0.0.0" }
 	$Present = $Current -Ne "0.0.0.0"
 
 	$Address = "https://api.github.com/repos/macchrome/winchrome/releases/latest"
@@ -245,6 +274,14 @@ Function Update-Chromium {
 
 	Update-ChromiumExtension "https://github.com/iamadamdev/bypass-paywalls-chrome/archive/master.zip"
 
+	[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+	$Address = "https://raw.githubusercontent.com/DanysysTeam/PS-SFTA/master/SFTA.ps1"
+	Invoke-Expression ((New-Object Net.WebClient).DownloadString("$Address"))
+	$FtaList = @(".htm", ".html", ".shtml", ".svg", ".xht", ".xhtml")
+	Foreach ($Element In $FtaList) { Set-FTA "ChromiumHTM" "$Element" }
+	$PtaList = @("ftp", "http", "https")
+	Foreach ($Element In $PtaList) { Set-PTA "ChromiumHTM" "$Element" }
+
 }
 
 Function Update-ChromiumExtension {
@@ -259,14 +296,14 @@ Function Update-ChromiumExtension {
 		If ($Payload -Like "http*") {
 			$Address = "$Payload"
 			$Package = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
-			(New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
+			(New-Object Net.WebClient).DownloadFile("$Address", "$Package")
 		}
 		Else {
 			$Version = Try { (Get-Item "$Starter" -EA SI).VersionInfo.FileVersion.ToString() } Catch { "0.0.0.0" }
 			$Address = "https://clients2.google.com/service/update2/crx?response=redirect&acceptformat=crx2,crx3"
 			$Address = "${Address}&prodversion=${Version}&x=id%3D${Payload}%26installsource%3Dondemand%26uc"
 			$Package = Join-Path "$Env:Temp" "$Payload.crx"
-			(New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
+			(New-Object Net.WebClient).DownloadFile("$Address", "$Package")
 		}
 		If ($Null -Ne $Package -And (Test-Path "$Package")) {
 			Add-Type -AssemblyName System.Windows.Forms
@@ -520,6 +557,110 @@ Function Update-JetbrainsPlugin {
 
 }
 
+Function Update-JoalDesktop {
+
+	$Starter = "$Env:LocalAppData\Programs\joal-desktop\JoalDesktop.exe"
+	$Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
+	$Present = $Current -Ne "0.0.0.0"
+
+	$Address = "https://api.github.com/repos/anthonyraymond/joal-desktop/releases/latest"
+	$Version = [Regex]::Match((Invoke-WebRequest "$Address" | ConvertFrom-Json).tag_name, "[\d.]+").Value
+	$Updated = [Version] "$Current" -Ge [Version] "$Version"
+
+	If (-Not $Updated) {
+		$Results = (Invoke-WebRequest "$Address" | ConvertFrom-Json).assets
+		$Address = $Results.Where( { $_.browser_download_url -Like "*win-x64.exe" } ).browser_download_url
+		$Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
+		(New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
+		Invoke-Gsudo { Start-Process "$Using:Fetched" "/S" -Wait }
+		Start-Sleep 4
+		Remove-Item "$Env:Public\Desktop\Joal*.lnk"
+		Remove-Item "$Env:UserProfile\Desktop\Joal*.lnk"
+	}
+
+}
+
+Function Update-Keepassxc {
+
+	$Starter = "$Env:ProgramFiles\KeePassXC\KeePassXC.exe"
+	$Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
+	$Present = $Current -Ne "0.0.0.0"
+
+	$Address = "https://api.github.com/repos/keepassxreboot/keepassxc/releases/latest"
+	$Version = [Regex]::Match((Invoke-WebRequest "$Address" | ConvertFrom-Json).tag_name, "[\d.]+").Value
+	$Updated = [Version] "$Current" -Ge [Version] "$Version"
+
+	If (-Not $Updated) {
+		$Results = (Invoke-WebRequest "$Address" | ConvertFrom-Json).assets
+		$Address = $Results.Where( { $_.browser_download_url -Like "*Win64.msi" } ).browser_download_url
+		$Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
+		(New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
+		Invoke-Gsudo { Start-Process "msiexec" "/i `"$Using:Fetched`" /qn" -Wait }
+		Start-Sleep 4
+		Remove-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Name "KeePassXC" -EA SI
+	}
+
+}
+
+Function Update-Mambaforge {
+
+	$Deposit = "$Env:LocalAppData\Programs\Mambaforge"
+	$Present = Test-Path "$Deposit\Scripts\mamba.exe"
+
+	If (-Not $Present) {
+		$Address = "https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-Windows-x86_64.exe"
+		$Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
+		(New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
+		$ArgList = "/S /InstallationType=JustMe /RegisterPython=0 /AddToPath=1 /NoRegistry=1 /D=$Deposit"
+		Start-Process "$Fetched" "$ArgList" -Wait
+		Start-Sleep 4
+	}
+
+	Update-SysPath "$Deposit\Scripts" "User"
+	conda config --set auto_activate_base false
+	conda update --all -y
+
+}
+
+Function Update-Mpv {
+
+	$Starter = "$Env:LocalAppData\Programs\Mpv\mpv.exe"
+
+	$Address = "https://sourceforge.net/projects/mpv-player-windows/files/64bit"
+	$Results = [Regex]::Matches((Invoke-WebRequest "$Address"), "mpv-x86_64-([\d]{8})-git-([\a-z]{7})\.7z")
+	$Version = $Results.Groups[1].Value
+	$Release = $results.Groups[2].Value
+	$Updated = Test-Path "$Starter" -NewerThan (Get-Date).AddDays(-10)
+    
+	If (-Not $Updated) {
+		$Address = "https://sourceforge.net/projects/mpv-player-windows/files/64bit/mpv-x86_64-$Version-git-$Release.7z"
+		$Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
+		(New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
+		Update-Nanazip ; $Deposit = Split-Path "$Starter" ; New-Item "$Deposit" -ItemType Directory -EA SI
+		Start-Process "7z.exe" "x `"$Fetched`" -o`"$Deposit`" -y -bso0 -bsp0" -WindowStyle Hidden -Wait ; Start-Sleep 4
+		$LnkFile = "$Env:AppData\Microsoft\Windows\Start Menu\Programs\Mpv.lnk"
+		Update-LnkFile -LnkFile "$LnkFile" -Starter "$Starter"
+		Start-Sleep 4 ; Invoke-Gsudo { & "$Using:Deposit\installer\mpv-install.bat" }
+		Start-Sleep 4 ; Stop-Process -Name "SystemSettings" -EA SI
+	}
+
+	$Configs = Join-Path "$(Split-Path "$Starter")" "mpv\mpv.conf"
+	Set-Content -Path "$Configs" -Value "profile=gpu-hq"
+	Add-Content -Path "$Configs" -Value "vo=gpu-next"
+	Add-Content -Path "$Configs" -Value "hwdec=auto-copy"
+	Add-Content -Path "$Configs" -Value "keep-open=yes"
+	Add-Content -Path "$Configs" -Value "ytdl-format=`"bestvideo[height<=?2160]+bestaudio/best`""
+	Add-Content -Path "$Configs" -Value "[protocol.http]"
+	Add-Content -Path "$Configs" -Value "force-window=immediate"
+	Add-Content -Path "$Configs" -Value "hls-bitrate=max"
+	Add-Content -Path "$Configs" -Value "cache=yes"
+	Add-Content -Path "$Configs" -Value "[protocol.https]"
+	Add-Content -Path "$Configs" -Value "profile=protocol.http"
+	Add-Content -Path "$Configs" -Value "[protocol.ytdl]"
+	Add-Content -Path "$Configs" -Value "profile=protocol.http"
+
+}
+
 Function Update-Nanazip {
 
 	$Current = (Get-Package "*nanazip*" -EA SI).Version
@@ -635,6 +776,19 @@ Write-Host "$Loading" -FO DarkYellow -NoNewline
 $Correct = (Update-Gsudo) -And -Not (gsudo cache on -d -1 2>&1).ToString().Contains("Error")
 If (-Not $Correct) { Write-Host "$Failure" -FO Red ; Write-Host ; Exit }
 
+# Update-AndroidStudio
+# Update-Chromium
+# Update-Git -GitMail 72373746+sharpordie@users.noreply.github.com -GitUser sharpordie
+# Update-Vscode
+# Update-Flutter
+# Update-Figma
+# Update-Jdownloader
+# Update-JoalDesktop
+# Update-Keepassxc
+# Update-Mambaforge
+Update-Mpv
+Exit
+
 # Handle elements
 $Factors = @(
 	"Update-AndroidStudio"
@@ -645,6 +799,10 @@ $Factors = @(
 	"Update-Flutter"
 	"Update-Figma"
 	"Update-Jdownloader"
+	"Update-JoalDesktop"
+	"Update-Keepassxc"
+	"Update-Mambaforge"
+	"Update-Mpv"
 )
 
 # Output progress
