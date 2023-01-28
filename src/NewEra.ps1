@@ -776,19 +776,6 @@ Write-Host "$Loading" -FO DarkYellow -NoNewline
 $Correct = (Update-Gsudo) -And -Not (gsudo cache on -d -1 2>&1).ToString().Contains("Error")
 If (-Not $Correct) { Write-Host "$Failure" -FO Red ; Write-Host ; Exit }
 
-# Update-AndroidStudio
-# Update-Chromium
-# Update-Git -GitMail 72373746+sharpordie@users.noreply.github.com -GitUser sharpordie
-# Update-Vscode
-# Update-Flutter
-# Update-Figma
-# Update-Jdownloader
-# Update-JoalDesktop
-# Update-Keepassxc
-# Update-Mambaforge
-Update-Mpv
-Exit
-
 # Handle elements
 $Factors = @(
 	"Update-AndroidStudio"
