@@ -63,7 +63,7 @@ Function Update-AndroidCmdline {
 		Update-Nanazip ; $Extract = [IO.Directory]::CreateDirectory("$Env:Temp\$([Guid]::NewGuid().Guid)").FullName
 		Start-Process "7z.exe" "x `"$Fetched`" -o`"$Extract`" -y -bso0 -bsp0" -WindowStyle Hidden -Wait
 		Start-Sleep 4 ; New-Item "$SdkHome" -ItemType Directory -EA SI
-		Update-Temurin ; $Manager = "$Extract\cmdline-tools\bin\sdkmanager.bat"
+		Update-Openjdk ; $Manager = "$Extract\cmdline-tools\bin\sdkmanager.bat"
 		Write-Output yes | & "$Manager" --sdk_root="$SdkHome" "cmdline-tools;latest"
 		Start-Sleep 4
 	}
@@ -257,8 +257,8 @@ Function Update-Chromium {
 		Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("^+b")
 		Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("%{F4}") ; Start-Sleep 2
 
-		Remove-Item "$Env:Public\Desktop\Chromium*.lnk"
-		Remove-Item "$Env:UserProfile\Desktop\Chromium*.lnk"
+		Remove-Item "$Env:Public\Desktop\Chromium*.lnk" -EA SI
+		Remove-Item "$Env:UserProfile\Desktop\Chromium*.lnk" -EA SI
 
 		$Address = "https://api.github.com/repos/NeverDecaf/chromium-web-store/releases/latest"
 		$Results = (Invoke-WebRequest "$Address" | ConvertFrom-Json).assets
@@ -277,7 +277,7 @@ Function Update-Chromium {
 	[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
 	$Address = "https://raw.githubusercontent.com/DanysysTeam/PS-SFTA/master/SFTA.ps1"
 	Invoke-Expression ((New-Object Net.WebClient).DownloadString("$Address"))
-	$FtaList = @(".htm", ".html", ".shtml", ".svg", ".xht", ".xhtml")
+	$FtaList = @(".htm", ".html", ".pdf", ".shtml", ".svg", ".xht", ".xhtml")
 	Foreach ($Element In $FtaList) { Set-FTA "ChromiumHTM" "$Element" }
 	$PtaList = @("ftp", "http", "https")
 	Foreach ($Element In $PtaList) { Set-PTA "ChromiumHTM" "$Element" }
@@ -345,6 +345,28 @@ Function Update-ChromiumExtension {
 			}
 		}
 	}
+
+}
+
+Function Update-DockerDesktop {
+
+    $Starter = "$Env:ProgramFiles\Docker\Docker\Docker Desktop.exe"
+    $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
+	$Present = $Current -Ne "0.0.0.0"
+
+    $Address = "https://community.chocolatey.org/packages/docker-desktop"
+	$Version = [Regex]::Matches((Invoke-WebRequest "$Address"), "Docker Desktop ([\d.]+)</title>").Groups[1].Value
+    $Updated = [Version] "$Current" -Ge [Version] "$Version"
+
+    If (-Not $Updated) {
+        $Address = "https://desktop.docker.com/win/stable/Docker Desktop Installer.exe"
+		$Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
+		(New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
+        Invoke-Gsudo { Start-Process "$Using:Fetched" "install --quiet --accept-license" -Wait }
+		Start-Sleep 4
+		Remove-Item "$Env:Public\Desktop\Docker*.lnk" -EA SI
+		Remove-Item "$Env:UserProfile\Desktop\Docker*.lnk" -EA SI
+    }
 
 }
 
@@ -486,8 +508,8 @@ Function Update-Jdownloader {
 		(New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
 		Invoke-Gsudo { Start-Process "$Using:Fetched" "-q" -Wait }
 		Start-Sleep 4
-		Remove-Item "$Env:Public\Desktop\JDownloader*.lnk"
-		Remove-Item "$Env:UserProfile\Desktop\JDownloader*.lnk"
+		Remove-Item "$Env:Public\Desktop\JDownloader*.lnk" -EA SI
+		Remove-Item "$Env:UserProfile\Desktop\JDownloader*.lnk" -EA SI
 	}
 
 	If (-Not $Present) {
@@ -574,8 +596,8 @@ Function Update-JoalDesktop {
 		(New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
 		Invoke-Gsudo { Start-Process "$Using:Fetched" "/S" -Wait }
 		Start-Sleep 4
-		Remove-Item "$Env:Public\Desktop\Joal*.lnk"
-		Remove-Item "$Env:UserProfile\Desktop\Joal*.lnk"
+		Remove-Item "$Env:Public\Desktop\Joal*.lnk" -EA SI
+		Remove-Item "$Env:UserProfile\Desktop\Joal*.lnk" -EA SI
 	}
 
 }
@@ -682,27 +704,25 @@ Function Update-Nanazip {
 
 }
 
-Function Update-Temurin {
+Function Update-Openjdk{
 
-	$Current = (Get-Package "*temurin*" -EA SI).Version
+	$Current = (Get-Package "*microsoft*openjdk*" -EA SI).Version
 	If ($Null -Eq $Current) { $Current = "0.0.0.0" }
 	$Present = $Current -Ne "0.0.0.0"
 
-	$Address = "https://api.github.com/repos/adoptium/temurin19-binaries/releases/latest"
-	$Version = [Regex]::Match((Invoke-WebRequest "$Address" | ConvertFrom-Json).tag_name, "[\d.]+").Value
+	$Address = "https://learn.microsoft.com/en-us/java/openjdk/download"
+	$Version = [Regex]::Matches((Invoke-WebRequest "$Address"), "OpenJDK ([\d.]+) LTS").Groups[1].Value
 	$Updated = [Version] "$Current" -Ge [Version] "$Version"
 
 	If (-Not $Updated) {
-		$Results = (Invoke-WebRequest "$Address" | ConvertFrom-Json).assets
-		$Address = $Results.Where( { $_.browser_download_url -Like "*jdk_x64_windows*.msi" } ).browser_download_url
+		$Address = "https://aka.ms/download-jdk/microsoft-jdk-$Version-windows-x64.msi"
 		$Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
 		(New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
-		$ArgList = If ($Present) { "REINSTALL=ALL REINSTALLMODE=amus /quiet" } Else { "INSTALLLEVEL=1 /quiet" }
-		Invoke-Gsudo { Start-Process "msiexec" "/i `"$Using:Fetched`" $Using:ArgList" -Wait }
+		Invoke-Gsudo { Start-Process "msiexec" "/i `"$Using:Fetched`" INSTALLLEVEL=3 /quiet" -Wait }
 		Start-Sleep 4
 	}
 
-	$Deposit = (Get-Item "$Env:ProgramFiles\Eclipse Adoptium\jdk-*\bin").FullName
+	$Deposit = (Get-Item "$Env:ProgramFiles\Microsoft\jdk-*\bin").FullName
 	Update-SysPath "$Deposit" "Process"
 
 }
@@ -755,6 +775,22 @@ Function Update-VscodeExtension {
 
 }
 
+Function Update-YtDlg {
+
+	$Deposit = "$Env:LocalAppData\Programs\YtDlp"
+    $Starter = "$Deposit\yt-dlp.exe"
+    $Updated = Test-Path "$Starter" -NewerThan (Get-Date).AddDays(-10)
+
+    If (-Not $Updated) {
+        $Address = "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe"
+        New-Item "$Deposit" -ItemType Directory -EA SI
+		(New-Object Net.WebClient).DownloadFile("$Address", "$Starter")
+    }
+
+	Update-SysPath "$Deposit" "Machine"
+
+}
+
 # Change headline
 $Current = "$($Script:MyInvocation.MyCommand.Path)"
 $Host.UI.RawUI.WindowTitle = (Get-Item "$Current").BaseName
@@ -783,6 +819,7 @@ $Factors = @(
 	"Update-Git -GitMail 72373746+sharpordie@users.noreply.github.com -GitUser sharpordie"
 	"Update-Vscode"
 
+	"Update-DockerDesktop"
 	"Update-Flutter"
 	"Update-Figma"
 	"Update-Jdownloader"
@@ -790,6 +827,7 @@ $Factors = @(
 	"Update-Keepassxc"
 	"Update-Mambaforge"
 	"Update-Mpv"
+	"Update-YtDlg"
 )
 
 # Output progress
