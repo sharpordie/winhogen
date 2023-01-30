@@ -350,23 +350,23 @@ Function Update-ChromiumExtension {
 
 Function Update-DockerDesktop {
 
-    $Starter = "$Env:ProgramFiles\Docker\Docker\Docker Desktop.exe"
-    $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
+	$Starter = "$Env:ProgramFiles\Docker\Docker\Docker Desktop.exe"
+	$Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
 	$Present = $Current -Ne "0.0.0.0"
 
-    $Address = "https://community.chocolatey.org/packages/docker-desktop"
+	$Address = "https://community.chocolatey.org/packages/docker-desktop"
 	$Version = [Regex]::Matches((Invoke-WebRequest "$Address"), "Docker Desktop ([\d.]+)</title>").Groups[1].Value
-    $Updated = [Version] "$Current" -Ge [Version] "$Version"
+	$Updated = [Version] "$Current" -Ge [Version] "$Version"
 
-    If (-Not $Updated) {
-        $Address = "https://desktop.docker.com/win/stable/Docker Desktop Installer.exe"
+	If (-Not $Updated) {
+		$Address = "https://desktop.docker.com/win/stable/Docker Desktop Installer.exe"
 		$Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
 		(New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
-        Invoke-Gsudo { Start-Process "$Using:Fetched" "install --quiet --accept-license" -Wait }
+		Invoke-Gsudo { Start-Process "$Using:Fetched" "install --quiet --accept-license" -Wait }
 		Start-Sleep 4
 		Remove-Item "$Env:Public\Desktop\Docker*.lnk" -EA SI
 		Remove-Item "$Env:UserProfile\Desktop\Docker*.lnk" -EA SI
-    }
+	}
 
 }
 
@@ -458,7 +458,7 @@ Function Update-Git {
 
 	Update-SysPath "$Env:ProgramFiles\Git\cmd" "Process"
 	If (-Not [String]::IsNullOrWhiteSpace($GitMail)) { git config --global user.email "$GitMail" }
-	If (-not [String]::IsNullOrWhiteSpace($GitUser)) { git config --global user.name "$GitUser" }
+	If (-Not [String]::IsNullOrWhiteSpace($GitUser)) { git config --global user.name "$GitUser" }
 	git config --global http.postBuffer 1048576000
 	git config --global init.defaultBranch "$Default"
 	
@@ -704,7 +704,7 @@ Function Update-Nanazip {
 
 }
 
-Function Update-Openjdk{
+Function Update-Openjdk {
 
 	$Current = (Get-Package "*microsoft*openjdk*" -EA SI).Version
 	If ($Null -Eq $Current) { $Current = "0.0.0.0" }
@@ -778,86 +778,92 @@ Function Update-VscodeExtension {
 Function Update-YtDlg {
 
 	$Deposit = "$Env:LocalAppData\Programs\YtDlp"
-    $Starter = "$Deposit\yt-dlp.exe"
-    $Updated = Test-Path "$Starter" -NewerThan (Get-Date).AddDays(-10)
+	$Starter = "$Deposit\yt-dlp.exe"
+	$Updated = Test-Path "$Starter" -NewerThan (Get-Date).AddDays(-10)
 
-    If (-Not $Updated) {
-        $Address = "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe"
-        New-Item "$Deposit" -ItemType Directory -EA SI
+	If (-Not $Updated) {
+		$Address = "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe"
+		New-Item "$Deposit" -ItemType Directory -EA SI
 		(New-Object Net.WebClient).DownloadFile("$Address", "$Starter")
-    }
+	}
 
 	Update-SysPath "$Deposit" "Machine"
 
 }
 
-# Change headline
-$Current = "$($Script:MyInvocation.MyCommand.Path)"
-$Host.UI.RawUI.WindowTitle = (Get-Item "$Current").BaseName
+Function Main {
 
-# Output greeting
-Clear-Host ; $ProgressPreference = "SilentlyContinue"
-Write-Host "+----------------------------------------------------------+"
-Write-Host "|                                                          |"
-Write-Host "|  > WINHOGEN (NEW)                                        |"
-Write-Host "|                                                          |"
-Write-Host "|  > CONFIGURATION SCRIPT FOR WINDOWS 11                   |"
-Write-Host "|                                                          |"
-Write-Host "+----------------------------------------------------------+"
+	# Change headline
+	$Current = "$($Script:MyInvocation.MyCommand.Path)"
+	$Host.UI.RawUI.WindowTitle = (Get-Item "$Current").BaseName
 
-# Remove security
-$Loading = "`nTHE UPDATING DEPENDENCIES PROCESS HAS LAUNCHED"
-$Failure = "`rTHE UPDATING DEPENDENCIES PROCESS WAS CANCELED"
-Write-Host "$Loading" -FO DarkYellow -NoNewline
-$Correct = (Update-Gsudo) -And -Not (gsudo cache on -d -1 2>&1).ToString().Contains("Error")
-If (-Not $Correct) { Write-Host "$Failure" -FO Red ; Write-Host ; Exit }
+	# Output greeting
+	Clear-Host ; $ProgressPreference = "SilentlyContinue"
+	Write-Host "+----------------------------------------------------------+"
+	Write-Host "|                                                          |"
+	Write-Host "|  > WINHOGEN (NEW)                                        |"
+	Write-Host "|                                                          |"
+	Write-Host "|  > CONFIGURATION SCRIPT FOR WINDOWS 11                   |"
+	Write-Host "|                                                          |"
+	Write-Host "+----------------------------------------------------------+"
 
-# Handle elements
-$Factors = @(
-	"Update-AndroidStudio"
-	"Update-Chromium"
-	"Update-Git -GitMail 72373746+sharpordie@users.noreply.github.com -GitUser sharpordie"
-	"Update-Vscode"
+	# Remove security
+	$Loading = "`nTHE UPDATING DEPENDENCIES PROCESS HAS LAUNCHED"
+	$Failure = "`rTHE UPDATING DEPENDENCIES PROCESS WAS CANCELED"
+	Write-Host "$Loading" -FO DarkYellow -NoNewline
+	$Correct = (Update-Gsudo) -And -Not (gsudo cache on -d -1 2>&1).ToString().Contains("Error")
+	If (-Not $Correct) { Write-Host "$Failure" -FO Red ; Write-Host ; Exit }
 
-	"Update-DockerDesktop"
-	"Update-Flutter"
-	"Update-Figma"
-	"Update-Jdownloader"
-	"Update-JoalDesktop"
-	"Update-Keepassxc"
-	"Update-Mambaforge"
-	"Update-Mpv"
-	"Update-YtDlg"
-)
+	# Handle elements
+	$Factors = @(
+		"Update-AndroidStudio"
+		"Update-Chromium"
+		"Update-Git -GitMail 72373746+sharpordie@users.noreply.github.com -GitUser sharpordie"
+		"Update-Vscode"
 
-# Output progress
-$Maximum = (60 - 20) * -1
-$Shaping = "`r{0,$Maximum}{1,-3}{2,-6}{3,-3}{4,-8}"
-$Heading = "$Shaping" -F "FUNCTION", " ", "STATUS", " ", "DURATION"
-Write-Host "$Heading"
-Foreach ($Element In $Factors) {
-	$Started = Get-Date
-	$Running = $Element.Split(' ')[0].ToUpper()
-	$Shaping = "`n{0,$Maximum}{1,-3}{2,-6}{3,-3}{4,-8}"
-	$Loading = "$Shaping" -F "$Running", "", "ACTIVE", "", "--:--:--"
-	Write-Host "$Loading" -ForegroundColor DarkYellow -NoNewline
-	Try {
-		Invoke-Expression $Element *> $Null
-		$Elapsed = "{0:hh}:{0:mm}:{0:ss}" -F ($(Get-Date) - $Started)
-		$Shaping = "`r{0,$Maximum}{1,-3}{2,-6}{3,-3}{4,-8}"
-		$Success = "$Shaping" -F "$Running", "", "WORKED", "", "$Elapsed"
-		Write-Host "$Success" -ForegroundColor Green -NoNewLine
+		"Update-DockerDesktop"
+		"Update-Flutter"
+		"Update-Figma"
+		"Update-Jdownloader"
+		"Update-JoalDesktop"
+		"Update-Keepassxc"
+		"Update-Mambaforge"
+		"Update-Mpv"
+		"Update-YtDlg"
+	)
+
+	# Output progress
+	$Maximum = (60 - 20) * -1
+	$Shaping = "`r{0,$Maximum}{1,-3}{2,-6}{3,-3}{4,-8}"
+	$Heading = "$Shaping" -F "FUNCTION", " ", "STATUS", " ", "DURATION"
+	Write-Host "$Heading"
+	Foreach ($Element In $Factors) {
+		$Started = Get-Date
+		$Running = $Element.Split(' ')[0].ToUpper()
+		$Shaping = "`n{0,$Maximum}{1,-3}{2,-6}{3,-3}{4,-8}"
+		$Loading = "$Shaping" -F "$Running", "", "ACTIVE", "", "--:--:--"
+		Write-Host "$Loading" -ForegroundColor DarkYellow -NoNewline
+		Try {
+			Invoke-Expression $Element *> $Null
+			$Elapsed = "{0:hh}:{0:mm}:{0:ss}" -F ($(Get-Date) - $Started)
+			$Shaping = "`r{0,$Maximum}{1,-3}{2,-6}{3,-3}{4,-8}"
+			$Success = "$Shaping" -F "$Running", "", "WORKED", "", "$Elapsed"
+			Write-Host "$Success" -ForegroundColor Green -NoNewLine
+		}
+		Catch {
+			$Elapsed = "{0:hh}:{0:mm}:{0:ss}" -F ($(Get-Date) - $Started)
+			$Shaping = "`r{0,$Maximum}{1,-3}{2,-6}{3,-3}{4,-8}"
+			$Failure = "$Shaping" -F "$Running", "", "FAILED", "", "$Elapsed"
+			Write-Host "$Failure" -ForegroundColor Red -NoNewLine
+		}
 	}
-	Catch {
-		$Elapsed = "{0:hh}:{0:mm}:{0:ss}" -F ($(Get-Date) - $Started)
-		$Shaping = "`r{0,$Maximum}{1,-3}{2,-6}{3,-3}{4,-8}"
-		$Failure = "$Shaping" -F "$Running", "", "FAILED", "", "$Elapsed"
-		Write-Host "$Failure" -ForegroundColor Red -NoNewLine
-	}
+
+	# Revert security
+	Invoke-Expression "gsudo -k" *> $Null
+
+	# Output new line
+	Write-Host "`n"
+
 }
 
-# Revert security
-Invoke-Expression "gsudo -k" *> $Null
-
-# Output new line
-Write-Host "`n"
+Main
