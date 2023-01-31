@@ -1,3 +1,5 @@
+#Region Services
+
 Function Assert-Pending {
 
 	If (Get-ChildItem "HKLM:\Software\Microsoft\Windows\CurrentVersion\Component Based Servicing\RebootPending" -EA Ignore) { Return $True }
@@ -18,10 +20,20 @@ Function Assert-Pending {
 Function Enable-Feature {
 
 	Param(
-		[ValidateSet("Uac", "Wsl")] [String] $Feature
+		[ValidateSet("HyperV", "Uac", "Wsl")] [String] $Feature
 	)
 
 	Switch ($Feature) {
+		"HyperV" {
+			$Enabled = Invoke-Gsudo { (Get-WindowsOptionalFeature -FeatureName Microsoft-Hyper-V-All -Online).State -Eq "Enabled" }
+			If (-Not $Enabled) {
+				$Address = "https://cdn3.bluestacks.com/support_files/HD-EnableHyperV.exe"
+				$Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
+				(New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
+				Invoke-Gsudo { Start-Process "$Using:Fetched" ; Start-Sleep 10 ; Stop-Process -Name "HD-EnableHyperV" }
+				If (Assert-Pending -Eq $True) { Invoke-Restart }
+			}
+		}
 		"Uac" {
 			$Created = [IO.Path]::ChangeExtension([IO.Path]::GetTempFileName(), "ps1")
 			[IO.File]::WriteAllText("$Created", @(
@@ -33,15 +45,14 @@ Function Enable-Feature {
 			Remove-Item "$Created" -Force
 		}
 		"Wsl" {
-			$Present = Invoke-Gsudo { (Get-WindowsOptionalFeature -FeatureName Microsoft-Windows-Subsystem-Linux -Online).State -Eq "Enabled" }
-			If (-Not $Present) {
+			$Enabled = Invoke-Gsudo { (Get-WindowsOptionalFeature -FeatureName Microsoft-Windows-Subsystem-Linux -Online).State -Eq "Enabled" }
+			If (-Not $Enabled) {
 				Invoke-Gsudo { Enable-WindowsOptionalFeature -Online -FeatureName VirtualMachinePlatform -All -NoRestart }
 				Invoke-Gsudo { Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux -All -NoRestart }
+				If (Assert-Pending -Eq $True) { Invoke-Restart }
 			}
 		}
 	}
-
-	If (Assert-Pending -Eq $True) { Invoke-Restart }
 
 }
 
@@ -70,10 +81,15 @@ Function Remove-Feature {
 	)
 
 	Switch ($Feature) {
-		"HyperV" { 
-			$Address = "https://cdn3.bluestacks.com/support_files/HD-DisableHyperV_native_v2.exe"
-			$Fetched = Invoke-Fetcher "$Address"
-			Invoke-Gsudo { Start-Process "$Using:Fetched" ; Start-Sleep 10 ; Stop-Process -Name "HD-DisableHyperV" }
+		"HyperV" {
+			$Enabled = Invoke-Gsudo { (Get-WindowsOptionalFeature -FeatureName Microsoft-Hyper-V-All -Online).State -Eq "Enabled" }
+			If ($Enabled) {
+				$Address = "https://cdn3.bluestacks.com/support_files/HD-DisableHyperV_native_v2.exe"
+				$Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
+				(New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
+				Invoke-Gsudo { Start-Process "$Using:Fetched" ; Start-Sleep 10 ; Stop-Process -Name "HD-DisableHyperV" }
+				If (Assert-Pending -Eq $True) { Invoke-Restart }
+			}
 		}
 		"Uac" {
 			$Created = [IO.Path]::ChangeExtension([IO.Path]::GetTempFileName(), "ps1")
@@ -86,8 +102,6 @@ Function Remove-Feature {
 			Remove-Item "$Created" -Force
 		}
 	}
-
-	If (Assert-Pending -Eq $True) { Invoke-Restart }
 
 }
 
@@ -120,6 +134,27 @@ Function Update-LnkFile {
 
 }
 
+Function Update-PowPlan {
+
+	Param (
+		[ValidateSet("Balanced", "High", "Power", "Ultimate", "Ultra")] [String] $Payload = "Balanced"
+	)
+
+	$Program = "C:\Windows\System32\powercfg.exe"
+	$Picking = (Invoke-Expression "$Program /l" | ForEach-Object { If ($_.Contains("($Payload")) { $_.Split()[3] } })
+	If ([String]::IsNullOrEmpty("$Picking") -And $Payload -Eq "Ultra") { Return }
+	If ([String]::IsNullOrEmpty("$Picking")) { Start-Process "$Program" "/duplicatescheme e9a42b02-d5df-448d-aa00-03f14749eb61" -NoNewWindow -Wait }
+	$Picking = (Invoke-Expression "$Program /l" | ForEach-Object { If ($_.Contains("($Payload")) { $_.Split()[3] } })
+	Start-Process "$Program" "/s $Picking" -NoNewWindow -Wait
+
+	If ($Payload -Eq "Ultimate") {
+		$Desktop = $Null -Eq (Get-WmiObject Win32_SystemEnclosure -ComputerName "localhost" | Where-Object ChassisTypes -In "{9}", "{10}", "{14}")
+		$Desktop = $Desktop -Or $Null -Eq (Get-WmiObject Win32_Battery -ComputerName "localhost")
+		If (-Not $Desktop) { Start-Process "$Program" "/setacvalueindex $Picking sub_buttons lidaction 000" -NoNewWindow -Wait }
+	}
+
+}
+
 Function Update-SysPath {
 
 	Param (
@@ -139,6 +174,8 @@ Function Update-SysPath {
 
 }
 
+#EndRegion
+
 Function Update-AndroidCmdline {
 
 	$SdkHome = "$Env:LocalAppData\Android\Sdk"
@@ -155,7 +192,7 @@ Function Update-AndroidCmdline {
 		Start-Process "7z.exe" "x `"$Fetched`" -o`"$Extract`" -y -bso0 -bsp0" -WindowStyle Hidden -Wait
 		Start-Sleep 4 ; New-Item "$SdkHome" -ItemType Directory -EA SI
 		Update-Openjdk ; $Manager = "$Extract\cmdline-tools\bin\sdkmanager.bat"
-		Write-Output yes | & "$Manager" --sdk_root="$SdkHome" "cmdline-tools;latest"
+		Write-Output $("y`n" * 10) | & "$Manager" --sdk_root="$SdkHome" "cmdline-tools;latest"
 		Start-Sleep 4
 	}
 
@@ -187,15 +224,15 @@ Function Update-AndroidStudio {
 
 	If (-Not $Present) {
 		Update-AndroidCmdline
-		Write-Output yes | sdkmanager "build-tools;33.0.1"
-		Write-Output yes | sdkmanager "emulator"
-		Write-Output yes | sdkmanager "extras;intel;Hardware_Accelerated_Execution_Manager"
-		Write-Output yes | sdkmanager "platform-tools"
-		Write-Output yes | sdkmanager "platforms;android-33"
-		Write-Output yes | sdkmanager "platforms;android-33-ext4"
-		Write-Output yes | sdkmanager "sources;android-33"
-		Write-Output yes | sdkmanager "system-images;android-33;google_apis;x86_64"
-		Write-Output yes | sdkmanager --licenses
+		Write-Output $("y`n" * 10) | sdkmanager "build-tools;33.0.1"
+		Write-Output $("y`n" * 10) | sdkmanager "emulator"
+		Write-Output $("y`n" * 10) | sdkmanager "extras;intel;Hardware_Accelerated_Execution_Manager"
+		Write-Output $("y`n" * 10) | sdkmanager "platform-tools"
+		Write-Output $("y`n" * 10) | sdkmanager "platforms;android-33"
+		Write-Output $("y`n" * 10) | sdkmanager "platforms;android-33-ext4"
+		Write-Output $("y`n" * 10) | sdkmanager "sources;android-33"
+		Write-Output $("y`n" * 10) | sdkmanager "system-images;android-33;google_apis;x86_64"
+		Write-Output $("y`n" * 10) | sdkmanager --licenses
 		avdmanager create avd -n "Pixel_3_API_33" -d "pixel_3" -k "system-images;android-33;google_apis;x86_64"
 	}
 
@@ -519,7 +556,7 @@ Function Update-Flutter {
 
 	Update-SysPath "$Deposit\bin" "Machine"
 	flutter channel stable ; flutter precache ; flutter upgrade
-	Write-Output $("yes " * 10) | flutter doctor --android-licenses
+	Write-Output $("y`n" * 10) | flutter doctor --android-licenses
 	dart --disable-analytics ; flutter config --no-analytics
 
 	$Browser = "$Env:ProgramFiles\Chromium\Application\chrome.exe"
@@ -756,6 +793,36 @@ Function Update-Mambaforge {
 
 }
 
+Function Update-Maui {
+
+	Update-VisualStudio2022
+	Update-VisualStudio2022Workload "Microsoft.VisualStudio.Workload.NetCrossPlat"
+
+	Invoke-Gsudo { [Environment]::SetEnvironmentVariable("DOTNET_CLI_TELEMETRY_OPTOUT", "1", "Machine") }
+	Invoke-Gsudo { [Environment]::SetEnvironmentVariable("DOTNET_NOLOGO", "1", "Machine") }
+
+	Enable-Feature "HyperV"
+	
+	$SdkHome = "${Env:ProgramFiles(x86)}\Android\android-sdk"
+	$Deposit = (Get-Item "$SdkHome\cmdline-tools\*\bin" -EA SI).FullName
+	If ($Null -Ne $Deposit) {
+		$Creator = "$Deposit\avdmanager.bat"
+		$Starter = "$Deposit\sdkmanager.bat"
+		Invoke-Gsudo { Write-Output $("y`n" * 10) | & "$Using:Starter" --sdk_root="$Using:SdkHome" "build-tools;31.0.0" }
+		Invoke-Gsudo { Write-Output $("y`n" * 10) | & "$Using:Starter" --sdk_root="$Using:SdkHome" "emulator" }
+		Invoke-Gsudo { Write-Output $("y`n" * 10) | & "$Using:Starter" --sdk_root="$Using:SdkHome" "extras;intel;Hardware_Accelerated_Execution_Manager" }
+		Invoke-Gsudo { Write-Output $("y`n" * 10) | & "$Using:Starter" --sdk_root="$Using:SdkHome" "platform-tools" }
+		Invoke-Gsudo { Write-Output $("y`n" * 10) | & "$Using:Starter" --sdk_root="$Using:SdkHome" "platforms;android-31" }
+		Invoke-Gsudo { Write-Output $("y`n" * 10) | & "$Using:Starter" --sdk_root="$Using:SdkHome" "system-images;android-31;google_apis;x86_64" }
+		Invoke-Gsudo { Write-Output $("y`n" * 10) | & "$Using:Starter" --sdk_root="$Using:SdkHome" --licenses }
+		& "$Creator" create avd -n "Pixel_3_API_31" -d "pixel_3" -k "system-images;android-31;google_apis;x86_64"
+	}
+
+	Update-VisualStudio2022Extension "MattLaceyLtd.MauiAppAccelerator"
+	Update-VisualStudio2022Extension "TeamXavalon.XAMLStyler2022"
+
+}
+
 Function Update-Mpv {
 
 	$Starter = "$Env:LocalAppData\Programs\Mpv\mpv.exe"
@@ -834,7 +901,7 @@ Function Update-Openjdk {
 		Start-Sleep 4
 	}
 
-	$Deposit = (Get-Item "$Env:ProgramFiles\Microsoft\jdk-*\bin").FullName
+	$Deposit = (Get-Item "$Env:ProgramFiles\Microsoft\jdk-*\bin" -EA SI).FullName
 	Update-SysPath "$Deposit" "Process"
 
 }
@@ -869,15 +936,17 @@ Function Update-Python {
 		Invoke-Gsudo { [Environment]::SetEnvironmentVariable("PYTHONDONTWRITEBYTECODE", "1", "Machine") }
 	}
 
-	New-Item "$Env:AppData\Python\Scripts" -ItemType Directory -EA SI
-	$Address = "https://install.python-poetry.org/"
-	$Fetched = Join-Path "$Env:Temp" "install-poetry.py"
-	(New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
-	Start-Process "python" "`"$Fetched`" --uninstall" -WindowStyle Hidden -Wait
-	Start-Process "python" "$Fetched" -WindowStyle Hidden -Wait
-	Update-SysPath "$Env:AppData\Python\Scripts" "Machine"
-	Start-Process "poetry" "config virtualenvs.in-project true" -WindowStyle Hidden -Wait
-	Start-Process "poetry" "self update" -WindowStyle Hidden -Wait
+	If (-Not $Updated) {
+		New-Item "$Env:AppData\Python\Scripts" -ItemType Directory -EA SI
+		$Address = "https://install.python-poetry.org/"
+		$Fetched = Join-Path "$Env:Temp" "install-poetry.py"
+		(New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
+		Start-Process "python" "`"$Fetched`" --uninstall" -WindowStyle Hidden -Wait
+		Start-Process "python" "$Fetched" -WindowStyle Hidden -Wait
+		Update-SysPath "$Env:AppData\Python\Scripts" "Machine"
+		Start-Process "poetry" "config virtualenvs.in-project true" -WindowStyle Hidden -Wait
+		Start-Process "poetry" "self update" -WindowStyle Hidden -Wait
+	}
 
 }
 
@@ -917,55 +986,168 @@ Function Update-Qbittorrent {
 
 }
 
+Function Update-VisualStudio2022 {
+
+	Param(
+		[String] $Deposit = "$Env:UserProfile\Projects",
+		[String] $Serials = "TD244-P4NB7-YQ6XK-Y8MMM-YWV2J",
+		[Switch] $Preview
+	)
+
+	$Adjunct = If ($Preview) { "Preview" } Else { "Professional" }
+	$Storage = "$Env:ProgramFiles\Microsoft Visual Studio\2022\$Adjunct"
+	$Starter = "$Storage\Common7\IDE\devenv.exe"
+	$Present = Test-Path "$Starter"
+	Update-VisualStudio2022Workload "Microsoft.VisualStudio.Workload.CoreEditor" -Preview:$Preview
+
+	If (-Not $Present) {
+		Invoke-Gsudo { Start-Process "$Using:Starter" "/ResetUserData" -Wait }
+		Add-Type -AssemblyName "System.Windows.Forms"
+		Start-Process -FilePath "$Starter"
+		Start-Sleep 15 ; [Windows.Forms.SendKeys]::SendWait("{TAB}" * 4)
+		Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+		Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{TAB}") ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+		Start-Sleep 20 ; [Windows.Forms.SendKeys]::SendWait("%{F4}") ; Start-Sleep 2
+	}
+
+	$Program = "$Storage\Common7\IDE\StorePID.exe"
+	Invoke-Gsudo { Start-Process "$Using:Program" "$Using:Serials 09662" -WindowStyle Hidden -Wait }
+
+	$Config1 = "$Env:LocalAppData\Microsoft\VisualStudio\17*\Settings\CurrentSettings.vssettings"
+	$Config2 = "$Env:LocalAppData\Microsoft\VisualStudio\17*\Settings\CurrentSettings-*.vssettings"
+	If (Test-Path "$Config1") {
+		$Configs = Get-Item "$Config1"
+		[Xml] $Content = Get-Content "$Configs"
+		$Content.SelectSingleNode("//*[@name='HighlightCurrentLine']").InnerText = "false"
+		$Content.Save("$Configs")
+	}
+	If (Test-Path "$Config2") {
+		$Configs = Get-Item "$Config2"
+		[Xml] $Content = Get-Content "$Configs"
+		$Content.SelectSingleNode("//*[@name='HighlightCurrentLine']").InnerText = "false"
+		$Content.Save("$Configs")
+	}
+
+	If (Test-Path "$Config1") {
+		$Configs = Get-Item "$Config1"
+		[Xml] $Content = Get-Content "$Configs"
+		$Content.SelectSingleNode("//*[@name='LineSpacing']").InnerText = "1.5"
+		$Content.Save($Configs)
+	}
+	If (Test-Path "$Config2") {
+		$Configs = Get-Item "$Config2"
+		[Xml] $Content = Get-Content "$Configs"
+		$Content.SelectSingleNode("//*[@name='LineSpacing']").InnerText = "1.5"
+		$Content.Save($Configs)
+	}
+
+	Remove-Item "$Env:UserProfile\source" -Recurse -EA SI
+	New-Item "$Deposit" -ItemType Directory -EA SI | Out-Null
+	Invoke-Gsudo { Add-MpPreference -ExclusionPath "$Using:Deposit" *> $Null }
+	If (Test-Path "$Config1") {
+		$Configs = Get-Item "$Config1"
+		[Xml] $Content = Get-Content "$Configs"
+		$Payload = $Deposit.Replace("${Env:UserProfile}", '%vsspv_user_appdata%') + "\"
+		$Content.SelectSingleNode("//*[@name='ProjectsLocation']").InnerText = "$Payload"
+		$Content.Save($Configs)
+	}
+	If (Test-Path "$Config2") {
+		$Configs = Get-Item "$Config2"
+		[Xml] $Content = Get-Content "$Configs"
+		$Payload = $Deposit.Replace("${Env:UserProfile}", '%vsspv_user_appdata%') + "\"
+		$Content.SelectSingleNode("//*[@name='ProjectsLocation']").InnerText = "$Payload"
+		$Content.Save($Configs)
+	}
+
+}
+
+Function Update-VisualStudio2022Extension {
+
+	Param (
+		[String] $Payload,
+		[Switch] $Preview
+	)
+
+	$Website = "https://marketplace.visualstudio.com/items?itemName=$Payload"
+	$Content = Invoke-WebRequest -Uri $Website -UseBasicParsing -SessionVariable Session
+	$Address = $Content.Links | Where-Object { $_.class -Eq "install-button-container" } | Select-Object -ExpandProperty href
+	$Address = "https://marketplace.visualstudio.com" + "$Address"
+	$Package = "$Env:Temp\$([Guid]::NewGuid()).vsix"
+	Invoke-WebRequest "$Address" -OutFile "$Package" -WebSession $Session
+	$Adjunct = If ($Preview) { "Preview" } Else { "Professional" }
+	$Updater = "$Env:ProgramFiles\Microsoft Visual Studio\2022\$Adjunct\Common7\IDE\VSIXInstaller.exe"
+	Invoke-Gsudo { Start-Process "$Using:Updater" "/q /a `"$Using:Package`"" -WindowStyle Hidden -Wait }
+
+}
+
+Function Update-VisualStudio2022Workload {
+
+	Param (
+		[String] $Payload,
+		[Switch] $Preview
+	)
+
+	$Address = "https://aka.ms/vs/17/release/vs_professional.exe"
+	If ($Preview) { $Address = "https://c2rsetup.officeapps.live.com/c2r/downloadVS.aspx?sku=professional&channel=Preview&version=VS2022" }
+	$Fetched = Join-Path "$Env:Temp" "VisualStudioSetup.exe"
+	(New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
+	Invoke-Gsudo {
+		Start-Process "$Using:Fetched" "update --wait --quiet --norestart" -WindowStyle Hidden -Wait
+		Start-Process "$Using:Fetched" "install --wait --quiet --norestart --add $Using:Payload" -WindowStyle Hidden -Wait
+		Start-Sleep 2 ; Start-Process "cmd" "/c taskkill /f /im devenv.exe /t 2>nul 1>nul" -WindowStyle Hidden -Wait
+	}
+    
+}
+
 Function Update-VmwareWorkstation {
 
-    Param (
-        [String] $Leading = "17",
-        [String] $Deposit = "$Env:UserProfile\Machines",
-        [String] $Serials = "MC60H-DWHD5-H80U9-6V85M-8280D"
-    )
+	Param (
+		[String] $Leading = "17",
+		[String] $Deposit = "$Env:UserProfile\Machines",
+		[String] $Serials = "MC60H-DWHD5-H80U9-6V85M-8280D"
+	)
 
-    $Starter = "${Env:ProgramFiles(x86)}\VMware\VMware Workstation\vmware.exe"
-    $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
+	$Starter = "${Env:ProgramFiles(x86)}\VMware\VMware Workstation\vmware.exe"
+	$Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
 	$Present = $Current -Ne "0.0.0.0"
 
-    $Address = "https://softwareupdate.vmware.com/cds/vmw-desktop/ws-windows.xml"
+	$Address = "https://softwareupdate.vmware.com/cds/vmw-desktop/ws-windows.xml"
 	$Version = [Regex]::Matches((Invoke-WebRequest "$Address"), "url>ws/($Leading.[\d.]+)/(\d+)/windows/core").Groups[1].Value
-    $Updated = [Version] "$Current" -Ge [Version] "$Version"
+	$Updated = [Version] "$Current" -Ge [Version] "$Version"
 
-    If (-Not $Updated) {
+	If (-Not $Updated) {
 		If (Assert-Pending -Eq $True) { Invoke-Restart }
-        $Address = "https://www.vmware.com/go/getworkstation-win"
-        $Fetched = Join-Path "$Env:Temp" "vmware-workstation-full.exe"
+		$Address = "https://www.vmware.com/go/getworkstation-win"
+		$Fetched = Join-Path "$Env:Temp" "vmware-workstation-full.exe"
 		(New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
-        $ArgList = "/s /v/qn EULAS_AGREED=1 AUTOSOFTWAREUPDATE=0 DATACOLLECTION=0 ADDLOCAL=ALL REBOOT=ReallySuppress SERIALNUMBER=$Serials"
-        Invoke-Gsudo { Start-Process "$Using:Fetched" "$Using:ArgList" -Wait } ; Start-Sleep 4
-        Start-Process "$Starter" -WindowStyle Hidden ; Start-Sleep 10 ; Stop-Process -Name "vmware" -EA SI ; Start-Sleep 2
-        Set-ItemProperty -Path "HKCU:\Software\VMware, Inc.\VMware Tray" -Name "TrayBehavior" -Type DWord -Value 2
+		$ArgList = "/s /v/qn EULAS_AGREED=1 AUTOSOFTWAREUPDATE=0 DATACOLLECTION=0 ADDLOCAL=ALL REBOOT=ReallySuppress SERIALNUMBER=$Serials"
+		Invoke-Gsudo { Start-Process "$Using:Fetched" "$Using:ArgList" -Wait } ; Start-Sleep 4
+		Start-Process "$Starter" -WindowStyle Hidden ; Start-Sleep 10 ; Stop-Process -Name "vmware" -EA SI ; Start-Sleep 2
+		Set-ItemProperty -Path "HKCU:\Software\VMware, Inc.\VMware Tray" -Name "TrayBehavior" -Type DWord -Value 2
 		Remove-Item "$Env:Public\Desktop\VMware*.lnk" -EA SI
 		Remove-Item "$Env:UserProfile\Desktop\VMware*.lnk" -EA SI
-    }
+	}
 
-    If (-Not $Present) {
-        $Address = "https://api.github.com/repos/DrDonk/unlocker/releases/latest"
+	If (-Not $Present) {
+		$Address = "https://api.github.com/repos/DrDonk/unlocker/releases/latest"
 		$Results = (Invoke-WebRequest "$Address" | ConvertFrom-Json).assets
 		$Address = $Results.Where( { $_.browser_download_url -Like "*.zip" } ).browser_download_url
 		$Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
 		(New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
 		Update-Nanazip ; $Extract = [IO.Directory]::CreateDirectory("$Env:Temp\$([Guid]::NewGuid().Guid)").FullName
 		Start-Process "7z.exe" "x `"$Fetched`" -o`"$Extract`" -y -bso0 -bsp0" -WindowStyle Hidden -Wait
-        Start-Sleep 4 ; $Program = Join-Path "$Extract" "windows\unlock.exe"
-        Invoke-Gsudo {
-            [Environment]::SetEnvironmentVariable("UNLOCK_QUIET", "1", "Process")
-            Start-Process "$Using:Program" -WindowStyle Hidden
-        }
-    }
+		Start-Sleep 4 ; $Program = Join-Path "$Extract" "windows\unlock.exe"
+		Invoke-Gsudo {
+			[Environment]::SetEnvironmentVariable("UNLOCK_QUIET", "1", "Process")
+			Start-Process "$Using:Program" -WindowStyle Hidden
+		}
+	}
 
-    If ($Deposit) {
-        New-Item -Path "$Deposit" -ItemType Directory -EA SI
-        $Configs = "$Env:AppData\VMware\preferences.ini"
-        If (-Not ((Get-Content "$Configs") -Match "prefvmx.defaultVMPath")) { Add-Content -Path "$Configs" -Value "prefvmx.defaultVMPath = `"$Deposit`"" }
-    }
+	If ($Deposit) {
+		New-Item -Path "$Deposit" -ItemType Directory -EA SI
+		$Configs = "$Env:AppData\VMware\preferences.ini"
+		If (-Not ((Get-Content "$Configs") -Match "prefvmx.defaultVMPath")) { Add-Content -Path "$Configs" -Value "prefvmx.defaultVMPath = `"$Deposit`"" }
+	}
 
 }
 
@@ -1091,11 +1273,9 @@ Function Update-YtDlg {
 
 Function Main {
 
-	# Change headline
 	$Current = "$($Script:MyInvocation.MyCommand.Path)"
 	$Host.UI.RawUI.WindowTitle = (Get-Item "$Current").BaseName
 
-	# Output greeting
 	Clear-Host ; $ProgressPreference = "SilentlyContinue"
 	Write-Host "+----------------------------------------------------------+"
 	Write-Host "|                                                          |"
@@ -1105,44 +1285,41 @@ Function Main {
 	Write-Host "|                                                          |"
 	Write-Host "+----------------------------------------------------------+"
 
-	# Remove security
 	$Loading = "`nTHE UPDATING DEPENDENCIES PROCESS HAS LAUNCHED"
 	$Failure = "`rTHE UPDATING DEPENDENCIES PROCESS WAS CANCELED"
-	# Write-Host "$Loading" -FO DarkYellow -NoNewline ; Remove-Feature "Uac" ; Update-PowPlan "Ultimate"
-	Write-Host "$Loading" -FO DarkYellow -NoNewline ; Remove-Feature "Uac"
+	Write-Host "$Loading" -FO DarkYellow -NoNewline ; Remove-Feature "Uac" ; Update-PowPlan "Ultimate"
 	$Correct = (Update-Gsudo) -And -Not (gsudo cache on -d -1 2>&1).ToString().Contains("Error")
 	If (-Not $Correct) { Write-Host "$Failure" -FO Red ; Write-Host ; Exit }
 
-	# Remove schedule
 	$Payload = (Get-Item "$Current").BaseName
 	Invoke-Gsudo { Unregister-ScheduledTask -TaskName "$Using:Payload" -Confirm:$False -EA SI }
 
-	# Handle elements
 	$Factors = @(
 		"Update-Cuda"
-		"Update-DockerDesktop"
-		"Update-VmwareWorkstation"
-		"Update-Wsl"
 		"Update-Wsa"
+		"Update-Wsl"
 
 		"Update-AndroidStudio"
-		"Update-Chromium"
 		"Update-Git -GitMail 72373746+sharpordie@users.noreply.github.com -GitUser sharpordie"
+		"Update-Chromium"
+		"Update-VisualStudio2022"
 		"Update-Vscode"
 		
+		"Update-DockerDesktop"
 		"Update-Flutter"
 		"Update-Figma"
 		"Update-Jdownloader"
 		"Update-JoalDesktop"
 		"Update-Keepassxc"
 		"Update-Mambaforge"
+		"Update-Maui"
 		"Update-Mpv"
 		"Update-Python"
 		"Update-Qbittorrent"
+		"Update-VmwareWorkstation"
 		"Update-YtDlg"
 	)
 
-	# Output progress
 	$Maximum = (60 - 20) * -1
 	$Shaping = "`r{0,$Maximum}{1,-3}{2,-6}{3,-3}{4,-8}"
 	$Heading = "$Shaping" -F "FUNCTION", " ", "STATUS", " ", "DURATION"
@@ -1168,10 +1345,8 @@ Function Main {
 		}
 	}
 
-	# Revert security
 	Enable-Feature "Uac" ; Invoke-Expression "gsudo -k" *> $Null
 
-	# Output new line
 	Write-Host "`n"
 
 }
