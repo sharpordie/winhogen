@@ -1,3 +1,96 @@
+Function Assert-Pending {
+
+	If (Get-ChildItem "HKLM:\Software\Microsoft\Windows\CurrentVersion\Component Based Servicing\RebootPending" -EA Ignore) { Return $True }
+	If (Get-Item "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\WindowsUpdate\Auto Update\RebootRequired" -EA Ignore) { Return $True }
+	If (Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager" -Name PendingFileRenameOperations -EA Ignore) { Return $True }
+	Try { 
+		$Factors = [WmiClass]"\\.\root\ccm\clientsdk:CCM_ClientUtilities"
+		$Pending = $Factors.DetermineIfRebootPending()
+		If (($Null -Ne $Pending) -And $Pending.RebootPending) {
+			Return $True
+		}
+	}
+	Catch {}
+	Return $False
+
+}
+
+Function Enable-Feature {
+
+	Param(
+		[ValidateSet("Uac", "Wsl")] [String] $Feature
+	)
+
+	Switch ($Feature) {
+		"Uac" {
+			$Created = [IO.Path]::ChangeExtension([IO.Path]::GetTempFileName(), "ps1")
+			[IO.File]::WriteAllText("$Created", @(
+					'$KeyPath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System"'
+					'Set-ItemProperty -Path "$KeyPath" -Name ConsentPromptBehaviorAdmin -Value 5'
+					'Set-ItemProperty -Path "$KeyPath" -Name PromptOnSecureDesktop -Value 1'
+				) -Join "`n")
+			Start-Process "powershell" "-ep bypass -f `"$Created`"" -Verb RunAs -WindowStyle Hidden -Wait
+			Remove-Item "$Created" -Force
+		}
+		"Wsl" {
+			$Present = Invoke-Gsudo { (Get-WindowsOptionalFeature -FeatureName Microsoft-Windows-Subsystem-Linux -Online).State -Eq "Enabled" }
+			If (-Not $Present) {
+				Invoke-Gsudo { Enable-WindowsOptionalFeature -Online -FeatureName VirtualMachinePlatform -All -NoRestart }
+				Invoke-Gsudo { Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux -All -NoRestart }
+			}
+		}
+	}
+
+	If (Assert-Pending -Eq $True) { Invoke-Restart }
+
+}
+
+Function Invoke-Restart {
+
+	$Current = "$($Script:MyInvocation.MyCommand.Path)"
+	$Heading = (Get-Item "$Current").BaseName
+	$ArgList = "/c start /b wt --title `"$Heading`" powershell -ep bypass -noexit -nologo -f `"$Current`""
+	Invoke-Gsudo {
+		Register-ScheduledTask `
+			-TaskName "$Using:Heading" `
+			-Trigger (New-ScheduledTaskTrigger -AtLogOn) `
+			-User ($Env:Username) `
+			-Action (New-ScheduledTaskAction -Execute "cmd" -Argument "$Using:ArgList") `
+			-RunLevel Limited `
+			-Force *> $Null            
+	}
+	Start-Sleep 2 ; Restart-Computer -Force
+
+}
+
+Function Remove-Feature {
+
+	Param(
+		[ValidateSet("HyperV", "Uac")] [String] $Feature
+	)
+
+	Switch ($Feature) {
+		"HyperV" { 
+			$Address = "https://cdn3.bluestacks.com/support_files/HD-DisableHyperV_native_v2.exe"
+			$Fetched = Invoke-Fetcher "$Address"
+			Invoke-Gsudo { Start-Process "$Using:Fetched" ; Start-Sleep 10 ; Stop-Process -Name "HD-DisableHyperV" }
+		}
+		"Uac" {
+			$Created = [IO.Path]::ChangeExtension([IO.Path]::GetTempFileName(), "ps1")
+			[IO.File]::WriteAllText("$Created", @(
+					'$KeyPath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System"'
+					'Set-ItemProperty -Path "$KeyPath" -Name ConsentPromptBehaviorAdmin -Value 0'
+					'Set-ItemProperty -Path "$KeyPath" -Name PromptOnSecureDesktop -Value 0'
+				) -Join "`n")
+			Start-Process "powershell" "-ep bypass -f `"$Created`"" -Verb RunAs -WindowStyle Hidden -Wait
+			Remove-Item "$Created" -Force
+		}
+	}
+
+	If (Assert-Pending -Eq $True) { Invoke-Restart }
+
+}
+
 Function Update-LnkFile {
 
 	Param(
@@ -31,20 +124,18 @@ Function Update-SysPath {
 
 	Param (
 		[String] $Payload,
-		[ValidateSet("Machine", "Process", "User")] [String] $Section,
-		[Switch] $Prepend
+		[ValidateSet("Machine", "Process", "User")] [String] $Section
 	)
 
 	If ($Section -Ne "Process" ) {
 		$OldPath = [Environment]::GetEnvironmentVariable("PATH", "$Section")
 		$OldPath = $OldPath -Split ";" | Where-Object { $_ -NotMatch "^$([Regex]::Escape($Payload))\\?" }
-		$NewPath = If ($Prepend) { ($Payload + $OldPath) -Join ";" } Else { ($OldPath + $Payload) -Join ";" }
+		$NewPath = ($OldPath + $Payload) -Join ";"
 		Invoke-Gsudo { [Environment]::SetEnvironmentVariable("PATH", "$Using:NewPath", "$Using:Section") }
 	}
 
 	$OldPath = $Env:Path -Split ";" | Where-Object { $_ -NotMatch "^$([Regex]::Escape($Payload))\\?" }
-	$NewPath = If ($Prepend) { ($Payload + $OldPath) -Join ";" } Else { ($OldPath + $Payload) -Join ";" }
-	$Env:Path = $NewPath -Join ";"
+	$NewPath = ($OldPath + $Payload) -Join ";" ; $Env:Path = $NewPath -Join ";"
 
 }
 
@@ -348,11 +439,32 @@ Function Update-ChromiumExtension {
 
 }
 
+Function Update-Cuda {
+
+	$Current = (Get-Package "*cuda*runtime*" -EA SI).Version
+	If ($Null -Eq $Current) { $Current = "0.0.0.0" }
+	# $Present = $Current -Ne "0.0.0.0"
+
+	$Address = "https://raw.githubusercontent.com/scoopinstaller/main/master/bucket/cuda.json"
+	$Version = [Regex]::Match((Invoke-WebRequest "$Address" | ConvertFrom-Json).version, "[\d.]+").Value
+	$Updated = [Version] "$Current" -Ge [Version] $Version.SubString(0, 4)
+
+	If (-Not $Updated) {
+		$Address = (Invoke-WebRequest "$Address" | ConvertFrom-Json).architecture."64bit".url.Replace("#/dl.7z", "")
+		$Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
+		(New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
+		Invoke-Gsudo { Start-Process "$Using:Fetched" "/s /noreboot" -Wait }
+		Remove-Item "$Env:Public\Desktop\GeForce*.lnk" -EA SI
+		Remove-Item "$Env:UserProfile\Desktop\GeForce*.lnk" -EA SI
+	}
+
+}
+
 Function Update-DockerDesktop {
 
 	$Starter = "$Env:ProgramFiles\Docker\Docker\Docker Desktop.exe"
 	$Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
-	$Present = $Current -Ne "0.0.0.0"
+	# $Present = $Current -Ne "0.0.0.0"
 
 	$Address = "https://community.chocolatey.org/packages/docker-desktop"
 	$Version = [Regex]::Matches((Invoke-WebRequest "$Address"), "Docker Desktop ([\d.]+)</title>").Groups[1].Value
@@ -440,7 +552,7 @@ Function Update-Git {
 
 	$Starter = "$Env:ProgramFiles\Git\git-bash.exe"
 	$Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
-	$Present = $Current -Ne "0.0.0.0"
+	# $Present = $Current -Ne "0.0.0.0"
 
 	$Address = "https://api.github.com/repos/git-for-windows/git/releases/latest"
 	$Version = [Regex]::Match((Invoke-WebRequest "$Address" | ConvertFrom-Json).tag_name.Replace("windows.", ""), "[\d.]+").Value
@@ -583,7 +695,7 @@ Function Update-JoalDesktop {
 
 	$Starter = "$Env:LocalAppData\Programs\joal-desktop\JoalDesktop.exe"
 	$Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
-	$Present = $Current -Ne "0.0.0.0"
+	# $Present = $Current -Ne "0.0.0.0"
 
 	$Address = "https://api.github.com/repos/anthonyraymond/joal-desktop/releases/latest"
 	$Version = [Regex]::Match((Invoke-WebRequest "$Address" | ConvertFrom-Json).tag_name, "[\d.]+").Value
@@ -606,7 +718,7 @@ Function Update-Keepassxc {
 
 	$Starter = "$Env:ProgramFiles\KeePassXC\KeePassXC.exe"
 	$Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
-	$Present = $Current -Ne "0.0.0.0"
+	# $Present = $Current -Ne "0.0.0.0"
 
 	$Address = "https://api.github.com/repos/keepassxreboot/keepassxc/releases/latest"
 	$Version = [Regex]::Match((Invoke-WebRequest "$Address" | ConvertFrom-Json).tag_name, "[\d.]+").Value
@@ -687,7 +799,7 @@ Function Update-Nanazip {
 
 	$Current = (Get-Package "*nanazip*" -EA SI).Version
 	If ($Null -Eq $Current) { $Current = "0.0.0.0" }
-	$Present = $Current -Ne "0.0.0.0"
+	# $Present = $Current -Ne "0.0.0.0"
 
 	$Address = "https://api.github.com/repos/m2team/nanazip/releases/latest"
 	$Version = [Regex]::Match((Invoke-WebRequest "$Address" | ConvertFrom-Json).tag_name, "[\d.]+").Value
@@ -708,7 +820,7 @@ Function Update-Openjdk {
 
 	$Current = (Get-Package "*microsoft*openjdk*" -EA SI).Version
 	If ($Null -Eq $Current) { $Current = "0.0.0.0" }
-	$Present = $Current -Ne "0.0.0.0"
+	# $Present = $Current -Ne "0.0.0.0"
 
 	$Address = "https://learn.microsoft.com/en-us/java/openjdk/download"
 	$Version = [Regex]::Matches((Invoke-WebRequest "$Address"), "OpenJDK ([\d.]+) LTS").Groups[1].Value
@@ -727,11 +839,141 @@ Function Update-Openjdk {
 
 }
 
+Function Update-Python {
+
+	Param (
+		[Int] $Leading = 3,
+		[Int] $Backing = 10
+	)
+
+	$Current = (Get-Package "*python*evelopment*" -EA SI).Version
+	If ($Null -Eq $Current) { $Current = "0.0.0.0" }
+	# $Present = $Current -Ne "0.0.0.0"
+
+	$Address = "https://www.python.org/downloads/windows/"
+	$Version = [Regex]::Matches((Invoke-WebRequest "$Address"), "python-($Leading\.$Backing\.[\d.]+)-").Groups[1].Value
+	$Updated = [Version] "$Current" -Ge [Version] "$Version"
+
+	If (-Not $Updated) {
+		$Ongoing = Invoke-Gsudo { [Environment]::GetEnvironmentVariable("PATH", "Machine") }
+		$Changed = "$Ongoing" -Replace "C:\\Program Files\\Python[\d]+\\Scripts\\;" -Replace "C:\\Program Files\\Python[\d]+\\;"
+		Invoke-Gsudo { [Environment]::SetEnvironmentVariable("PATH", "$Using:Changed", "Machine") }
+		$Address = "https://www.python.org/ftp/python/$Version/python-$Version-amd64.exe"
+		$Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
+		(New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
+		$ArgList = "/quiet InstallAllUsers=1 AssociateFiles=0 PrependPath=1 Shortcuts=0 Include_launcher=0 InstallLauncherAllUsers=0"
+		Invoke-Gsudo { Start-Process "$Using:Fetched" "$Using:ArgList" -Wait } ; Start-Sleep 4
+		Update-SysPath "$Env:ProgramFiles\Python$Leading$Backing\" "Machine"
+		Update-SysPath "$Env:ProgramFiles\Python$Leading$Backing\Scripts\" "Machine"
+		Invoke-Gsudo { Start-Process "python" "-m pip install --upgrade pip" -WindowStyle Hidden -Wait }
+		Invoke-Gsudo { [Environment]::SetEnvironmentVariable("PYTHONDONTWRITEBYTECODE", "1", "Machine") }
+	}
+
+	New-Item "$Env:AppData\Python\Scripts" -ItemType Directory -EA SI
+	$Address = "https://install.python-poetry.org/"
+	$Fetched = Join-Path "$Env:Temp" "install-poetry.py"
+	(New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
+	Start-Process "python" "`"$Fetched`" --uninstall" -WindowStyle Hidden -Wait
+	Start-Process "python" "$Fetched" -WindowStyle Hidden -Wait
+	Update-SysPath "$Env:AppData\Python\Scripts" "Machine"
+	Start-Process "poetry" "config virtualenvs.in-project true" -WindowStyle Hidden -Wait
+	Start-Process "poetry" "self update" -WindowStyle Hidden -Wait
+
+}
+
+Function Update-Qbittorrent {
+
+	Param (
+		[String] $Deposit = "$Env:UserProfile\Downloads\P2P",
+		[String] $Loading = "$Env:UserProfile\Downloads\P2P\Incompleted"
+	)
+
+	$Starter = "$Env:ProgramFiles\qBittorrent\qbittorrent.exe"
+	$Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
+	# $Present = $Current -Ne "0.0.0.0"
+
+	$Address = "https://www.qbittorrent.org/download.php"
+	$Version = [Regex]::Matches((Invoke-WebRequest "$Address"), "Latest:\s+v([\d.]+)").Groups[1].Value
+	$Updated = [Version] "$Current" -Ge [Version] "$Version"
+
+	If (-Not $Updated) {
+		$Address = "https://downloads.sourceforge.net/project/qbittorrent/qbittorrent-win32/qbittorrent-$Version/qbittorrent_${Version}_x64_setup.exe"
+		$Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
+		(New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
+		Invoke-Gsudo { Start-Process "$Using:Fetched" "/S" -Wait }
+	}
+
+	$Configs = "$Env:AppData\qBittorrent\qBittorrent.ini"
+	New-Item "$Deposit" -ItemType Directory -EA SI
+	New-Item "$Loading" -ItemType Directory -EA SI
+	New-Item "$(Split-Path "$Configs")" -ItemType Directory -EA SI
+	Set-Content -Path "$Configs" -Value "[LegalNotice]"
+	Add-Content -Path "$Configs" -Value "Accepted=true"
+	Add-Content -Path "$Configs" -Value "[Preferences]"
+	Add-Content -Path "$Configs" -Value "Bittorrent\MaxRatio=0"
+	Add-Content -Path "$Configs" -Value "Downloads\SavePath=$($Deposit.Replace("\", "/"))"
+	Add-Content -Path "$Configs" -Value "Downloads\TempPath=$($Loading.Replace("\", "/"))"
+	Add-Content -Path "$Configs" -Value "Downloads\TempPathEnabled=true"
+
+}
+
+Function Update-VmwareWorkstation {
+
+    Param (
+        [String] $Leading = "17",
+        [String] $Deposit = "$Env:UserProfile\Machines",
+        [String] $Serials = "MC60H-DWHD5-H80U9-6V85M-8280D"
+    )
+
+    $Starter = "${Env:ProgramFiles(x86)}\VMware\VMware Workstation\vmware.exe"
+    $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
+	$Present = $Current -Ne "0.0.0.0"
+
+    $Address = "https://softwareupdate.vmware.com/cds/vmw-desktop/ws-windows.xml"
+	$Version = [Regex]::Matches((Invoke-WebRequest "$Address"), "url>ws/($Leading.[\d.]+)/(\d+)/windows/core").Groups[1].Value
+    $Updated = [Version] "$Current" -Ge [Version] "$Version"
+
+    If (-Not $Updated) {
+		If (Assert-Pending -Eq $True) { Invoke-Restart }
+        $Address = "https://www.vmware.com/go/getworkstation-win"
+        $Fetched = Join-Path "$Env:Temp" "vmware-workstation-full.exe"
+		(New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
+        $ArgList = "/s /v/qn EULAS_AGREED=1 AUTOSOFTWAREUPDATE=0 DATACOLLECTION=0 ADDLOCAL=ALL REBOOT=ReallySuppress SERIALNUMBER=$Serials"
+        Invoke-Gsudo { Start-Process "$Using:Fetched" "$Using:ArgList" -Wait } ; Start-Sleep 4
+        Start-Process "$Starter" -WindowStyle Hidden ; Start-Sleep 10 ; Stop-Process -Name "vmware" -EA SI ; Start-Sleep 2
+        Set-ItemProperty -Path "HKCU:\Software\VMware, Inc.\VMware Tray" -Name "TrayBehavior" -Type DWord -Value 2
+		Remove-Item "$Env:Public\Desktop\VMware*.lnk" -EA SI
+		Remove-Item "$Env:UserProfile\Desktop\VMware*.lnk" -EA SI
+    }
+
+    If (-Not $Present) {
+        $Address = "https://api.github.com/repos/DrDonk/unlocker/releases/latest"
+		$Results = (Invoke-WebRequest "$Address" | ConvertFrom-Json).assets
+		$Address = $Results.Where( { $_.browser_download_url -Like "*.zip" } ).browser_download_url
+		$Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
+		(New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
+		Update-Nanazip ; $Extract = [IO.Directory]::CreateDirectory("$Env:Temp\$([Guid]::NewGuid().Guid)").FullName
+		Start-Process "7z.exe" "x `"$Fetched`" -o`"$Extract`" -y -bso0 -bsp0" -WindowStyle Hidden -Wait
+        Start-Sleep 4 ; $Program = Join-Path "$Extract" "windows\unlock.exe"
+        Invoke-Gsudo {
+            [Environment]::SetEnvironmentVariable("UNLOCK_QUIET", "1", "Process")
+            Start-Process "$Using:Program" -WindowStyle Hidden
+        }
+    }
+
+    If ($Deposit) {
+        New-Item -Path "$Deposit" -ItemType Directory -EA SI
+        $Configs = "$Env:AppData\VMware\preferences.ini"
+        If (-Not ((Get-Content "$Configs") -Match "prefvmx.defaultVMPath")) { Add-Content -Path "$Configs" -Value "prefvmx.defaultVMPath = `"$Deposit`"" }
+    }
+
+}
+
 Function Update-Vscode {
 
 	$Starter = "$Env:LocalAppData\Programs\Microsoft VS Code\Code.exe"
 	$Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
-	$Present = $Current -Ne "0.0.0.0"
+	# $Present = $Current -Ne "0.0.0.0"
 
 	$Address = "https://code.visualstudio.com/sha?build=stable"
 	$Version = [Regex]::Match((Invoke-WebRequest "$Address" | ConvertFrom-Json).products[1].name, "[\d.]+").Value
@@ -775,6 +1017,62 @@ Function Update-VscodeExtension {
 
 }
 
+Function Update-Wsa {
+
+	Function Local:Invoke-Scraper {
+		Param(
+			[String] $Address,
+			[String] $Pattern
+		)
+		$Content = Invoke-WebRequest `
+			-UseBasicParsing `
+			-Uri "https://store.rg-adguard.net/api/GetFiles" `
+			-Method "POST" `
+			-ContentType "application/x-www-form-urlencoded" `
+			-Body "type=url&url=$Address&ring=RP&lang=en-US"
+		Return [Regex]::Matches($Content.Links.Where({ $_ -Like "$Pattern" }).OuterHTML, "href=`"(.*)(?=`"\s)").Groups[1].Value
+	}
+
+	$Current = (Get-AppxPackage "*microsoft*ui*xaml*" -EA SI).Version
+	If ($Null -Eq $Current) { $Current = "0.0.0.0" }
+	$Present = "$Current" -Ne "0.0.0.0"
+	If (-Not $Present) {
+		$Address = Invoke-Scraper "www.microsoft.com/en-us/p/windows-subsystem-for-android/9p3395vx91nr" "*Microsoft.UI.Xaml*x64*appx*"
+		$Fetched = Join-Path "$Env:Temp" "9p3395vx91nr.appx"
+		(New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
+		Add-AppxPackage -Path "$Fetched"
+	}
+
+	$Current = (Get-AppxPackage "*windowssubsystemforandroid*" -EA SI).Version
+	If ($Null -Eq $Current) { $Current = "0.0.0.0" }
+	$Present = "$Current" -Ne "0.0.0.0"
+	If (-Not $Present) {
+		$Address = Invoke-Scraper "www.microsoft.com/en-us/p/windows-subsystem-for-android/9p3395vx91nr" "*msixbundle*"
+		$Fetched = Join-Path "$Env:Temp" "9p3395vx91nr.msixbundle"
+		(New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
+		Invoke-Gsudo { Add-AppxPackage -Path "$Using:Fetched" }
+	}
+
+}
+
+Function Update-Wsl {
+
+	Enable-Feature "Wsl" ; Start-Process "wsl" "--update" -WindowStyle Hidden -Wait
+	Start-Process "wsl" "--shutdown" -WindowStyle Hidden -Wait
+	Start-Process "wsl" "--install ubuntu --no-launch" -WindowStyle Hidden -Wait
+
+	$Program = "$Env:LocalAppData\Microsoft\WindowsApps\ubuntu.exe"
+	Start-Process "$Program" "install --root" -WindowStyle Hidden -Wait
+	Start-Process "$Program" "run sudo dpkg --configure -a" -WindowStyle Hidden -Wait
+	Start-Process "$Program" "run sudo apt update -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=false" -WindowStyle Hidden -Wait
+	Start-Process "$Program" "run sudo apt update" -WindowStyle Hidden -Wait
+	Start-Process "$Program" "run sudo apt upgrade -y" -WindowStyle Hidden -Wait
+	Start-Process "$Program" "run sudo apt full-upgrade -y" -WindowStyle Hidden -Wait
+	Start-Process "$Program" "run sudo apt autoremove -y" -WindowStyle Hidden -Wait
+	Start-Process "$Program" "run sudo apt install -y x11-apps" -WindowStyle Hidden -Wait
+
+}
+
 Function Update-YtDlg {
 
 	$Deposit = "$Env:LocalAppData\Programs\YtDlp"
@@ -810,18 +1108,28 @@ Function Main {
 	# Remove security
 	$Loading = "`nTHE UPDATING DEPENDENCIES PROCESS HAS LAUNCHED"
 	$Failure = "`rTHE UPDATING DEPENDENCIES PROCESS WAS CANCELED"
-	Write-Host "$Loading" -FO DarkYellow -NoNewline
+	# Write-Host "$Loading" -FO DarkYellow -NoNewline ; Remove-Feature "Uac" ; Update-PowPlan "Ultimate"
+	Write-Host "$Loading" -FO DarkYellow -NoNewline ; Remove-Feature "Uac"
 	$Correct = (Update-Gsudo) -And -Not (gsudo cache on -d -1 2>&1).ToString().Contains("Error")
 	If (-Not $Correct) { Write-Host "$Failure" -FO Red ; Write-Host ; Exit }
 
+	# Remove schedule
+	$Payload = (Get-Item "$Current").BaseName
+	Invoke-Gsudo { Unregister-ScheduledTask -TaskName "$Using:Payload" -Confirm:$False -EA SI }
+
 	# Handle elements
 	$Factors = @(
+		"Update-Cuda"
+		"Update-DockerDesktop"
+		"Update-VmwareWorkstation"
+		"Update-Wsl"
+		"Update-Wsa"
+
 		"Update-AndroidStudio"
 		"Update-Chromium"
 		"Update-Git -GitMail 72373746+sharpordie@users.noreply.github.com -GitUser sharpordie"
 		"Update-Vscode"
-
-		"Update-DockerDesktop"
+		
 		"Update-Flutter"
 		"Update-Figma"
 		"Update-Jdownloader"
@@ -829,6 +1137,8 @@ Function Main {
 		"Update-Keepassxc"
 		"Update-Mambaforge"
 		"Update-Mpv"
+		"Update-Python"
+		"Update-Qbittorrent"
 		"Update-YtDlg"
 	)
 
@@ -859,7 +1169,7 @@ Function Main {
 	}
 
 	# Revert security
-	Invoke-Expression "gsudo -k" *> $Null
+	Enable-Feature "Uac" ; Invoke-Expression "gsudo -k" *> $Null
 
 	# Output new line
 	Write-Host "`n"
