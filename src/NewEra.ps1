@@ -251,6 +251,45 @@ Function Update-AndroidStudio {
 
 }
 
+Function Update-Bluestacks {
+
+	$Starter = (Get-Item "$Env:ProgramFiles\BlueStacks*\HD-Player.exe").FullName
+	$Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
+	# $Present = $Current -Ne "0.0.0.0"
+
+	Add-Type -AssemblyName "System.Net.Http"
+	$Manager = [Net.Http.HttpClient]::New()
+	$UsAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/500.0 (KHTML, like Gecko) Chrome/100.0.0.0 Safari/500.0"
+	$Manager.DefaultRequestHeaders.Add("User-Agent", "$UsAgent")
+	$Address = "https://webcache.googleusercontent.com/search?q=cache:https://support.bluestacks.com"
+	$Address = "$Address/hc/en-us/articles/4402611273485-BlueStacks-5-offline-installer"
+	$Content = $Manager.GetStringAsync("$Address").GetAwaiter().GetResult().ToString()
+	$Results = [Regex]::Matches("$Content", "windows/nxt/([\d.]+)/(?<sha>[0-9a-f]+)/")
+	$Version = $Results.Groups[1].Value
+	$Hashing = $results.Groups[2].Value
+	$Updated = [Version] "$Current" -Ge [Version] ($Version.SubString(0, 6))
+
+	If (-Not $Updated) {
+		$Address = "https://cdn3.bluestacks.com/downloads/windows/nxt/$Version/$Hashing/FullInstaller/x64/BlueStacksFullInstaller_${Version}_amd64_native.exe"
+		$Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
+		(New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
+		$ArgList = "-s --defaultImageName Nougat64 --imageToLaunch Nougat64 --defaultImageName Nougat64 --imageToLaunch Nougat64"
+        # $ArgList = "-s --defaultImageName Nougat64 --imageToLaunch Nougat64 --defaultImageName Pie64 --imageToLaunch Pie64"
+		Invoke-Gsudo { Start-Process "$Using:Fetched" "$Using:ArgList" -Wait }
+		Start-Sleep 4
+		Remove-Item "$Env:Public\Desktop\BlueStacks*.lnk" -EA SI
+		Remove-Item "$Env:UserProfile\Desktop\BlueStacks*.lnk" -EA SI
+	}
+
+    $Altered = (Get-Item "$Env:ProgramData\Microsoft\Windows\Start Menu\Programs\BlueStacks 5.lnk" -EA SI).FullName
+    If ($Null -Ne $Altered) {
+        $Content = [IO.File]::ReadAllBytes("$Altered")
+        $Content[0x15] = $Content[0x15] -Bor 0x20
+        Invoke-Gsudo { [IO.File]::WriteAllBytes("$Using:Altered", $Using:Content) }
+    }
+
+}
+
 Function Update-Chromium {
 
 	Param (
@@ -532,8 +571,8 @@ Function Update-Figma {
 	If (-Not $Updated) {
 		$Address = "https://desktop.figma.com/win/FigmaSetup.exe"
 		$Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
-		$ArgList = "/s /S /q /Q /quiet /silent /SILENT /VERYSILENT"
 		(New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
+		$ArgList = "/s /S /q /Q /quiet /silent /SILENT /VERYSILENT"
 		Invoke-Gsudo { Start-Process "$Using:Fetched" "$Using:ArgList" -Wait }
 		Start-Sleep 4
 	}
@@ -906,6 +945,40 @@ Function Update-Openjdk {
 
 }
 
+Function Update-Pycharm {
+
+    Param (
+        [String] $Deposit = "$Env:userProfile\Projects",
+        [String] $Margins = 140
+    )
+
+    $Starter = "$Env:ProgramFiles\JetBrains\PyCharm\bin\pycharm64.exe"
+	$Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
+	$Present = $Current -Ne "0.0.0.0"
+
+    $Address = "https://data.services.jetbrains.com/products/releases?code=PCP&latest=true&type=release"
+    $Version = ((New-Object Net.WebClient).DownloadString("$Address") | ConvertFrom-Json).PCP[0].version
+    $Updated = [Version] "$Current" -Ge [Version] "$Version"
+
+    If (-Not $Updated) {
+        If ($Present) {
+			Invoke-Gsudo { Start-Process "$Env:ProgramFiles\JetBrains\PyCharm\bin\Uninstall.exe" "/S" -Wait }
+            Remove-Item -Path "$Env:ProgramFiles\JetBrains\PyCharm" -Recurse -Force
+            Remove-Item -Path "HKCU:\SOFTWARE\JetBrains\PyCharm" -Recurse -Force
+        }
+        $Address = ((New-Object Net.WebClient).DownloadString("$Address") | ConvertFrom-Json).PCP[0].downloads.windows.link
+		$Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
+        (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
+        $ArgList = "/S /D=$Env:ProgramFiles\JetBrains\PyCharm"
+        Invoke-Gsudo { Start-Process "$Using:Fetched" "$Using:ArgList" -Wait }
+        $Created = "$([Environment]::GetFolderPath("CommonStartMenu"))\Programs\JetBrains\PyCharm.lnk"
+        Remove-Item "$Created" -EA SI
+        $Forward = Get-Item "$([Environment]::GetFolderPath("CommonStartMenu"))\Programs\JetBrains\*PyCharm*.lnk"
+        Invoke-Gsudo { Rename-Item -Path "$Using:Forward" -NewName "$Using:Created" }
+    }
+
+}
+
 Function Update-Python {
 
 	Param (
@@ -1201,20 +1274,23 @@ Function Update-VscodeExtension {
 
 Function Update-Windows {
 
-    Rename-Computer -NewName "WINHOGEN" -EA SI
+	Rename-Computer -NewName "WINHOGEN" -EA SI
 
-    Set-TimeZone -Name "Romance Standard Time"
-    Invoke-Gsudo {
-        Start-Process "w32tm" "/unregister" -WindowStyle Hidden -Wait
-        Start-Process "w32tm" "/register" -WindowStyle Hidden -Wait
-        Start-Process "net" "start w32time" -WindowStyle Hidden -Wait
-        Start-Process "w32tm" "/resync /force" -WindowStyle Hidden -Wait
-    }
+	Set-TimeZone -Name "Romance Standard Time"
+	Invoke-Gsudo {
+		Start-Process "w32tm" "/unregister" -WindowStyle Hidden -Wait
+		Start-Process "w32tm" "/register" -WindowStyle Hidden -Wait
+		Start-Process "net" "start w32time" -WindowStyle Hidden -Wait
+		Start-Process "w32tm" "/resync /force" -WindowStyle Hidden -Wait
+	}
 
-    Invoke-Gsudo { 
-        Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server" -Name "fDenyTSConnections" -Value 0
-        Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
-    }
+	Invoke-Gsudo { 
+		Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server" -Name "fDenyTSConnections" -Value 0
+		Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+	}
+
+	# TODO: Enable developer mode
+	# TODO: Enable advanced networking
 
 }
 
@@ -1313,6 +1389,8 @@ Function Main {
 	$Payload = (Get-Item "$Current").BaseName
 	Invoke-Gsudo { Unregister-ScheduledTask -TaskName "$Using:Payload" -Confirm:$False -EA SI }
 
+	Update-Pycharm ; exit
+
 	$Factors = @(
 		"Update-Windows"
 		"Update-Cuda"
@@ -1320,11 +1398,13 @@ Function Main {
 		"Update-Wsl"
 
 		"Update-AndroidStudio"
-		"Update-Git -GitMail 72373746+sharpordie@users.noreply.github.com -GitUser sharpordie"
 		"Update-Chromium"
+		"Update-Git -GitMail 72373746+sharpordie@users.noreply.github.com -GitUser sharpordie"
+		"Update-Pycharm"
 		"Update-VisualStudio2022"
 		"Update-Vscode"
 		
+		"Update-Bluestacks"
 		"Update-DockerDesktop"
 		"Update-Flutter"
 		"Update-Figma"
