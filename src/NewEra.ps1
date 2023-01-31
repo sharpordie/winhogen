@@ -274,19 +274,19 @@ Function Update-Bluestacks {
 		$Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
 		(New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
 		$ArgList = "-s --defaultImageName Nougat64 --imageToLaunch Nougat64 --defaultImageName Nougat64 --imageToLaunch Nougat64"
-        # $ArgList = "-s --defaultImageName Nougat64 --imageToLaunch Nougat64 --defaultImageName Pie64 --imageToLaunch Pie64"
+		# $ArgList = "-s --defaultImageName Nougat64 --imageToLaunch Nougat64 --defaultImageName Pie64 --imageToLaunch Pie64"
 		Invoke-Gsudo { Start-Process "$Using:Fetched" "$Using:ArgList" -Wait }
 		Start-Sleep 4
 		Remove-Item "$Env:Public\Desktop\BlueStacks*.lnk" -EA SI
 		Remove-Item "$Env:UserProfile\Desktop\BlueStacks*.lnk" -EA SI
 	}
 
-    $Altered = (Get-Item "$Env:ProgramData\Microsoft\Windows\Start Menu\Programs\BlueStacks 5.lnk" -EA SI).FullName
-    If ($Null -Ne $Altered) {
-        $Content = [IO.File]::ReadAllBytes("$Altered")
-        $Content[0x15] = $Content[0x15] -Bor 0x20
-        Invoke-Gsudo { [IO.File]::WriteAllBytes("$Using:Altered", $Using:Content) }
-    }
+	$Altered = (Get-Item "$Env:ProgramData\Microsoft\Windows\Start Menu\Programs\BlueStacks 5.lnk" -EA SI).FullName
+	If ($Null -Ne $Altered) {
+		$Content = [IO.File]::ReadAllBytes("$Altered")
+		$Content[0x15] = $Content[0x15] -Bor 0x20
+		Invoke-Gsudo { [IO.File]::WriteAllBytes("$Using:Altered", $Using:Content) }
+	}
 
 }
 
@@ -536,7 +536,7 @@ Function Update-Cuda {
 
 }
 
-Function Update-DockerDesktop {
+Function Update-Docker {
 
 	$Starter = "$Env:ProgramFiles\Docker\Docker\Docker Desktop.exe"
 	$Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
@@ -554,6 +554,18 @@ Function Update-DockerDesktop {
 		Start-Sleep 4
 		Remove-Item "$Env:Public\Desktop\Docker*.lnk" -EA SI
 		Remove-Item "$Env:UserProfile\Desktop\Docker*.lnk" -EA SI
+	}
+
+	$Configs = "$Env:AppData\Docker\settings.json"
+	If (Test-Path "$Configs") {
+		$Content = Get-Content "$Configs" | ConvertFrom-Json
+		$Content.analyticsEnabled = $False
+		$Content.autoStart = $True
+		$Content.disableTips = $True
+		$Content.disableUpdate = $True
+		$Content.licenseTermsVersion = 2
+		$Content.openUIOnStartupDisabled = $True
+		$Content | ConvertTo-Json | Set-Content "$Configs"
 	}
 
 }
@@ -767,7 +779,7 @@ Function Update-JetbrainsPlugin {
 
 }
 
-Function Update-JoalDesktop {
+Function Update-Joal {
 
 	$Starter = "$Env:LocalAppData\Programs\joal-desktop\JoalDesktop.exe"
 	$Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
@@ -947,35 +959,35 @@ Function Update-Openjdk {
 
 Function Update-Pycharm {
 
-    Param (
-        [String] $Deposit = "$Env:userProfile\Projects",
-        [String] $Margins = 140
-    )
+	Param (
+		[String] $Deposit = "$Env:userProfile\Projects",
+		[String] $Margins = 140
+	)
 
-    $Starter = "$Env:ProgramFiles\JetBrains\PyCharm\bin\pycharm64.exe"
+	$Starter = "$Env:ProgramFiles\JetBrains\PyCharm\bin\pycharm64.exe"
 	$Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
 	$Present = $Current -Ne "0.0.0.0"
 
-    $Address = "https://data.services.jetbrains.com/products/releases?code=PCP&latest=true&type=release"
-    $Version = ((New-Object Net.WebClient).DownloadString("$Address") | ConvertFrom-Json).PCP[0].version
-    $Updated = [Version] "$Current" -Ge [Version] "$Version"
+	$Address = "https://data.services.jetbrains.com/products/releases?code=PCP&latest=true&type=release"
+	$Version = ((New-Object Net.WebClient).DownloadString("$Address") | ConvertFrom-Json).PCP[0].version
+	$Updated = [Version] "$Current" -Ge [Version] "$Version"
 
-    If (-Not $Updated) {
-        If ($Present) {
+	If (-Not $Updated) {
+		If ($Present) {
 			Invoke-Gsudo { Start-Process "$Env:ProgramFiles\JetBrains\PyCharm\bin\Uninstall.exe" "/S" -Wait }
-            Remove-Item -Path "$Env:ProgramFiles\JetBrains\PyCharm" -Recurse -Force
-            Remove-Item -Path "HKCU:\SOFTWARE\JetBrains\PyCharm" -Recurse -Force
-        }
-        $Address = ((New-Object Net.WebClient).DownloadString("$Address") | ConvertFrom-Json).PCP[0].downloads.windows.link
+			Remove-Item -Path "$Env:ProgramFiles\JetBrains\PyCharm" -Recurse -Force
+			Remove-Item -Path "HKCU:\SOFTWARE\JetBrains\PyCharm" -Recurse -Force
+		}
+		$Address = ((New-Object Net.WebClient).DownloadString("$Address") | ConvertFrom-Json).PCP[0].downloads.windows.link
 		$Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
         (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
-        $ArgList = "/S /D=$Env:ProgramFiles\JetBrains\PyCharm"
-        Invoke-Gsudo { Start-Process "$Using:Fetched" "$Using:ArgList" -Wait }
-        $Created = "$([Environment]::GetFolderPath("CommonStartMenu"))\Programs\JetBrains\PyCharm.lnk"
-        Remove-Item "$Created" -EA SI
-        $Forward = Get-Item "$([Environment]::GetFolderPath("CommonStartMenu"))\Programs\JetBrains\*PyCharm*.lnk"
-        Invoke-Gsudo { Rename-Item -Path "$Using:Forward" -NewName "$Using:Created" }
-    }
+		$ArgList = "/S /D=$Env:ProgramFiles\JetBrains\PyCharm"
+		Invoke-Gsudo { Start-Process "$Using:Fetched" "$Using:ArgList" -Wait }
+		$Created = "$([Environment]::GetFolderPath("CommonStartMenu"))\Programs\JetBrains\PyCharm.lnk"
+		Remove-Item "$Created" -EA SI
+		$Forward = Get-Item "$([Environment]::GetFolderPath("CommonStartMenu"))\Programs\JetBrains\*PyCharm*.lnk"
+		Invoke-Gsudo { Rename-Item -Path "$Using:Forward" -NewName "$Using:Created" }
+	}
 
 }
 
@@ -1405,11 +1417,11 @@ Function Main {
 		"Update-Vscode"
 		
 		"Update-Bluestacks"
-		"Update-DockerDesktop"
+		"Update-Docker"
 		"Update-Flutter"
 		"Update-Figma"
 		"Update-Jdownloader"
-		"Update-JoalDesktop"
+		"Update-Joal"
 		"Update-Keepassxc"
 		"Update-Mambaforge"
 		"Update-Maui"
