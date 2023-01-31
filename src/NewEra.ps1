@@ -1199,6 +1199,25 @@ Function Update-VscodeExtension {
 
 }
 
+Function Update-Windows {
+
+    Rename-Computer -NewName "WINHOGEN" -EA SI
+
+    Set-TimeZone -Name "Romance Standard Time"
+    Invoke-Gsudo {
+        Start-Process "w32tm" "/unregister" -WindowStyle Hidden -Wait
+        Start-Process "w32tm" "/register" -WindowStyle Hidden -Wait
+        Start-Process "net" "start w32time" -WindowStyle Hidden -Wait
+        Start-Process "w32tm" "/resync /force" -WindowStyle Hidden -Wait
+    }
+
+    Invoke-Gsudo { 
+        Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server" -Name "fDenyTSConnections" -Value 0
+        Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+    }
+
+}
+
 Function Update-Wsa {
 
 	Function Local:Invoke-Scraper {
@@ -1295,6 +1314,7 @@ Function Main {
 	Invoke-Gsudo { Unregister-ScheduledTask -TaskName "$Using:Payload" -Confirm:$False -EA SI }
 
 	$Factors = @(
+		"Update-Windows"
 		"Update-Cuda"
 		"Update-Wsa"
 		"Update-Wsl"
