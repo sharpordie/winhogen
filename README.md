@@ -9,7 +9,6 @@ Opinionated post-installation scripts for Windows 11.
 ## For development purpose
 
 Check out [line number 37](src/Devhogen.ps1#L37) to get an idea of what the script does.
-Running this blindly is strongly discouraged.
 
 ```powershell
 iwr https://raw.githubusercontent.com/sharpordie/winhogen/HEAD/src/Devhogen.ps1 -o $env:temp\Devhogen.ps1 | powershell -ep bypass $env:temp\Devhogen.ps1
@@ -18,7 +17,6 @@ iwr https://raw.githubusercontent.com/sharpordie/winhogen/HEAD/src/Devhogen.ps1 
 ## For gaming purpose
 
 Check out [line number 37](src/Gamhogen.ps1#L37) to get an idea of what the script does.
-Running this blindly is strongly discouraged.
 
 ```powershell
 iwr https://raw.githubusercontent.com/sharpordie/winhogen/HEAD/src/Gamhogen.ps1 -o $env:temp\Gamhogen.ps1 | powershell -ep bypass $env:temp\Gamhogen.ps1
