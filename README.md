@@ -8,12 +8,7 @@ Opinionated post-installation scripts for Windows 11.
 
 ## For development purpose
 
-### Things done by the script
-
-Check out [the line number 37](src/Devhogen.ps1#L37) to get an idea.
-
-### One-command execution
-
+Check out [line number 37](src/Devhogen.ps1#L37) to get an idea of what the script does.
 Running this blindly is strongly discouraged.
 
 ```powershell
@@ -22,12 +17,7 @@ iwr https://raw.githubusercontent.com/sharpordie/winhogen/HEAD/src/Devhogen.ps1 
 
 ## For gaming purpose
 
-### Things done by the script
-
-Check out [the line number 37](src/Gamhogen.ps1#L37) to get an idea.
-
-### One-command execution
-
+Check out [line number 37](src/Gamhogen.ps1#L37) to get an idea of what the script does.
 Running this blindly is strongly discouraged.
 
 ```powershell
