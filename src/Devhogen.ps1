@@ -1,24 +1,24 @@
 #!/usr/bin/env pwsh
 
 # Output greeting
-Clear-Host ; $ProgressPreference = "SilentlyContinue"
-Write-Host "+---------------------------------------------------------------------------+"
-Write-Host "|                                                                           |"
-Write-Host "|  > DEVHOGEN                                                               |"
-Write-Host "|                                                                           |"
-Write-Host "|  > CONFIGURATION SCRIPT FOR DEVELOPMENT PURPOSE                           |"
-Write-Host "|                                                                           |"
-Write-Host "+---------------------------------------------------------------------------+"
+Clear-Host ; $Global:ProgressPreference = "SilentlyContinue"
+Write-Host "+-----------------------------------------------------------------+"
+Write-Host "|                                                                 |"
+Write-Host "|  > DEVHOGEN                                                     |"
+Write-Host "|                                                                 |"
+Write-Host "|  > CONFIGURATION SCRIPT FOR DEVELOPERS                          |"
+Write-Host "|                                                                 |"
+Write-Host "+-----------------------------------------------------------------+"
 
 # Change headline
 $Current = "$($Script:MyInvocation.MyCommand.Path)"
 $Host.UI.RawUI.WindowTitle = (Get-Item "$Current").BaseName
 
 # Import winhogen
-Try {
+If (Test-Path "$(Split-Path "$Current")\Winhogen.psm1") {
     Import-Module "$(Split-Path "$Current")\Winhogen.psm1" -Force
 }
-Catch {
+Else {
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
     $BaseUrl = "https://raw.githubusercontent.com"
     $Address = "$BaseUrl/sharpordie/winhogen/HEAD/src/Winhogen.psm1"
@@ -64,7 +64,7 @@ $Members = @(
 )
 
 # Output progress
-$Maximum = (77 - 20) * -1
+$Maximum = (67 - 20) * -1
 $Shaping = "`r{0,$Maximum}{1,-3}{2,-6}{3,-3}{4,-8}"
 $Heading = "$Shaping" -F "FUNCTION", " ", "STATUS", " ", "DURATION"
 Write-Host "$Heading"

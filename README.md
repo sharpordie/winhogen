@@ -8,12 +8,16 @@ Opinionated post-installation scripts for Windows 11.
 
 ## For development purpose
 
+<!-- powershell -ep bypass -c "irm https://raw.githubusercontent.com/sharpordie/winhogen/HEAD/src/Devhogen.ps1 | iex" -->
+
 ```powershell
-powershell -ep bypass -c "irm https://raw.githubusercontent.com/sharpordie/winhogen/HEAD/src/Devhogen.ps1 | iex"
+powershell -ep bypass "./src/Devhogen.ps1"
 ```
 
 ## For gaming purpose
 
+<!-- powershell -ep bypass -c "irm https://raw.githubusercontent.com/sharpordie/winhogen/HEAD/src/Gamhogen.ps1 | iex" -->
+
 ```powershell
-powershell -ep bypass -c "irm https://raw.githubusercontent.com/sharpordie/winhogen/HEAD/src/Gamhogen.ps1 | iex"
+powershell -ep bypass "./src/Gamhogen.ps1"
 ```
