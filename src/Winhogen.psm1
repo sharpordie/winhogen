@@ -41,7 +41,7 @@ Function Enable-Feature {
                     'Set-ItemProperty -Path "$KeyPath" -Name ConsentPromptBehaviorAdmin -Value 5'
                     'Set-ItemProperty -Path "$KeyPath" -Name PromptOnSecureDesktop -Value 1'
                 ) -Join "`n")
-            Start-Process "powershell" "-ep bypass -f `"$Created`"" -Verb RunAs -WindowStyle Hidden -Wait
+            Try { Start-Process "powershell" "-ep bypass -f `"$Created`"" -Verb RunAs -WindowStyle Hidden -Wait } Catch { }
             Remove-Item "$Created" -Force
         }
         "Wsl" {
@@ -98,7 +98,7 @@ Function Remove-Feature {
                     'Set-ItemProperty -Path "$KeyPath" -Name ConsentPromptBehaviorAdmin -Value 0'
                     'Set-ItemProperty -Path "$KeyPath" -Name PromptOnSecureDesktop -Value 0'
                 ) -Join "`n")
-            Start-Process "powershell" "-ep bypass -f `"$Created`"" -Verb RunAs -WindowStyle Hidden -Wait
+            Try { Start-Process "powershell" "-ep bypass -f `"$Created`"" -Verb RunAs -WindowStyle Hidden -Wait } Catch { }
             Remove-Item "$Created" -Force
         }
     }
@@ -178,8 +178,6 @@ Function Update-SysPath {
 
 #EndRegion
 
-#Region Updaters
-
 Function Update-AndroidCmdline {
 
     $SdkHome = "$Env:LocalAppData\Android\Sdk"
@@ -195,7 +193,7 @@ Function Update-AndroidCmdline {
         Update-Nanazip ; $Extract = [IO.Directory]::CreateDirectory("$Env:Temp\$([Guid]::NewGuid().Guid)").FullName
         Start-Process "7z.exe" "x `"$Fetched`" -o`"$Extract`" -y -bso0 -bsp0" -WindowStyle Hidden -Wait
         Start-Sleep 4 ; New-Item "$SdkHome" -ItemType Directory -EA SI
-        Update-Openjdk ; $Manager = "$Extract\cmdline-tools\bin\sdkmanager.bat"
+        Update-MiscrosoftOpenjdk ; $Manager = "$Extract\cmdline-tools\bin\sdkmanager.bat"
         Write-Output $("y`n" * 10) | & "$Manager" --sdk_root="$SdkHome" "cmdline-tools;latest"
         Start-Sleep 4
     }
@@ -520,7 +518,9 @@ Function Update-ChromiumExtension {
 
 }
 
-Function Update-Cuda {
+Function Update-NvidiaCudaDriver {
+
+    # TODO: Verify nvidia card presence
 
     $Current = (Get-Package "*cuda*runtime*" -EA SI).Version
     If ($Null -Eq $Current) { $Current = "0.0.0.0" }
@@ -541,7 +541,30 @@ Function Update-Cuda {
 
 }
 
-Function Update-Docker {
+Function Update-NvidiaGameDriver {
+
+    # TODO: Verify nvidia card presence
+
+    $Current = (Get-Package "*nvidia*graphics*driver*" -EA SI).Version
+    If ($Null -Eq $Current) { $Current = "0.0.0.0" }
+    # $Present = $Current -Ne "0.0.0.0"
+
+    $Address = "https://community.chocolatey.org/packages/geforce-game-ready-driver"
+    $Version = [Regex]::Matches((Invoke-WebRequest "$Address"), "Geforce Game Ready Driver ([\d.]+)</title>").Groups[1].Value
+    $Updated = [Version] "$Current" -Ge [Version] "$Version"
+
+    If (-Not $Updated) {
+        $Address = "https://us.download.nvidia.com/Windows/$Version/$Version-desktop-win10-win11-64bit-international-dch-whql.exe"
+        $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
+		(New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
+        Update-Nanazip ; $Extract = [IO.Directory]::CreateDirectory("$Env:Temp\$([Guid]::NewGuid().Guid)").FullName
+        Start-Process "7z.exe" "x `"$Fetched`" -o`"$Extract`" -y -bso0 -bsp0" -WindowStyle Hidden -Wait
+        Invoke-Gsudo { Start-Process "$Using:Extract\setup.exe" "Display.Driver HDAudio.Driver -clean -s -noreboot" -Wait }
+    }
+
+}
+
+Function Update-DockerDesktop {
 
     $Starter = "$Env:ProgramFiles\Docker\Docker\Docker Desktop.exe"
     $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
@@ -630,11 +653,11 @@ Function Update-Flutter {
     Update-JetbrainsPlugin "$Product" "13666" # flutter-intl
     Update-JetbrainsPlugin "$Product" "14641" # flutter-riverpod-snippets
 
-    Update-VscodeExtension "Dart-Code.flutter"
-    Update-VscodeExtension "alexisvt.flutter-snippets"
-    Update-VscodeExtension "pflannery.vscode-versionlens"
-    Update-VscodeExtension "robert-brunhage.flutter-riverpod-snippets"
-    Update-VscodeExtension "usernamehw.errorlens"
+    Update-VisualStudioCodeExtension "Dart-Code.flutter"
+    Update-VisualStudioCodeExtension "alexisvt.flutter-snippets"
+    Update-VisualStudioCodeExtension "pflannery.vscode-versionlens"
+    Update-VisualStudioCodeExtension "robert-brunhage.flutter-riverpod-snippets"
+    Update-VisualStudioCodeExtension "usernamehw.errorlens"
 
     If (Test-Path "$Env:ProgramFiles\Microsoft Visual Studio\2022\Professional\Common7\IDE\devenv.exe") {
         Update-VisualStudio2022Workload "Microsoft.VisualStudio.Workload.NativeDesktop"
@@ -946,7 +969,7 @@ Function Update-Nanazip {
 
 }
 
-Function Update-Openjdk {
+Function Update-MiscrosoftOpenjdk {
 
     $Current = (Get-Package "*microsoft*openjdk*" -EA SI).Version
     If ($Null -Eq $Current) { $Current = "0.0.0.0" }
@@ -1083,6 +1106,30 @@ Function Update-Qbittorrent {
 
 }
 
+Function Update-System {
+
+    Param (
+        [String] $Country = "Romance Standard Time",
+        [String] $Machine
+    )
+
+    If (-Not [String]::IsNullOrWhiteSpace($Machine)) { Rename-Computer -NewName "$Machine" -EA SI }
+
+    Set-TimeZone -Name "$Country"
+    Invoke-Gsudo {
+        Start-Process "w32tm" "/unregister" -WindowStyle Hidden -Wait
+        Start-Process "w32tm" "/register" -WindowStyle Hidden -Wait
+        Start-Process "net" "start w32time" -WindowStyle Hidden -Wait
+        Start-Process "w32tm" "/resync /force" -WindowStyle Hidden -Wait
+    }
+
+    Invoke-Gsudo { 
+        Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server" -Name "fDenyTSConnections" -Value 0
+        Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+    }
+
+}
+
 Function Update-VisualStudio2022 {
 
     Param(
@@ -1196,6 +1243,54 @@ Function Update-VisualStudio2022Workload {
     
 }
 
+Function Update-VisualStudioCode {
+
+    $Starter = "$Env:LocalAppData\Programs\Microsoft VS Code\Code.exe"
+    $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
+    # $Present = $Current -Ne "0.0.0.0"
+
+    $Address = "https://code.visualstudio.com/sha?build=stable"
+    $Version = [Regex]::Match((Invoke-WebRequest "$Address" | ConvertFrom-Json).products[1].name, "[\d.]+").Value
+    $Updated = [Version] "$Current" -Ge [Version] ($Version.SubString(0, 6))
+
+    If (-Not $Updated -And "$Env:TERM_PROGRAM" -Ne "Vscode") {
+        $Address = "https://aka.ms/win32-x64-user-stable"
+        $Fetched = Join-Path "$Env:Temp" "VSCodeUserSetup-x64-Latest.exe"
+        $ArgList = "/VERYSILENT /MERGETASKS=`"!runcode`""
+		(New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
+        Invoke-Gsudo { Stop-Process -Name "Code" -EA SI ; Start-Process "$Using:Fetched" "$Using:ArgList" -Wait }
+        Start-Sleep 4
+    }
+
+    Update-SysPath "$Env:LocalAppData\Programs\Microsoft VS Code\bin" "Machine"
+    Update-VisualStudioCodeExtension "github.github-vscode-theme"
+    Update-VisualStudioCodeExtension "ms-vscode.powershell"
+
+    $Configs = "$Env:AppData\Code\User\settings.json"
+    New-Item "$(Split-Path "$Configs")" -ItemType Directory -EA SI
+    New-Item "$Configs" -ItemType File -EA SI
+    $NewJson = New-Object PSObject
+    $NewJson | Add-Member -Type NoteProperty -Name "editor.bracketPairColorization.enabled" -Value $True -Force
+    $NewJson | Add-Member -Type NoteProperty -Name "editor.fontSize" -Value 14 -Force
+    $NewJson | Add-Member -Type NoteProperty -Name "editor.lineHeight" -Value 28 -Force
+    $NewJson | Add-Member -Type NoteProperty -Name "security.workspace.trust.enabled" -Value $False -Force
+    $NewJson | Add-Member -Type NoteProperty -Name "telemetry.telemetryLevel" -Value "crash" -Force
+    $NewJson | Add-Member -Type NoteProperty -Name "update.mode" -Value "none" -Force
+    $NewJson | Add-Member -Type NoteProperty -Name "workbench.colorTheme" -Value "GitHub Dark Default" -Force
+    $NewJson | ConvertTo-Json | Set-Content "$Configs"
+
+}
+
+Function Update-VisualStudioCodeExtension {
+
+    Param(
+        [String] $Payload
+    )
+
+    Start-Process "code" "--install-extension $Payload --force" -WindowStyle Hidden -Wait
+
+}
+
 Function Update-VmwareWorkstation {
 
     Param (
@@ -1248,77 +1343,10 @@ Function Update-VmwareWorkstation {
 
 }
 
-Function Update-Vscode {
-
-    $Starter = "$Env:LocalAppData\Programs\Microsoft VS Code\Code.exe"
-    $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
-    # $Present = $Current -Ne "0.0.0.0"
-
-    $Address = "https://code.visualstudio.com/sha?build=stable"
-    $Version = [Regex]::Match((Invoke-WebRequest "$Address" | ConvertFrom-Json).products[1].name, "[\d.]+").Value
-    $Updated = [Version] "$Current" -Ge [Version] ($Version.SubString(0, 6))
-
-    If (-Not $Updated -And "$Env:TERM_PROGRAM" -Ne "Vscode") {
-        $Address = "https://aka.ms/win32-x64-user-stable"
-        $Fetched = Join-Path "$Env:Temp" "VSCodeUserSetup-x64-Latest.exe"
-        $ArgList = "/VERYSILENT /MERGETASKS=`"!runcode`""
-		(New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
-        Invoke-Gsudo { Stop-Process -Name "Code" -EA SI ; Start-Process "$Using:Fetched" "$Using:ArgList" -Wait }
-        Start-Sleep 4
-    }
-
-    Update-SysPath "$Env:LocalAppData\Programs\Microsoft VS Code\bin" "Machine"
-    Update-VscodeExtension "github.github-vscode-theme"
-    Update-VscodeExtension "ms-vscode.powershell"
-
-    $Configs = "$Env:AppData\Code\User\settings.json"
-    New-Item "$(Split-Path "$Configs")" -ItemType Directory -EA SI
-    New-Item "$Configs" -ItemType File -EA SI
-    $NewJson = New-Object PSObject
-    $NewJson | Add-Member -Type NoteProperty -Name "editor.bracketPairColorization.enabled" -Value $True -Force
-    $NewJson | Add-Member -Type NoteProperty -Name "editor.fontSize" -Value 14 -Force
-    $NewJson | Add-Member -Type NoteProperty -Name "editor.lineHeight" -Value 28 -Force
-    $NewJson | Add-Member -Type NoteProperty -Name "security.workspace.trust.enabled" -Value $False -Force
-    $NewJson | Add-Member -Type NoteProperty -Name "telemetry.telemetryLevel" -Value "crash" -Force
-    $NewJson | Add-Member -Type NoteProperty -Name "update.mode" -Value "none" -Force
-    $NewJson | Add-Member -Type NoteProperty -Name "workbench.colorTheme" -Value "GitHub Dark Default" -Force
-    $NewJson | ConvertTo-Json | Set-Content "$Configs"
-
-}
-
-Function Update-VscodeExtension {
-
-    Param(
-        [String] $Payload
-    )
-
-    Start-Process "code" "--install-extension $Payload --force" -WindowStyle Hidden -Wait
-
-}
-
-Function Update-Windows {
-
-    Rename-Computer -NewName "WINHOGEN" -EA SI
-
-    Set-TimeZone -Name "Romance Standard Time"
-    Invoke-Gsudo {
-        Start-Process "w32tm" "/unregister" -WindowStyle Hidden -Wait
-        Start-Process "w32tm" "/register" -WindowStyle Hidden -Wait
-        Start-Process "net" "start w32time" -WindowStyle Hidden -Wait
-        Start-Process "w32tm" "/resync /force" -WindowStyle Hidden -Wait
-    }
-
-    Invoke-Gsudo { 
-        Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Control\Terminal Server" -Name "fDenyTSConnections" -Value 0
-        Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
-    }
+Function Update-Wsa {
 
     # TODO: Enable developer mode
     # TODO: Enable advanced networking
-
-}
-
-Function Update-Wsa {
 
     Function Local:Invoke-Scraper {
         Param(
@@ -1389,5 +1417,3 @@ Function Update-YtDlg {
     Update-SysPath "$Deposit" "Machine"
 
 }
-
-#EndRegion
