@@ -3,8 +3,10 @@
 # Output greeting
 Clear-Host ; $ProgressPreference = "SilentlyContinue"
 Write-Host "+-----------------------------------------------------------------+"
+Write-Host "|                                                                 |"
 Write-Host "|  > DEVHOGEN                                                     |"
 Write-Host "|  > CONFIGURATION SCRIPT FOR DEVELOPERS                          |"
+Write-Host "|                                                                 |"
 Write-Host "+-----------------------------------------------------------------+"
 
 # Change headline
