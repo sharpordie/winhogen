@@ -49,8 +49,8 @@ Function Enable-Feature {
             If (-Not $Enabled) {
                 Invoke-Gsudo {
                     $ProgressPreference = "SilentlyContinue"
-                    Enable-WindowsOptionalFeature -Online -FeatureName VirtualMachinePlatform -All -NoRestart
-                    Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux -All -NoRestart
+                    Enable-WindowsOptionalFeature -Online -FeatureName VirtualMachinePlatform -All -NoRestart -LogLevel Errors
+                    Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux -All -NoRestart -LogLevel Errors
                 }
                 If (Assert-Pending -Eq $True) { Invoke-Restart }
             }
