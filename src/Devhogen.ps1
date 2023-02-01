@@ -1,7 +1,7 @@
 #!/usr/bin/env pwsh
 
 # Output greeting
-Clear-Host ; $Global:ProgressPreference = "SilentlyContinue"
+Clear-Host ; $ProgressPreference = "SilentlyContinue"
 Write-Host "+-----------------------------------------------------------------+"
 Write-Host "|                                                                 |"
 Write-Host "|  > DEVHOGEN                                                     |"

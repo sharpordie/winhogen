@@ -47,8 +47,11 @@ Function Enable-Feature {
         "Wsl" {
             $Enabled = Invoke-Gsudo { (Get-WindowsOptionalFeature -FeatureName Microsoft-Windows-Subsystem-Linux -Online).State -Eq "Enabled" }
             If (-Not $Enabled) {
-                Invoke-Gsudo { Enable-WindowsOptionalFeature -Online -FeatureName VirtualMachinePlatform -All -NoRestart }
-                Invoke-Gsudo { Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux -All -NoRestart }
+                Invoke-Gsudo {
+                    $ProgressPreference = "SilentlyContinue"
+                    Enable-WindowsOptionalFeature -Online -FeatureName VirtualMachinePlatform -All -NoRestart
+                    Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux -All -NoRestart
+                }
                 If (Assert-Pending -Eq $True) { Invoke-Restart }
             }
         }
