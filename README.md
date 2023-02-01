@@ -24,11 +24,11 @@ iwr https://raw.githubusercontent.com/sharpordie/winhogen/HEAD/src/Gamhogen.ps1 
 powershell -ep bypass $env:temp\Gamhogen.ps1
 ```
 
-## For your own purpose
+## For personal purpose
 
 Copy the generic template and modify the list of functions to execute.
 
 ```powershell
 git clone https://github.com/sharpordie/winhogen.git
-cd winhogen ; cp ./src/Template.ps1 ./src/Newhogen.ps1
+cd winhogen ; cp ./src/Template.ps1 ./src/Ownhogen.ps1
 ```
