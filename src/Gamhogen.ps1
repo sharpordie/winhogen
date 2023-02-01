@@ -36,7 +36,7 @@ If (-Not $Correct) { Write-Host "$Failure" -FO Red ; Write-Host ; Exit }
 $Payload = (Get-Item "$Current").BaseName
 Invoke-Gsudo { Unregister-ScheduledTask "$Using:Payload" -Confirm:$False -EA SI }
 
-# Handle members
+# Handle elements
 $Members = @(
     "Update-System 'Romance Standard Time' 'GAMHOGEN'"
     "Update-NvidiaGameDriver"
