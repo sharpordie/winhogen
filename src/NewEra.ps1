@@ -70,8 +70,7 @@ Function Invoke-Restart {
 			-RunLevel Limited `
 			-Force *> $Null            
 	}
-	Start-Sleep 2 ; Restart-Computer -Force
-	Exit ; Start-Sleep 2
+	Start-Sleep 2 ; Restart-Computer -Force ; Start-Sleep 2
 
 }
 
@@ -634,6 +633,10 @@ Function Update-Flutter {
 	Update-VscodeExtension "pflannery.vscode-versionlens"
 	Update-VscodeExtension "robert-brunhage.flutter-riverpod-snippets"
 	Update-VscodeExtension "usernamehw.errorlens"
+
+	If (Test-Path "$Env:ProgramFiles\Microsoft Visual Studio\2022\Professional\Common7\IDE\devenv.exe") {
+		Update-VisualStudio2022Workload "Microsoft.VisualStudio.Workload.NativeDesktop"
+	}
 
 }
 
@@ -1410,49 +1413,31 @@ Function Main {
 
 	$Factors = @(
 		"Update-Windows"
-		"Update-Cuda"
-		"Update-Wsa"
-		"Update-Wsl"
+		# "Update-Cuda"
+		# "Update-Wsa"
+		# "Update-Wsl"
 
 		"Update-AndroidStudio"
 		"Update-Chromium"
 		"Update-Git -GitMail 72373746+sharpordie@users.noreply.github.com -GitUser sharpordie"
-		"Update-Pycharm"
+		# "Update-Pycharm"
 		"Update-VisualStudio2022"
 		"Update-Vscode"
 		
-		"Update-Bluestacks"
+		# "Update-Bluestacks"
 		"Update-Docker"
 		"Update-Flutter"
 		"Update-Figma"
-		"Update-Jdownloader"
-		"Update-Joal"
-		"Update-Keepassxc"
-		"Update-Mambaforge"
-		"Update-Maui"
+		# "Update-Jdownloader"
+		# "Update-Joal"
+		# "Update-Keepassxc"
+		# "Update-Mambaforge"
+		# "Update-Maui"
 		"Update-Mpv"
-		"Update-Python"
-		"Update-Qbittorrent"
+		# "Update-Python"
+		# "Update-Qbittorrent"
 		"Update-VmwareWorkstation"
 		"Update-YtDlg"
-	)
-
-	$Factors = @(
-		"Update-Windows"
-
-		# "Update-AndroidStudio"
-		# "Update-Git -GitMail 72373746+sharpordie@users.noreply.github.com -GitUser sharpordie"
-		# "Update-Pycharm"
-		# "Update-VisualStudio2022"
-		"Update-Vscode"
-		
-		"Update-Docker"
-		"Update-Flutter"
-		"Update-Figma"
-		"Update-Jdownloader"
-		"Update-Mambaforge"
-		"Update-Python"
-		"Update-VmwareWorkstation"
 	)
 
 	$Maximum = (60 - 20) * -1
@@ -1481,7 +1466,7 @@ Function Main {
 	}
 
 	Enable-Feature "Uac" ; Invoke-Expression "gsudo -k" *> $Null
-
+	
 	Write-Host "`n"
 
 }
