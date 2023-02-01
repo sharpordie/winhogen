@@ -3,11 +3,8 @@
 # Output greeting
 Clear-Host ; $ProgressPreference = "SilentlyContinue"
 Write-Host "+-----------------------------------------------------------------+"
-Write-Host "|                                                                 |"
 Write-Host "|  > DEVHOGEN                                                     |"
-Write-Host "|                                                                 |"
 Write-Host "|  > CONFIGURATION SCRIPT FOR DEVELOPERS                          |"
-Write-Host "|                                                                 |"
 Write-Host "+-----------------------------------------------------------------+"
 
 # Change headline
@@ -28,7 +25,7 @@ Else {
 # Handle security
 $Loading = "`nTHE UPDATING DEPENDENCIES PROCESS HAS LAUNCHED"
 $Failure = "`rTHE UPDATING DEPENDENCIES PROCESS WAS CANCELED"
-Write-Host "$Loading" -NoNewline ; Remove-Feature "Uac" ; Update-PowPlan "Ultimate"
+Write-Host "$Loading" -FO DarkYellow -NoNewline ; Remove-Feature "Uac" ; Update-PowPlan "Ultimate"
 $Correct = (Update-Gsudo) -And ! (gsudo cache on -d -1 2>&1).ToString().Contains("Error")
 If (-Not $Correct) { Write-Host "$Failure" -FO Red ; Write-Host ; Exit }
 
@@ -42,25 +39,25 @@ $Members = @(
     # "Update-NvidiaCudaDriver"
     "Update-Wsl"
     # "Update-AndroidStudio"
-    # "Update-Chromium"
-    # "Update-Git 'main' '72373746+sharpordie@users.noreply.github.com' 'sharpordie'"
-    # "Update-Pycharm"
-    # "Update-VisualStudio2022"
-    # "Update-VisualStudioCode"
+    "Update-Chromium"
+    "Update-Git 'main' '72373746+sharpordie@users.noreply.github.com' 'sharpordie'"
+    "Update-Pycharm"
+    "Update-VisualStudio2022"
+    "Update-VisualStudioCode"
     # "Update-Bluestacks"
-    # "Update-DockerDesktop"
+    "Update-DockerDesktop"
     # "Update-Flutter"
-    # "Update-Figma"
+    "Update-Figma"
     # "Update-Jdownloader"
     # "Update-Joal"
     # "Update-Keepassxc"
     # "Update-Mambaforge"
     # "Update-Maui"
-    # "Update-Mpv"
-    # "Update-Python"
-    # "Update-Qbittorrent"
-    # "Update-VmwareWorkstation"
-    # "Update-YtDlg"
+    "Update-Mpv"
+    "Update-Python"
+    "Update-Qbittorrent"
+    "Update-VmwareWorkstation"
+    "Update-YtDlg"
 )
 
 # Output progress

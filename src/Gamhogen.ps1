@@ -3,11 +3,8 @@
 # Output greeting
 Clear-Host ; $ProgressPreference = "SilentlyContinue"
 Write-Host "+-----------------------------------------------------------------+"
-Write-Host "|                                                                 |"
 Write-Host "|  > GAMHOGEN                                                     |"
-Write-Host "|                                                                 |"
 Write-Host "|  > CONFIGURATION SCRIPT FOR GAMERS                              |"
-Write-Host "|                                                                 |"
 Write-Host "+-----------------------------------------------------------------+"
 
 # Change headline
@@ -28,7 +25,7 @@ Else {
 # Handle security
 $Loading = "`nTHE UPDATING DEPENDENCIES PROCESS HAS LAUNCHED"
 $Failure = "`rTHE UPDATING DEPENDENCIES PROCESS WAS CANCELED"
-Write-Host "$Loading" -NoNewline ; Remove-Feature "Uac" ; Update-PowPlan "Ultimate"
+Write-Host "$Loading" -FO DarkYellow -NoNewline ; Remove-Feature "Uac" ; Update-PowPlan "Ultimate"
 $Correct = (Update-Gsudo) -And ! (gsudo cache on -d -1 2>&1).ToString().Contains("Error")
 If (-Not $Correct) { Write-Host "$Failure" -FO Red ; Write-Host ; Exit }
 
