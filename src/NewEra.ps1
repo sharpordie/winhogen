@@ -71,6 +71,7 @@ Function Invoke-Restart {
 			-Force *> $Null            
 	}
 	Start-Sleep 2 ; Restart-Computer -Force
+	Exit ; Start-Sleep 2
 
 }
 
@@ -161,6 +162,8 @@ Function Update-SysPath {
 		[String] $Payload,
 		[ValidateSet("Machine", "Process", "User")] [String] $Section
 	)
+
+	If (-Not (Test-Path "$Payload")) { Return }
 
 	If ($Section -Ne "Process" ) {
 		$OldPath = [Environment]::GetEnvironmentVariable("PATH", "$Section")
@@ -273,8 +276,9 @@ Function Update-Bluestacks {
 		$Address = "https://cdn3.bluestacks.com/downloads/windows/nxt/$Version/$Hashing/FullInstaller/x64/BlueStacksFullInstaller_${Version}_amd64_native.exe"
 		$Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
 		(New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
-		$ArgList = "-s --defaultImageName Nougat64 --imageToLaunch Nougat64 --defaultImageName Nougat64 --imageToLaunch Nougat64"
-		# $ArgList = "-s --defaultImageName Nougat64 --imageToLaunch Nougat64 --defaultImageName Pie64 --imageToLaunch Pie64"
+		$ArgList = "-s --defaultImageName Nougat64 --imageToLaunch Nougat64"
+		# $ArgList = "-s --defaultImageName Pie64 --imageToLaunch Pie64"
+		# $ArgList = "--defaultImageName Rvc64 --imageToLaunch Rvc64"
 		Invoke-Gsudo { Start-Process "$Using:Fetched" "$Using:ArgList" -Wait }
 		Start-Sleep 4
 		Remove-Item "$Env:Public\Desktop\BlueStacks*.lnk" -EA SI
@@ -540,13 +544,14 @@ Function Update-Docker {
 
 	$Starter = "$Env:ProgramFiles\Docker\Docker\Docker Desktop.exe"
 	$Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
-	# $Present = $Current -Ne "0.0.0.0"
+	$Present = $Current -Ne "0.0.0.0"
 
 	$Address = "https://community.chocolatey.org/packages/docker-desktop"
 	$Version = [Regex]::Matches((Invoke-WebRequest "$Address"), "Docker Desktop ([\d.]+)</title>").Groups[1].Value
 	$Updated = [Version] "$Current" -Ge [Version] "$Version"
 
 	If (-Not $Updated) {
+		Update-Wsl
 		$Address = "https://desktop.docker.com/win/stable/Docker Desktop Installer.exe"
 		$Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
 		(New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
@@ -554,6 +559,7 @@ Function Update-Docker {
 		Start-Sleep 4
 		Remove-Item "$Env:Public\Desktop\Docker*.lnk" -EA SI
 		Remove-Item "$Env:UserProfile\Desktop\Docker*.lnk" -EA SI
+		If (-Not $Present) { Invoke-Restart }
 	}
 
 	$Configs = "$Env:AppData\Docker\settings.json"
@@ -563,6 +569,7 @@ Function Update-Docker {
 		$Content.autoStart = $True
 		$Content.disableTips = $True
 		$Content.disableUpdate = $True
+		$Content.displayedTutorial = $True
 		$Content.licenseTermsVersion = 2
 		$Content.openUIOnStartupDisabled = $True
 		$Content | ConvertTo-Json | Set-Content "$Configs"
@@ -668,7 +675,7 @@ Function Update-Gsudo {
 
 	$Current = (Get-Package "*gsudo*" -EA SI).Version
 	If ($Null -Eq $Current) { $Current = "0.0.0.0" }
-	$Present = $Current -Ne "0.0.0.0"
+	$Present = $Current -Ne "0.0.0.0" ; If ($Present) { Return $True }
 
 	$Address = "https://api.github.com/repos/gerardog/gsudo/releases/latest"
 	$Version = [Regex]::Match((Invoke-WebRequest "$Address" | ConvertFrom-Json).tag_name, "[\d.]+").Value
@@ -751,7 +758,7 @@ Function Update-JetbrainsPlugin {
 		[String] $Element
 	)
 
-	If (-Not (Test-Path "$Deposit") -Or ([String]::IsNullOrWhiteSpace($Element))) { Return 0 }
+	If (-Not (Test-Path "$Deposit") -Or ([String]::IsNullOrWhiteSpace($Element))) { Return }
 	$Release = (Get-Content "$Deposit\product-info.json" | ConvertFrom-Json).buildNumber
 	$Release = [Regex]::Matches("$Release", "([\d.]+)\.").Groups[1].Value
 	$DataDir = (Get-Content "$Deposit\product-info.json" | ConvertFrom-Json).dataDirectoryName
@@ -890,7 +897,7 @@ Function Update-Mpv {
 		(New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
 		Update-Nanazip ; $Deposit = Split-Path "$Starter" ; New-Item "$Deposit" -ItemType Directory -EA SI
 		Start-Process "7z.exe" "x `"$Fetched`" -o`"$Deposit`" -y -bso0 -bsp0" -WindowStyle Hidden -Wait ; Start-Sleep 4
-		$LnkFile = "$Env:AppData\Microsoft\Windows\Start Menu\Programs\Mpv.lnk"
+		$LnkFile = "$Env:AppData\Microsoft\Windows\Start Menu\Programs\mpv.lnk"
 		Update-LnkFile -LnkFile "$LnkFile" -Starter "$Starter"
 		Start-Sleep 4 ; Invoke-Gsudo { & "$Using:Deposit\installer\mpv-install.bat" }
 		Start-Sleep 4 ; Stop-Process -Name "SystemSettings" -EA SI
@@ -1401,8 +1408,6 @@ Function Main {
 	$Payload = (Get-Item "$Current").BaseName
 	Invoke-Gsudo { Unregister-ScheduledTask -TaskName "$Using:Payload" -Confirm:$False -EA SI }
 
-	Update-Pycharm ; exit
-
 	$Factors = @(
 		"Update-Windows"
 		"Update-Cuda"
@@ -1430,6 +1435,24 @@ Function Main {
 		"Update-Qbittorrent"
 		"Update-VmwareWorkstation"
 		"Update-YtDlg"
+	)
+
+	$Factors = @(
+		"Update-Windows"
+
+		# "Update-AndroidStudio"
+		# "Update-Git -GitMail 72373746+sharpordie@users.noreply.github.com -GitUser sharpordie"
+		# "Update-Pycharm"
+		# "Update-VisualStudio2022"
+		"Update-Vscode"
+		
+		"Update-Docker"
+		"Update-Flutter"
+		"Update-Figma"
+		"Update-Jdownloader"
+		"Update-Mambaforge"
+		"Update-Python"
+		"Update-VmwareWorkstation"
 	)
 
 	$Maximum = (60 - 20) * -1
