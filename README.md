@@ -21,3 +21,12 @@ Check out [line number 37](src/Gamhogen.ps1#L37) to get an idea of what the scri
 ```powershell
 iwr https://raw.githubusercontent.com/sharpordie/winhogen/HEAD/src/Gamhogen.ps1 -o $env:temp\Gamhogen.ps1 | powershell -ep bypass $env:temp\Gamhogen.ps1
 ```
+
+## For your own purpose
+
+Copy the generic template and modify the list of functions to execute.
+
+```powershell
+git clone https://github.com/sharpordie/winhogen.git
+cd winhogen ; cp ./src/Template.ps1 ./src/Newhogen.ps1
+```

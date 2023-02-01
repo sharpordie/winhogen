@@ -3,8 +3,8 @@
 # Output greeting
 Clear-Host ; $ProgressPreference = "SilentlyContinue"
 Write-Host "+-----------------------------------------------------------------+"
-Write-Host "|  > DEVHOGEN                                                     |"
-Write-Host "|  > CONFIGURATION SCRIPT FOR DEVELOPERS                          |"
+Write-Host "|  > TEMPLATE                                                     |"
+Write-Host "|  > CONFIGURATION SCRIPT FOR ...                                 |"
 Write-Host "+-----------------------------------------------------------------+"
 
 # Change headline
@@ -35,29 +35,7 @@ Invoke-Gsudo { Unregister-ScheduledTask "$Using:Payload" -Confirm:$False -EA SI 
 
 # Handle elements
 $Members = @(
-    "Update-System 'Romance Standard Time' 'DEVHOGEN'"
-    "Update-NvidiaCudaDriver"
-    "Update-Wsl"
-    "Update-AndroidStudio"
-    "Update-Chromium"
-    "Update-Git 'main' '72373746+sharpordie@users.noreply.github.com' 'sharpordie'"
-    "Update-Pycharm"
-    "Update-VisualStudio2022"
-    "Update-VisualStudioCode"
-    "Update-Bluestacks"
-    "Update-DockerDesktop"
-    "Update-Flutter"
-    "Update-Figma"
-    "Update-Jdownloader"
-    "Update-Joal"
-    "Update-Keepassxc"
-    "Update-Mambaforge"
-    "Update-Maui"
-    "Update-Mpv"
-    "Update-Python"
-    "Update-Qbittorrent"
-    "Update-VmwareWorkstation"
-    "Update-YtDlg"
+    # TODO: Insert functions to be executed here
 )
 
 # Output progress
