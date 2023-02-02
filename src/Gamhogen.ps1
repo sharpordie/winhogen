@@ -39,7 +39,9 @@ Invoke-Gsudo { Unregister-ScheduledTask "$Using:Payload" -Confirm:$False -EA SI 
 $Members = @(
     "Update-System 'Romance Standard Time' 'GAMHOGEN'"
     "Update-NvidiaGameDriver"
+    "Update-Protonvpn"
     "Update-Qbittorrent"
+    "Update-Steam"
 )
 
 # Output progress

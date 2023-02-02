@@ -521,52 +521,6 @@ Function Update-ChromiumExtension {
 
 }
 
-Function Update-NvidiaCudaDriver {
-
-    # TODO: Verify nvidia card presence
-
-    $Current = (Get-Package "*cuda*runtime*" -EA SI).Version
-    If ($Null -Eq $Current) { $Current = "0.0.0.0" }
-    # $Present = $Current -Ne "0.0.0.0"
-
-    $Address = "https://raw.githubusercontent.com/scoopinstaller/main/master/bucket/cuda.json"
-    $Version = [Regex]::Match((Invoke-WebRequest "$Address" | ConvertFrom-Json).version, "[\d.]+").Value
-    $Updated = [Version] "$Current" -Ge [Version] $Version.SubString(0, 4)
-
-    If (-Not $Updated) {
-        $Address = (Invoke-WebRequest "$Address" | ConvertFrom-Json).architecture."64bit".url.Replace("#/dl.7z", "")
-        $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
-		(New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
-        Invoke-Gsudo { Start-Process "$Using:Fetched" "/s /noreboot" -Wait }
-        Remove-Item "$Env:Public\Desktop\GeForce*.lnk" -EA SI
-        Remove-Item "$Env:UserProfile\Desktop\GeForce*.lnk" -EA SI
-    }
-
-}
-
-Function Update-NvidiaGameDriver {
-
-    # TODO: Verify nvidia card presence
-
-    $Current = (Get-Package "*nvidia*graphics*driver*" -EA SI).Version
-    If ($Null -Eq $Current) { $Current = "0.0.0.0" }
-    # $Present = $Current -Ne "0.0.0.0"
-
-    $Address = "https://community.chocolatey.org/packages/geforce-game-ready-driver"
-    $Version = [Regex]::Matches((Invoke-WebRequest "$Address"), "Geforce Game Ready Driver ([\d.]+)</title>").Groups[1].Value
-    $Updated = [Version] "$Current" -Ge [Version] "$Version"
-
-    If (-Not $Updated) {
-        $Address = "https://us.download.nvidia.com/Windows/$Version/$Version-desktop-win10-win11-64bit-international-dch-whql.exe"
-        $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
-		(New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
-        Update-Nanazip ; $Extract = [IO.Directory]::CreateDirectory("$Env:Temp\$([Guid]::NewGuid().Guid)").FullName
-        Start-Process "7z.exe" "x `"$Fetched`" -o`"$Extract`" -y -bso0 -bsp0" -WindowStyle Hidden -Wait
-        Invoke-Gsudo { Start-Process "$Using:Extract\setup.exe" "Display.Driver HDAudio.Driver -clean -s -noreboot" -Wait }
-    }
-
-}
-
 Function Update-DockerDesktop {
 
     $Starter = "$Env:ProgramFiles\Docker\Docker\Docker Desktop.exe"
@@ -912,6 +866,29 @@ Function Update-Maui {
 
 }
 
+Function Update-MiscrosoftOpenjdk {
+
+    $Current = (Get-Package "*microsoft*openjdk*" -EA SI).Version
+    If ($Null -Eq $Current) { $Current = "0.0.0.0" }
+    # $Present = $Current -Ne "0.0.0.0"
+
+    $Address = "https://learn.microsoft.com/en-us/java/openjdk/download"
+    $Version = [Regex]::Matches((Invoke-WebRequest "$Address"), "OpenJDK ([\d.]+) LTS").Groups[1].Value
+    $Updated = [Version] "$Current" -Ge [Version] "$Version"
+
+    If (-Not $Updated) {
+        $Address = "https://aka.ms/download-jdk/microsoft-jdk-$Version-windows-x64.msi"
+        $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
+		(New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
+        Invoke-Gsudo { Start-Process "msiexec" "/i `"$Using:Fetched`" INSTALLLEVEL=3 /quiet" -Wait }
+        Start-Sleep 4
+    }
+
+    $Deposit = (Get-Item "$Env:ProgramFiles\Microsoft\jdk-*\bin" -EA SI).FullName
+    Update-SysPath "$Deposit" "Process"
+
+}
+
 Function Update-Mpv {
 
     $Starter = "$Env:LocalAppData\Programs\Mpv\mpv.exe"
@@ -972,26 +949,72 @@ Function Update-Nanazip {
 
 }
 
-Function Update-MiscrosoftOpenjdk {
+Function Update-NvidiaCudaDriver {
 
-    $Current = (Get-Package "*microsoft*openjdk*" -EA SI).Version
+    # TODO: Verify nvidia card presence
+
+    $Current = (Get-Package "*cuda*runtime*" -EA SI).Version
     If ($Null -Eq $Current) { $Current = "0.0.0.0" }
     # $Present = $Current -Ne "0.0.0.0"
 
-    $Address = "https://learn.microsoft.com/en-us/java/openjdk/download"
-    $Version = [Regex]::Matches((Invoke-WebRequest "$Address"), "OpenJDK ([\d.]+) LTS").Groups[1].Value
+    $Address = "https://raw.githubusercontent.com/scoopinstaller/main/master/bucket/cuda.json"
+    $Version = [Regex]::Match((Invoke-WebRequest "$Address" | ConvertFrom-Json).version, "[\d.]+").Value
+    $Updated = [Version] "$Current" -Ge [Version] $Version.SubString(0, 4)
+
+    If (-Not $Updated) {
+        $Address = (Invoke-WebRequest "$Address" | ConvertFrom-Json).architecture."64bit".url.Replace("#/dl.7z", "")
+        $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
+		(New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
+        Invoke-Gsudo { Start-Process "$Using:Fetched" "/s /noreboot" -Wait }
+        Remove-Item "$Env:Public\Desktop\GeForce*.lnk" -EA SI
+        Remove-Item "$Env:UserProfile\Desktop\GeForce*.lnk" -EA SI
+    }
+
+}
+
+Function Update-NvidiaGameDriver {
+
+    # TODO: Verify nvidia card presence
+
+    $Current = (Get-Package "*nvidia*graphics*driver*" -EA SI).Version
+    If ($Null -Eq $Current) { $Current = "0.0.0.0" }
+    # $Present = $Current -Ne "0.0.0.0"
+
+    $Address = "https://community.chocolatey.org/packages/geforce-game-ready-driver"
+    $Version = [Regex]::Matches((Invoke-WebRequest "$Address"), "Geforce Game Ready Driver ([\d.]+)</title>").Groups[1].Value
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
 
     If (-Not $Updated) {
-        $Address = "https://aka.ms/download-jdk/microsoft-jdk-$Version-windows-x64.msi"
+        $Address = "https://us.download.nvidia.com/Windows/$Version/$Version-desktop-win10-win11-64bit-international-dch-whql.exe"
         $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
 		(New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
-        Invoke-Gsudo { Start-Process "msiexec" "/i `"$Using:Fetched`" INSTALLLEVEL=3 /quiet" -Wait }
-        Start-Sleep 4
+        Update-Nanazip ; $Extract = [IO.Directory]::CreateDirectory("$Env:Temp\$([Guid]::NewGuid().Guid)").FullName
+        Start-Process "7z.exe" "x `"$Fetched`" -o`"$Extract`" -y -bso0 -bsp0" -WindowStyle Hidden -Wait
+        Invoke-Gsudo { Start-Process "$Using:Extract\setup.exe" "Display.Driver HDAudio.Driver -clean -s -noreboot" -Wait }
     }
 
-    $Deposit = (Get-Item "$Env:ProgramFiles\Microsoft\jdk-*\bin" -EA SI).FullName
-    Update-SysPath "$Deposit" "Process"
+}
+
+Function Update-Protonvpn {
+
+    $Starter = "${Env:ProgramFiles(x86)}\Proton Technologies\ProtonVPN\ProtonVPN.exe"
+    $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
+    # $Present = $Current -Ne "0.0.0.0"
+
+    $Address = "https://community.chocolatey.org/packages/protonvpn"
+    $Version = [Regex]::Matches((Invoke-WebRequest "$Address"), "ProtonVPN ([\d.]+)</title>").Groups[1].Value
+    $Updated = [Version] "$Current" -Ge [Version] "$Version"
+
+    If (-Not $Updated) {
+        $Address = "https://protonvpn.com/download/ProtonVPN_win_v$Version.exe"
+        $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
+		(New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
+        Invoke-Gsudo { Start-Process "$Using:Fetched" "/quiet" -Wait }
+        Start-Sleep 4
+        Remove-Item "$Env:Public\Desktop\Proton*.lnk" -EA SI
+        Remove-Item "$Env:UserProfile\Desktop\Proton*.lnk" -EA SI
+        Stop-Process -Name "ProtonVPN" -EA SI ; Start-Sleep 4
+    }
 
 }
 
@@ -1106,6 +1129,28 @@ Function Update-Qbittorrent {
     Add-Content -Path "$Configs" -Value "Downloads\SavePath=$($Deposit.Replace("\", "/"))"
     Add-Content -Path "$Configs" -Value "Downloads\TempPath=$($Loading.Replace("\", "/"))"
     Add-Content -Path "$Configs" -Value "Downloads\TempPathEnabled=true"
+
+}
+
+Function Update-Steam {
+
+    $Current = (Get-Package "*steam*" -EA SI).Version
+    If ($Null -Eq $Current) { $Current = "0.0.0.0" }
+    # $Present = $Current -Ne "0.0.0.0"
+
+    $Address = "https://community.chocolatey.org/packages/steam"
+    $Version = [Regex]::Matches((Invoke-WebRequest "$Address"), "Steam ([\d.]+)</title>").Groups[1].Value
+    $Updated = [Version] "$Current" -Ge [Version] "$Version"
+
+    If (-Not $Updated) {
+        $Address = "http://cdn.akamai.steamstatic.com/client/installer/SteamSetup.exe"
+        $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
+		(New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
+        Invoke-Gsudo { Start-Process "$Using:Fetched" "/S" -Wait }
+        Start-Sleep 4
+        Remove-Item "$Env:Public\Desktop\Steam*.lnk" -EA SI
+        Remove-Item "$Env:UserProfile\Desktop\Steam*.lnk" -EA SI
+    }
 
 }
 
