@@ -1014,6 +1014,7 @@ Function Update-Protonvpn {
         Remove-Item "$Env:Public\Desktop\Proton*.lnk" -EA SI
         Remove-Item "$Env:UserProfile\Desktop\Proton*.lnk" -EA SI
         Stop-Process -Name "ProtonVPN" -EA SI ; Start-Sleep 4
+        Remove-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Name "ProtonVPN" -EA SI
     }
 
 }
@@ -1150,6 +1151,7 @@ Function Update-Steam {
         Start-Sleep 4
         Remove-Item "$Env:Public\Desktop\Steam*.lnk" -EA SI
         Remove-Item "$Env:UserProfile\Desktop\Steam*.lnk" -EA SI
+        Remove-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Name "Steam" -EA SI
     }
 
 }
