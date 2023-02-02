@@ -38,7 +38,8 @@ Invoke-Gsudo { Unregister-ScheduledTask "$Using:Payload" -Confirm:$False -EA SI 
 # Handle elements
 $Members = @(
     "Update-System 'Romance Standard Time' 'DEVHOGEN'"
-    "Update-NvidiaCudaDriver"
+    # "Update-NvidiaCudaDriver"
+    "Update-NvidiaGameDriver"
     "Update-Wsl"
     "Update-AndroidStudio"
     "Update-Chromium"
@@ -56,8 +57,10 @@ $Members = @(
     "Update-Mambaforge"
     "Update-Maui"
     "Update-Mpv"
+    "Update-Protonvpn"
     "Update-Python"
     "Update-Qbittorrent"
+    "Update-Steam"
     "Update-VmwareWorkstation"
     "Update-YtDlg"
 )
