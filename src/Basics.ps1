@@ -54,7 +54,6 @@ Function Enable-Feature {
             $Enabled = Invoke-Gsudo { (Get-WindowsOptionalFeature -FeatureName Microsoft-Windows-Subsystem-Linux -Online).State -Eq "Enabled" }
             If (-Not $Enabled) {
                 Invoke-Gsudo {
-                    $ProgressPreference = "SilentlyContinue"
                     Enable-WindowsOptionalFeature -Online -FeatureName VirtualMachinePlatform -All -NoRestart *> $Null
                     Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux -All -NoRestart *> $Null
                 }
@@ -70,7 +69,7 @@ Function Invoke-Restart {
     $Current = $Script:MyInvocation.MyCommand.Path
     $Deposit = "HKCU:\Software\Microsoft\Windows\CurrentVersion\RunOnce"
     $Command = "wt powershell -ep bypass -noexit -nologo -file `"$Current`""
-    New-ItemProperty "$Deposit" (Get-Item "$Current").BaseName -Value "$Command"
+    New-ItemProperty "$Deposit" "." -Value "$Command"
     Update-Account "$Env:Username" ([SecureString]::New())
     Restart-Computer -Force
 
@@ -207,6 +206,8 @@ Function Update-SysPath {
 
 #EndRegion
 
+#Region Updaters
+
 Function Update-Gsudo {
 
     $Current = (Get-Package "*gsudo*" -EA SI).Version
@@ -238,17 +239,21 @@ Function Update-Gsudo {
 
 }
 
-Function Main {
+#EndRegion
 
-    Write-Host "+-----------------------------------------------------------------------+"
-    Write-Host "|                                                                       |"
-    Write-Host "|  > WINHOGEN                                                           |"
-    Write-Host "|  > CONFIGURATION SCRIPT FOR DEVELOPERS                                |"
-    Write-Host "|                                                                       |"
-    Write-Host "+-----------------------------------------------------------------------+"
+Function Main {
 
     $Current = $Script:MyInvocation.MyCommand.Path
     $Host.UI.RawUI.WindowTitle = (Get-Item "$Current").BaseName
+    $ProgressPreference = "SilentlyContinue"
+
+    Clear-Host
+    Write-Host "+-------------------------------------------------------------+"
+    Write-Host "|                                                             |"
+    Write-Host "|  > WINHOGEN                                                 |"
+    Write-Host "|  > CONFIGURATION SCRIPT FOR DEVELOPERS                      |"
+    Write-Host "|                                                             |"
+    Write-Host "+-------------------------------------------------------------+"
 
     $Loading = "`nTHE UPDATING DEPENDENCIES PROCESS HAS LAUNCHED"
     $Failure = "`rTHE UPDATING DEPENDENCIES PROCESS WAS CANCELED"
@@ -266,7 +271,7 @@ Function Main {
         "Rename-Machine 'WINHOGEN' -Restart"
     )
 
-    $Maximum = (71 - 20) * -1
+    $Maximum = (63 - 20) * -1
     $Shaping = "`r{0,$Maximum}{1,-3}{2,-6}{3,-3}{4,-8}"
     $Heading = "$Shaping" -F "FUNCTION", " ", "STATUS", " ", "DURATION"
     Write-Host "$Heading"
