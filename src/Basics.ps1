@@ -31,13 +31,13 @@ Function Enable-Feature {
             If (-Not $Enabled) {
                 $Address = "https://cdn3.bluestacks.com/support_files/HD-EnableHyperV.exe"
                 $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
-				(New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
+                (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
                 Invoke-Gsudo {
                     Start-Process "$Using:Fetched"
                     Start-Sleep 10
                     Stop-Process -Name "HD-EnableHyperV"
                 }
-                If (Assert-Pending -Eq $True) { Invoke-Restart }
+                Invoke-Restart
             }
         }
         "Uac" {
@@ -54,10 +54,11 @@ Function Enable-Feature {
             $Enabled = Invoke-Gsudo { (Get-WindowsOptionalFeature -FeatureName Microsoft-Windows-Subsystem-Linux -Online).State -Eq "Enabled" }
             If (-Not $Enabled) {
                 Invoke-Gsudo {
+                    $ProgressPreference = "SilentlyContinue"
                     Enable-WindowsOptionalFeature -Online -FeatureName VirtualMachinePlatform -All -NoRestart *> $Null
                     Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Windows-Subsystem-Linux -All -NoRestart *> $Null
                 }
-                If (Assert-Pending -Eq $True) { Invoke-Restart }
+                Invoke-Restart
             }
         }
     }
@@ -67,10 +68,13 @@ Function Enable-Feature {
 Function Invoke-Restart {
 
     $Current = $Script:MyInvocation.MyCommand.Path
+    $Heading = (Get-Item "$Current").BaseName
     $Deposit = "HKCU:\Software\Microsoft\Windows\CurrentVersion\RunOnce"
-    $Command = "wt powershell -ep bypass -noexit -nologo -file `"$Current`""
-    New-ItemProperty "$Deposit" "." -Value "$Command"
+    $Program = "$Env:LocalAppData\Microsoft\WindowsApps\wt.exe"
+    $Command = "$Program --title `"$Heading`" powershell -ep bypass -noexit -nologo -file `"$Current`""
+    New-ItemProperty "$Deposit" "$Heading" -Value "$Command"
     Update-Account "$Env:Username" ([SecureString]::New())
+    Start-Sleep 4
     Restart-Computer -Force
 
 }
@@ -87,7 +91,7 @@ Function Remove-Feature {
             If ($Enabled) {
                 $Address = "https://cdn3.bluestacks.com/support_files/HD-DisableHyperV_native_v2.exe"
                 $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
-				(New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
+                (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
                 Invoke-Gsudo {
                     Start-Process "$Using:Fetched"
                     Start-Sleep 10
@@ -225,9 +229,9 @@ Function Update-Gsudo {
             $Results = (Invoke-WebRequest "$Address" | ConvertFrom-Json).assets
             $Address = $Results.Where( { $_.browser_download_url -Like "*.msi" } ).browser_download_url
             $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
-			(New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
+            (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
             If (-Not $Present) { Start-Process "msiexec" "/i `"$Fetched`" /qn" -Verb RunAs -Wait }
-            Else { Invoke-Gsudo { Start-Process "msiexec" "/i `"$Using:Fetched`" /qn" -Wait } }
+            Else { Invoke-Gsudo { msiexec /i "$Using:Fetched" /qn } }
             Start-Sleep 4
         }
         Update-SysPath "${Env:ProgramFiles(x86)}\gsudo" "Process"
@@ -239,36 +243,63 @@ Function Update-Gsudo {
 
 }
 
+Function Update-System {
+
+    Rename-Machine 'WINHOGEN' -Restart
+    
+}
+
+Function Update-Wsl {
+
+    Enable-Feature "Wsl"
+
+    $Program = "$Env:Windir\System32\wsl.exe"
+    If (Test-Path "$Program") {
+        & "$Program" --update
+        & "$Program" --shutdown
+        & "$Program" --install ubuntu --no-launch
+    }
+
+    $Program = "$Env:LocalAppData\Microsoft\WindowsApps\ubuntu.exe"
+    If (Test-Path "$Program") {
+        & "$Program" install --root
+        & "$Program" run sudo dpkg --configure -a
+        & "$Program" run sudo apt update -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=false
+        & "$Program" run sudo apt update
+        & "$Program" run sudo apt upgrade -y
+        & "$Program" run sudo apt full-upgrade -y
+        & "$Program" run sudo apt autoremove -y
+        & "$Program" run sudo apt install -y x11-apps
+    }
+
+}
+
 #EndRegion
 
 Function Main {
 
-    $Current = $Script:MyInvocation.MyCommand.Path
-    $Host.UI.RawUI.WindowTitle = (Get-Item "$Current").BaseName
-    $ProgressPreference = "SilentlyContinue"
-
-    Clear-Host
+    Clear-Host ; $ProgressPreference = "SilentlyContinue"
     Write-Host "+-------------------------------------------------------------+"
     Write-Host "|                                                             |"
     Write-Host "|  > WINHOGEN                                                 |"
-    Write-Host "|  > CONFIGURATION SCRIPT FOR DEVELOPERS                      |"
+    Write-Host "|                                                             |"
+    Write-Host "|  > CONFIGURATION SCRIPT FOR WINDOWS 11                      |"
     Write-Host "|                                                             |"
     Write-Host "+-------------------------------------------------------------+"
+
+    $Current = "$($Script:MyInvocation.MyCommand.Path)"
+    $Host.UI.RawUI.WindowTitle = (Get-Item "$Current").BaseName
 
     $Loading = "`nTHE UPDATING DEPENDENCIES PROCESS HAS LAUNCHED"
     $Failure = "`rTHE UPDATING DEPENDENCIES PROCESS WAS CANCELED"
     Write-Host "$Loading" -FO DarkYellow -NoNewline
-    Remove-Feature "Uac"
-    Update-PowPlan "Ultimate"
+    Remove-Feature "Uac" ; Update-PowPlan "Ultimate"
     $Correct = (Update-Gsudo) -And ! (gsudo cache on -d -1 2>&1).ToString().Contains("Error")
-    If (-Not $Correct) {
-        Write-Host "$Failure" -FO Red
-        Write-Host
-        Exit
-    }
+    If (-Not $Correct) { Write-Host "$Failure" -FO Red ; Write-Host ; Exit }
 
     $Members = @(
-        "Rename-Machine 'WINHOGEN' -Restart"
+        "Update-System"
+        "Update-Wsl"
     )
 
     $Maximum = (63 - 20) * -1
