@@ -6,14 +6,14 @@ Function Update-Ldplayer {
     If ($Null -Eq $Current) { $Current = "0.0.0.0" }
     $Present = $Current -Ne "0.0.0.0"
 
-    $Fetched = "LDPlayer_9.0.36.exe"
+    $Fetched = "src\LDPlayer_9.0.36.exe"
    
     Invoke-Gsudo {
-        Add-Type -Path "Libs\Interop.UIAutomationClient.dll"
-        Add-Type -Path "Libs\FlaUI.Core.dll"
-        Add-Type -Path "Libs\FlaUI.UIA3.dll"
-        Add-Type -Path "Libs\System.Drawing.Common.dll"
-        Add-Type -Path "Libs\System.Security.Permissions.dll"
+        Add-Type -Path "src\Libs\Interop.UIAutomationClient.dll"
+        Add-Type -Path "src\Libs\FlaUI.Core.dll"
+        Add-Type -Path "src\Libs\FlaUI.UIA3.dll"
+        Add-Type -Path "src\Libs\System.Drawing.Common.dll"
+        Add-Type -Path "src\Libs\System.Security.Permissions.dll"
         $Handler = [FlaUI.UIA3.UIA3Automation]::New()
         $Invoked = [FlaUI.Core.Application]::Launch("$Using:Fetched")
         $Window1 = $Invoked.GetMainWindow($Handler)
