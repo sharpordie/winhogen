@@ -1,5 +1,7 @@
 #!/usr/bin/env pwsh
 
+$ProgressPreference = "SilentlyContinue"
+
 #Region Services
 
 Function Assert-Pending {
