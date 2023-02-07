@@ -90,6 +90,17 @@ Function Invoke-Restart {
 
 }
 
+Function Remove-Desktop {
+
+    Param(
+        [String] $Pattern
+    )
+
+    Remove-Item -Path "$Env:Public\Desktop\$Pattern"
+    Remove-Item -Path "$Env:UserProfile\Desktop\$Pattern"
+
+}
+
 Function Remove-Feature {
 
     Param(
@@ -122,14 +133,43 @@ Function Remove-Feature {
 
 }
 
-Function Rename-Machine {
+Function Update-Element {
 
     Param(
-        [String] $Machine
+        [String] $Element,
+        [String] $Payload
     )
 
-    If ([String]::IsNullOrWhiteSpace("$Machine")) { Return }
-    If ((Hostname) -Ne "$Machine") { Invoke-Gsudo { Rename-Computer -NewName "$Using:Machine" -EA SI *> $Null } }
+    Switch ($Element) {
+        "Computer" {
+            If ([String]::IsNullOrWhiteSpace("$Payload")) { Return }
+            If ((Hostname) -Ne "$Payload") {
+                Invoke-Gsudo { Rename-Computer -NewName "$Using:Payload" -EA SI *> $Null }
+            }
+        }
+        "Plan" {
+            $Program = "C:\Windows\System32\powercfg.exe"
+            $Picking = (& "$Program" /l | ForEach-Object { If ($_.Contains("($Payload")) { $_.Split()[3] } })
+            If ([String]::IsNullOrEmpty("$Picking") -And $Payload -Eq "Ultra") { Return }
+            If ([String]::IsNullOrEmpty("$Picking")) { & "$Program" /duplicatescheme e9a42b02-d5df-448d-aa00-03f14749eb61 }
+            $Picking = (& "$Program" /l | ForEach-Object { If ($_.Contains("($Payload")) { $_.Split()[3] } })
+            & "$Program" /s "$Picking"
+            If ($Payload -Eq "Ultimate") {
+                $Desktop = $Null -Eq (Get-WmiObject Win32_SystemEnclosure -ComputerName "localhost" | Where-Object ChassisTypes -In "{9}", "{10}", "{14}")
+                $Desktop = $Desktop -Or $Null -Eq (Get-WmiObject Win32_Battery -ComputerName "localhost")
+                If (-Not $Desktop) { & "$Program" /setacvalueindex $Picking sub_buttons lidaction 000 }
+            }
+        }
+        "Timezone" {
+            Set-TimeZone -Name "$Payload"
+            Invoke-Gsudo {
+                Start-Process "w32tm" "/unregister" -WindowStyle Hidden -Wait
+                Start-Process "w32tm" "/register" -WindowStyle Hidden -Wait
+                Start-Process "net" "start w32time" -WindowStyle Hidden -Wait
+                Start-Process "w32tm" "/resync /force" -WindowStyle Hidden -Wait
+            }
+        }
+    }
 
 }
 
@@ -157,26 +197,6 @@ Function Update-LnkFile {
         $Content = [IO.File]::ReadAllBytes("$LnkFile")
         $Content[0x15] = $Content[0x15] -Bor 0x20
         [IO.File]::WriteAllBytes("$LnkFile", $Content)
-    }
-
-}
-
-Function Update-PowPlan {
-
-    Param (
-        [ValidateSet("Balanced", "High", "Power", "Ultimate")] [String] $Payload = "Balanced"
-    )
-
-    $Program = "C:\Windows\System32\powercfg.exe"
-    $Picking = (& "$Program" /l | ForEach-Object { If ($_.Contains("($Payload")) { $_.Split()[3] } })
-    If ([String]::IsNullOrEmpty("$Picking") -And $Payload -Eq "Ultra") { Return }
-    If ([String]::IsNullOrEmpty("$Picking")) { & "$Program" /duplicatescheme e9a42b02-d5df-448d-aa00-03f14749eb61 }
-    $Picking = (& "$Program" /l | ForEach-Object { If ($_.Contains("($Payload")) { $_.Split()[3] } })
-    & "$Program" /s "$Picking"
-    If ($Payload -Eq "Ultimate") {
-        $Desktop = $Null -Eq (Get-WmiObject Win32_SystemEnclosure -ComputerName "localhost" | Where-Object ChassisTypes -In "{9}", "{10}", "{14}")
-        $Desktop = $Desktop -Or $Null -Eq (Get-WmiObject Win32_Battery -ComputerName "localhost")
-        If (-Not $Desktop) { & "$Program" /setacvalueindex $Picking sub_buttons lidaction 000 }
     }
 
 }
@@ -271,10 +291,7 @@ Function Update-Ldplayer {
             $Factor2 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::F4
             Start-Sleep 4 ; [FlaUI.Core.Input.Keyboard]::TypeSimultaneously($Factor1, $Factor2)
         }
-        Remove-Item "$Env:Public\Desktop\LDM*.lnk" -EA SI
-        Remove-Item "$Env:Public\Desktop\LDP*.lnk" -EA SI
-        Remove-Item "$Env:UserProfile\Desktop\LDM*.lnk" -EA SI
-        Remove-Item "$Env:UserProfile\Desktop\LDP*.lnk" -EA SI
+        Remove-Desktop "LDM*.lnk" ; Remove-Desktop "LDP*.lnk"
     }
 
 }
@@ -287,16 +304,10 @@ Function Update-Windows {
     )
 
     # Update timezone
-    Set-TimeZone -Name "$Country"
-    Invoke-Gsudo {
-        Start-Process "w32tm" "/unregister" -WindowStyle Hidden -Wait
-        Start-Process "w32tm" "/register" -WindowStyle Hidden -Wait
-        Start-Process "net" "start w32time" -WindowStyle Hidden -Wait
-        Start-Process "w32tm" "/resync /force" -WindowStyle Hidden -Wait
-    }
+    Update-Element "Timezone" "$Country"
 
-    # Rename machine
-    Rename-Machine "$Machine"
+    # Update computer
+    Update-Element "Computer" "$Machine"
 
     # Enable remote desktop
     Enable-Feature "RemoteDesktop"
