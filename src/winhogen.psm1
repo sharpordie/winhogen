@@ -18,7 +18,8 @@ Function Update-Ldplayer {
 
         Invoke-Gsudo {
             # $Current = $PSCommandPath | Split-Path -Parent
-            echo $PSCommandPath
+            $Current = Split-Path $script:MyInvocation.MyCommand.Path
+            echo "VALUE: $Current"
             # $Current = Split-Path $Script:PSScriptRoot
             # Add-Type -Path "$Current\libs\Interop.UIAutomationClient.dll"
             # Add-Type -Path "$Current\libs\FlaUI.Core.dll"
