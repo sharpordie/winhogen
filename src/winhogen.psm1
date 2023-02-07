@@ -1,5 +1,7 @@
 #!/usr/bin/env pwsh
 
+#Region Services
+
 Function Assert-Pending {
 
     $RegKey0 = "HKLM:\Software\Microsoft\Windows\CurrentVersion"
@@ -191,6 +193,8 @@ Function Update-SysPath {
 
 }
 
+#EndRegion
+
 Function Update-Gsudo {
 
     $Current = (Get-Package "*gsudo*" -EA SI).Version
@@ -252,12 +256,11 @@ Function Update-Ldplayer {
             $FactorX = $Scraped.X + ($Scraped.Width / 2)
             $FactorY = $Scraped.Y + ($Scraped.Height / 2) + 60
             $Centrum = [Drawing.Point]::New($FactorX, $FactorY)
-            Start-Sleep 4
-            [FlaUI.Core.Input.Mouse]::LeftClick($Centrum)
-            Start-Sleep 50
+            Start-Sleep 4 ; [FlaUI.Core.Input.Mouse]::LeftClick($Centrum)
+            While (-Not (Test-Path "$Env:Public\Desktop\LDPlayer*.lnk")) { Start-Sleep 2 }
             $Factor1 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::ALT
             $Factor2 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::F4
-            [FlaUI.Core.Input.Keyboard]::TypeSimultaneously($Factor1, $Factor2)
+            Start-Sleep 4 ; [FlaUI.Core.Input.Keyboard]::TypeSimultaneously($Factor1, $Factor2)
         }
         Remove-Item "$Env:Public\Desktop\LDM*.lnk" -EA SI
         Remove-Item "$Env:Public\Desktop\LDP*.lnk" -EA SI
