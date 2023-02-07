@@ -19,15 +19,11 @@ expand-archive $env:temp\main.zip -destinationpath $env:temp -force
 
 ### Winhogen for casual purpose
 
-<img src="https://fakeimg.pl/852x480/000/fff" width="49.25%"/><img src="https://upload.wikimedia.org/wikipedia/commons/c/ca/1x1.png" width="1.5%"/><img src="https://fakeimg.pl/852x480/000/fff" width="49.25%"/>
-
 ```powershell
 powershell -ep bypass $env:temp\winhogen-main\winhogen.ps1
 ```
 
 ### Gamhogen for gaming purpose
-
-<img src="https://fakeimg.pl/852x480/000/fff" width="49.25%"/><img src="https://upload.wikimedia.org/wikipedia/commons/c/ca/1x1.png" width="1.5%"/><img src="https://fakeimg.pl/852x480/000/fff" width="49.25%"/>
 
 ```powershell
 powershell -ep bypass $env:temp\winhogen-main\gamhogen.ps1
