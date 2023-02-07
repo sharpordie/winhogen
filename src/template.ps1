@@ -7,9 +7,9 @@ $Host.UI.RawUI.WindowTitle = (Get-Item "$Current").BaseName.ToUpper()
 # Output greeting
 Write-Output "+-------------------------------------------------------------------------+"
 Write-Output "|                                                                         |"
-Write-Output "|  > STRHOGEN                                                             |"
+Write-Output "|  > TEMPLATE                                                             |"
 Write-Output "|                                                                         |"
-Write-Output "|  > CONFIGURATION SCRIPT FOR STREAM PURPOSE                              |"
+Write-Output "|  > CONFIGURATION SCRIPT FOR ??????? PURPOSE                             |"
 Write-Output "|                                                                         |"
 Write-Output "+-------------------------------------------------------------------------+"
 
@@ -25,7 +25,7 @@ If (-Not $Correct) { Write-Host "$Failure" -FO Red ; Write-Host ; Exit }
 
 # Handle elements
 $Members = @(
-    "Update-Windows 'Romance Standard Time' 'GAMHOGEN'"
+    "Update-Windows 'Romance Standard Time' 'TEMPLATE'"
 )
 
 # Output progress
