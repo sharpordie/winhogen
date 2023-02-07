@@ -1,6 +1,6 @@
 # <samp>OVERVIEW</samp>
 
-Opinionated configuration script for Windows 11.
+Opinionated post-installation script for Windows 11.
 
 | <samp>AND</samp> | <samp>IOS</samp> | <samp>LIN</samp> | <samp>MAC</samp> | <samp>WIN</samp> | <samp>WEB</samp> |
 | :-: | :-: | :-: | :-: | :-: | :-: |
@@ -8,22 +8,30 @@ Opinionated configuration script for Windows 11.
 
 # <samp>GUIDANCE</samp>
 
-## Gather project archive
+## 1 Gather project archive
 
 ```powershell
 iwr https://github.com/sharpordie/winhogen/archive/refs/heads/main.zip -o $env:temp\main.zip
 ```
 
-## Expand fetched archive
+## 2. Expand fetched archive
 
 ```powershell
 expand-archive $env:temp\main.zip -destinationpath $env:temp -force
 ```
 
-## Launch expanded script
+## 3. Launch expanded script
+
+### Winhogen for casual purpose
 
 ```powershell
 powershell -ep bypass $env:temp\winhogen-main\winhogen.ps1
+```
+
+### Gamhogen for gaming purpose
+
+```powershell
+powershell -ep bypass $env:temp\winhogen-main\gamhogen.ps1
 ```
 
 <!-- 
