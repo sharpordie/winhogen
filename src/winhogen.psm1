@@ -142,7 +142,6 @@ Function Update-LnkFile {
     $Element.IconLocation = If ($Picture -And (Test-Path "$Picture")) { "$Picture" } Else { "$Starter" }
     $Element.WorkingDirectory = If ($WorkDir -And (Test-Path "$WorkDir")) { "$WorkDir" } Else { Split-Path "$Starter" }
     $Element.Save()
-
     If ($AsAdmin) { 
         $Content = [IO.File]::ReadAllBytes("$LnkFile")
         $Content[0x15] = $Content[0x15] -Bor 0x20
@@ -154,20 +153,19 @@ Function Update-LnkFile {
 Function Update-PowPlan {
 
     Param (
-        [String] $Payload = "Balanced"
+        [ValidateSet("Balanced", "High", "Power", "Ultimate")] [String] $Payload = "Balanced"
     )
 
     $Program = "C:\Windows\System32\powercfg.exe"
-    $Picking = (Invoke-Expression "$Program /l" | ForEach-Object { If ($_.Contains("($Payload")) { $_.Split()[3] } })
+    $Picking = (& "$Program" /l | ForEach-Object { If ($_.Contains("($Payload")) { $_.Split()[3] } })
     If ([String]::IsNullOrEmpty("$Picking") -And $Payload -Eq "Ultra") { Return }
-    If ([String]::IsNullOrEmpty("$Picking")) { Start-Process "$Program" "/duplicatescheme e9a42b02-d5df-448d-aa00-03f14749eb61" -NoNewWindow -Wait }
-    $Picking = (Invoke-Expression "$Program /l" | ForEach-Object { If ($_.Contains("($Payload")) { $_.Split()[3] } })
-    Start-Process "$Program" "/s $Picking" -NoNewWindow -Wait
-
+    If ([String]::IsNullOrEmpty("$Picking")) { & "$Program" /duplicatescheme e9a42b02-d5df-448d-aa00-03f14749eb61 }
+    $Picking = (& "$Program" /l | ForEach-Object { If ($_.Contains("($Payload")) { $_.Split()[3] } })
+    & "$Program" /s "$Picking"
     If ($Payload -Eq "Ultimate") {
         $Desktop = $Null -Eq (Get-WmiObject Win32_SystemEnclosure -ComputerName "localhost" | Where-Object ChassisTypes -In "{9}", "{10}", "{14}")
         $Desktop = $Desktop -Or $Null -Eq (Get-WmiObject Win32_Battery -ComputerName "localhost")
-        If (-Not $Desktop) { Start-Process "$Program" "/setacvalueindex $Picking sub_buttons lidaction 000" -NoNewWindow -Wait }
+        If (-Not $Desktop) { & "$Program" /setacvalueindex $Picking sub_buttons lidaction 000 }
     }
 
 }
@@ -193,24 +191,52 @@ Function Update-SysPath {
 
 }
 
+Function Update-Gsudo {
+
+    $Current = (Get-Package "*gsudo*" -EA SI).Version
+    If ($Null -Eq $Current) { $Current = "0.0.0.0" }
+    $Present = $Current -Ne "0.0.0.0"
+
+    If ($Present) { Return $True }
+
+    $Address = "https://api.github.com/repos/gerardog/gsudo/releases/latest"
+    $Version = [Regex]::Match((Invoke-WebRequest "$Address" | ConvertFrom-Json).tag_name, "[\d.]+").Value
+    $Updated = [Version] "$Current" -Ge [Version] "$Version"
+
+    Try {
+        If (-Not $Updated) {
+            $Results = (Invoke-WebRequest "$Address" | ConvertFrom-Json).assets
+            $Address = $Results.Where( { $_.browser_download_url -Like "*.msi" } ).browser_download_url
+            $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
+		    (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
+            If (-Not $Present) { Start-Process "msiexec" "/i `"$Fetched`" /qn" -Verb RunAs -Wait }
+            Else { Invoke-Gsudo { msiexec /i "$Using:Fetched" /qn } }
+            Start-Sleep 4
+        }
+        Update-SysPath "${Env:ProgramFiles(x86)}\gsudo" "Process"
+        Return $True
+    }
+    Catch { 
+        Return $False
+    }
+
+}
+
 Function Update-Ldplayer {
 
-    $Current = (Get-Package "LDPlayer" -ProviderName "Programs" -EA SI).Version
+    $Current = (Get-Package "*ldplayer*" -EA SI).Version
     If ($Null -Eq $Current) { $Current = "0.0.0.0" }
     $Present = $Current -Ne "0.0.0.0"
 
     $Address = "https://www.ldplayer.net/other/version-history-and-release-notes.html"
-    $Pattern = "LDPlayer_([\d.]+).exe"
-    $Version = [Regex]::Matches((Invoke-WebRequest "$Address"), "$Pattern").Groups[1].Value
+    $Version = [Regex]::Matches((Invoke-WebRequest "$Address"), "LDPlayer_([\d.]+).exe").Groups[1].Value
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
 
     If (-Not $Updated) {
         Remove-Feature "HyperV"
-
         $Address = "https://encdn.ldmnq.com/download/package/LDPlayer_$Version.exe"
         $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
         (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
-
         $Current = Split-Path $Script:MyInvocation.MyCommand.Path
         Invoke-Gsudo {
             Add-Type -Path "$Using:Current\libs\Interop.UIAutomationClient.dll"
@@ -233,7 +259,6 @@ Function Update-Ldplayer {
             $Factor2 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::F4
             [FlaUI.Core.Input.Keyboard]::TypeSimultaneously($Factor1, $Factor2)
         }
-
         Remove-Item "$Env:Public\Desktop\LDM*.lnk" -EA SI
         Remove-Item "$Env:Public\Desktop\LDP*.lnk" -EA SI
         Remove-Item "$Env:UserProfile\Desktop\LDM*.lnk" -EA SI
