@@ -4,11 +4,21 @@ Opinionated configuration script for Windows 11.
 
 # <samp>GUIDANCE</samp>
 
-## Single-command execution
+## Gather project archive
 
 ```powershell
 iwr https://github.com/sharpordie/winhogen/archive/refs/heads/main.zip -o $env:temp\main.zip
-expand-archive $env:temp\main.zip -force
+```
+
+## Expand fetched archive
+
+```powershell
+expand-archive $env:temp\main.zip -destinationpath $env:temp -force
+```
+
+## Invoke winhogen script
+
+```powershell
 powershell -ep bypass $env:temp\winhogen-main\winhogen.ps1
 ```
 
