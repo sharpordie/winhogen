@@ -2,10 +2,6 @@
 
 Opinionated post-installation scripts for Windows 11.
 
-| <samp>AND</samp> | <samp>IOS</samp> | <samp>LIN</samp> | <samp>MAC</samp> | <samp>WIN</samp> | <samp>WEB</samp> |
-| :-: | :-: | :-: | :-: | :-: | :-: |
-| <br>🟥<br><br> | <br>🟥<br><br> | <br>🟥<br><br> | <br>🟥<br><br> | <br>🟩<br><br> | <br>🟥<br><br> |
-
 # <samp>GUIDANCE</samp>
 
 ## For coding purpose
@@ -23,7 +19,7 @@ Opinionated post-installation scripts for Windows 11.
 ```powershell
 iwr https://github.com/sharpordie/winhogen/archive/refs/heads/main.zip -o $env:temp\main.zip
 expand-archive $env:temp\main.zip -destinationpath $env:temp -force
-powershell -ep bypass $env:temp\winhogen-main\codhogen.ps1
+powershell -ep bypass $env:temp\winhogen-main\src\codhogen.ps1
 ```
 
 ## For gaming purpose
@@ -41,7 +37,7 @@ powershell -ep bypass $env:temp\winhogen-main\codhogen.ps1
 ```powershell
 iwr https://github.com/sharpordie/winhogen/archive/refs/heads/main.zip -o $env:temp\main.zip
 expand-archive $env:temp\main.zip -destinationpath $env:temp -force
-powershell -ep bypass $env:temp\winhogen-main\gamhogen.ps1
+powershell -ep bypass $env:temp\winhogen-main\src\gamhogen.ps1
 ```
 
 ## For shield purpose
@@ -60,7 +56,7 @@ powershell -ep bypass $env:temp\winhogen-main\gamhogen.ps1
 ```powershell
 iwr https://github.com/sharpordie/winhogen/archive/refs/heads/main.zip -o $env:temp\main.zip
 expand-archive $env:temp\main.zip -destinationpath $env:temp -force
-powershell -ep bypass $env:temp\winhogen-main\shihogen.ps1
+powershell -ep bypass $env:temp\winhogen-main\src\shihogen.ps1
 ```
 
 ## For custom purpose
