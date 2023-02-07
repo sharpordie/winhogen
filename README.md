@@ -1,6 +1,6 @@
 # <samp>OVERVIEW</samp>
 
-Opinionated post-installation script for Windows 11.
+Opinionated post-installation scripts for Windows 11.
 
 | <samp>AND</samp> | <samp>IOS</samp> | <samp>LIN</samp> | <samp>MAC</samp> | <samp>WIN</samp> | <samp>WEB</samp> |
 | :-: | :-: | :-: | :-: | :-: | :-: |
@@ -8,27 +8,26 @@ Opinionated post-installation script for Windows 11.
 
 # <samp>GUIDANCE</samp>
 
-## 1 Gather project archive
+## Gather and expand project archive
 
 ```powershell
 iwr https://github.com/sharpordie/winhogen/archive/refs/heads/main.zip -o $env:temp\main.zip
-```
-
-## 2. Expand fetched archive
-
-```powershell
 expand-archive $env:temp\main.zip -destinationpath $env:temp -force
 ```
 
-## 3. Launch expanded script
+## Launch expanded script
 
 ### Winhogen for casual purpose
+
+<img src="https://fakeimg.pl/852x480/000/fff" width="49.25%"/><img src="https://upload.wikimedia.org/wikipedia/commons/c/ca/1x1.png" width="1.5%"/><img src="https://fakeimg.pl/852x480/000/fff" width="49.25%"/>
 
 ```powershell
 powershell -ep bypass $env:temp\winhogen-main\winhogen.ps1
 ```
 
 ### Gamhogen for gaming purpose
+
+<img src="https://fakeimg.pl/852x480/000/fff" width="49.25%"/><img src="https://upload.wikimedia.org/wikipedia/commons/c/ca/1x1.png" width="1.5%"/><img src="https://fakeimg.pl/852x480/000/fff" width="49.25%"/>
 
 ```powershell
 powershell -ep bypass $env:temp\winhogen-main\gamhogen.ps1
