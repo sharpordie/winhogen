@@ -42,6 +42,13 @@ Function Enable-Feature {
                 Invoke-Restart
             }
         }
+        "RemoteDesktop" {
+            Invoke-Gsudo {
+                $RegPath = "HKLM:\System\CurrentControlSet\Control\Terminal Server"
+                Set-ItemProperty -Path "$RegPath" -Name "fDenyTSConnections" -Value 0
+                Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+            }
+        }
         "Uac" {
             $Content = @(
                 '$KeyPath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System"'
@@ -292,10 +299,6 @@ Function Update-Windows {
     Rename-Machine "$Machine"
 
     # Enable remote desktop
-    Invoke-Gsudo {
-        $RegPath = "HKLM:\System\CurrentControlSet\Control\Terminal Server"
-        Set-ItemProperty -Path "$RegPath" -Name "fDenyTSConnections" -Value 0
-        Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
-    }
+    Enable-Feature "RemoteDesktop"
 
 }
