@@ -17,11 +17,12 @@ Function Update-Ldplayer {
 		# (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
 
         Invoke-Gsudo {
-            Add-Type -Path "libs\Interop.UIAutomationClient.dll"
-            Add-Type -Path "libs\FlaUI.Core.dll"
-            Add-Type -Path "libs\FlaUI.UIA3.dll"
-            Add-Type -Path "libs\System.Drawing.Common.dll"
-            Add-Type -Path "libs\System.Security.Permissions.dll"
+            $Current = Split-Path $Script:PSScriptRoot
+            Add-Type -Path "$Current\libs\Interop.UIAutomationClient.dll"
+            Add-Type -Path "$Current\libs\FlaUI.Core.dll"
+            Add-Type -Path "$Current\libs\FlaUI.UIA3.dll"
+            Add-Type -Path "$Current\libs\System.Drawing.Common.dll"
+            Add-Type -Path "$Current\libs\System.Security.Permissions.dll"
             $Handler = [FlaUI.UIA3.UIA3Automation]::New()
             $Started = [FlaUI.Core.Application]::Launch("$Using:Fetched")
             $Window1 = $Started.GetMainWindow($Handler)
