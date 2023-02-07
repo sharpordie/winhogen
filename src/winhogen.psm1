@@ -259,7 +259,7 @@ Function Update-Ldplayer {
             $FactorY = $Scraped.Y + ($Scraped.Height / 2) + 60
             $Centrum = [Drawing.Point]::New($FactorX, $FactorY)
             Start-Sleep 4 ; [FlaUI.Core.Input.Mouse]::LeftClick($Centrum)
-            While (-Not (Test-Path "$Env:Public\Desktop\LDPlayer*.lnk")) { Start-Sleep 2 }
+            While (-Not (Test-Path "$Env:UserProfile\Desktop\LDPlayer*.lnk")) { Start-Sleep 2 }
             $Factor1 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::ALT
             $Factor2 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::F4
             Start-Sleep 4 ; [FlaUI.Core.Input.Keyboard]::TypeSimultaneously($Factor1, $Factor2)
