@@ -20,7 +20,7 @@ Function Update-Ldplayer {
         echo "VALUE: $Current"
 
         Invoke-Gsudo {
-            $Current = Split-Path $script:MyInvocation.MyCommand.Path
+            $Current = Split-Path $script:MyInvocation
             echo "VALUE: $Current"
             # $Current = Split-Path $Script:PSScriptRoot
             # Add-Type -Path "$Current\libs\Interop.UIAutomationClient.dll"
