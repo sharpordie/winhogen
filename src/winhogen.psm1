@@ -15,12 +15,14 @@ Function Update-Ldplayer {
         $Address = "https://encdn.ldmnq.com/download/package/LDPlayer_$Version.exe"
         $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
 		(New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
+
         Invoke-Gsudo {
-            Add-Type -Path "Libs\Interop.UIAutomationClient.dll"
-            Add-Type -Path "Libs\FlaUI.Core.dll"
-            Add-Type -Path "Libs\FlaUI.UIA3.dll"
-            Add-Type -Path "Libs\System.Drawing.Common.dll"
-            Add-Type -Path "Libs\System.Security.Permissions.dll"
+            $Current = Split-Path $Script:MyInvocation.MyCommand.Path
+            Add-Type -Path "$Current\libs\Interop.UIAutomationClient.dll"
+            Add-Type -Path "$Current\libs\FlaUI.Core.dll"
+            Add-Type -Path "$Current\libs\FlaUI.UIA3.dll"
+            Add-Type -Path "$Current\libs\System.Drawing.Common.dll"
+            Add-Type -Path "$Current\libs\System.Security.Permissions.dll"
             $Handler = [FlaUI.UIA3.UIA3Automation]::New()
             $Started = [FlaUI.Core.Application]::Launch("$Using:Fetched")
             $Window1 = $Started.GetMainWindow($Handler)
@@ -36,6 +38,7 @@ Function Update-Ldplayer {
             $Factor2 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::F4
             [FlaUI.Core.Input.Keyboard]::TypeSimultaneously($Factor1, $Factor2)
         }
+
         Remove-Item "$Env:Public\Desktop\LDM*.lnk" -EA SI
         Remove-Item "$Env:Public\Desktop\LDP*.lnk" -EA SI
         Remove-Item "$Env:UserProfile\Desktop\LDM*.lnk" -EA SI
@@ -43,5 +46,3 @@ Function Update-Ldplayer {
     }
 
 }
-
-Update-Ldplayer
