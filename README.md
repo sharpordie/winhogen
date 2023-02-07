@@ -1,11 +1,18 @@
 # <samp>OVERVIEW</samp>
 
-Opinionated post-installation scripts for Windows 11.
-
-<img src="assets/img1.png" width="49.25%"/><img src="assets/img0.png" width="1.5%"/><img src="assets/img2.png" width="49.25%"/>
+Opinionated configuration script for Windows 11.
 
 # <samp>GUIDANCE</samp>
 
+## Single-command execution
+
+```powershell
+iwr https://github.com/sharpordie/winhogen/archive/refs/heads/main.zip -o $env:temp\main.zip
+expand-archive $env:temp\main.zip -force
+powershell -ep bypass $env:temp\winhogen-main\winhogen.ps1
+```
+
+<!-- 
 ## For development purpose
 
 Check out [line number 37](src/Devhogen.ps1#L37) to get an idea of what the script does.
@@ -31,4 +38,4 @@ Copy the generic template and modify the list of functions to execute.
 ```powershell
 git clone https://github.com/sharpordie/winhogen.git
 cd winhogen ; cp ./src/Template.ps1 ./src/Ownhogen.ps1
-```
+``` -->
