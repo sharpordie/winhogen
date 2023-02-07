@@ -20,7 +20,7 @@ iwr https://github.com/sharpordie/winhogen/archive/refs/heads/main.zip -o $env:t
 expand-archive $env:temp\main.zip -destinationpath $env:temp -force
 ```
 
-## Invoke winhogen script
+## Launch expanded script
 
 ```powershell
 powershell -ep bypass $env:temp\winhogen-main\winhogen.ps1
