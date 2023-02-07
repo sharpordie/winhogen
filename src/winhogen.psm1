@@ -14,10 +14,11 @@ Function Update-Ldplayer {
     If (-Not $Updated) {
         $Address = "https://encdn.ldmnq.com/download/package/LDPlayer_$Version.exe"
         $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
-		(New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
+		# (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
 
         Invoke-Gsudo {
             $Current = Split-Path $Script:MyInvocation.MyCommand.Path
+            echo $Current
             Add-Type -Path "$Current\libs\Interop.UIAutomationClient.dll"
             Add-Type -Path "$Current\libs\FlaUI.Core.dll"
             Add-Type -Path "$Current\libs\FlaUI.UIA3.dll"
