@@ -8,51 +8,67 @@ Opinionated post-installation scripts for Windows 11.
 
 # <samp>GUIDANCE</samp>
 
-## Gather and expand project archive
+## For coding purpose
+
+<img src="https://fakeimg.pl/852x480/43d6b5/43d6b5" width="49.25%"/><img src="https://upload.wikimedia.org/wikipedia/commons/c/ca/1x1.png" width="1.5%"/><img src="https://fakeimg.pl/852x480/43d6b5/43d6b5" width="49.25%"/>
+
+### Features
+
+- Update and configure windows
+- Update and configure gpu driver
+- ...
+
+### Launcher
 
 ```powershell
 iwr https://github.com/sharpordie/winhogen/archive/refs/heads/main.zip -o $env:temp\main.zip
 expand-archive $env:temp\main.zip -destinationpath $env:temp -force
-```
-
-## Launch expanded script
-
-### Winhogen for casual purpose
-
-```powershell
-powershell -ep bypass $env:temp\winhogen-main\winhogen.ps1
-```
-
-### Gamhogen for gaming purpose
-
-```powershell
-powershell -ep bypass $env:temp\winhogen-main\gamhogen.ps1
-```
-
-<!-- 
-## For development purpose
-
-Check out [line number 37](src/Devhogen.ps1#L37) to get an idea of what the script does.
-
-```powershell
-iwr https://raw.githubusercontent.com/sharpordie/winhogen/HEAD/src/Devhogen.ps1 -o $env:temp\Devhogen.ps1
-powershell -ep bypass $env:temp\Devhogen.ps1
+powershell -ep bypass $env:temp\winhogen-main\codhogen.ps1
 ```
 
 ## For gaming purpose
 
-Check out [line number 37](src/Gamhogen.ps1#L37) to get an idea of what the script does.
+<img src="https://fakeimg.pl/852x480/ffa154/ffa154" width="49.25%"/><img src="https://upload.wikimedia.org/wikipedia/commons/c/ca/1x1.png" width="1.5%"/><img src="https://fakeimg.pl/852x480/ffa154/ffa154" width="49.25%"/>
+
+### Features
+
+- Update and configure windows
+- Update and configure gpu driver
+- ...
+
+### Launcher
 
 ```powershell
-iwr https://raw.githubusercontent.com/sharpordie/winhogen/HEAD/src/Gamhogen.ps1 -o $env:temp\Gamhogen.ps1
-powershell -ep bypass $env:temp\Gamhogen.ps1
+iwr https://github.com/sharpordie/winhogen/archive/refs/heads/main.zip -o $env:temp\main.zip
+expand-archive $env:temp\main.zip -destinationpath $env:temp -force
+powershell -ep bypass $env:temp\winhogen-main\gamhogen.ps1
 ```
 
-## For personal purpose
+## For shield purpose
 
-Copy the generic template and modify the list of functions to execute.
+<img src="https://fakeimg.pl/852x480/9bdb4d/9bdb4d" width="49.25%"/><img src="https://upload.wikimedia.org/wikipedia/commons/c/ca/1x1.png" width="1.5%"/><img src="https://fakeimg.pl/852x480/9bdb4d/9bdb4d" width="49.25%"/>
+
+### Features
+
+- Update and configure windows
+- Update and configure gpu driver
+- Update and configure sunshine
+- ...
+
+### Launcher
+
+```powershell
+iwr https://github.com/sharpordie/winhogen/archive/refs/heads/main.zip -o $env:temp\main.zip
+expand-archive $env:temp\main.zip -destinationpath $env:temp -force
+powershell -ep bypass $env:temp\winhogen-main\shihogen.ps1
+```
+
+## For custom purpose
+
+Copy the generic template and make it yours.
 
 ```powershell
 git clone https://github.com/sharpordie/winhogen.git
-cd winhogen ; cp ./src/Template.ps1 ./src/Ownhogen.ps1
-``` -->
+cd winhogen
+cp template.ps1 ownhogen.ps1
+```
