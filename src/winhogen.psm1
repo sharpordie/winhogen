@@ -17,8 +17,8 @@ Function Update-Ldplayer {
 		# (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
 
         Invoke-Gsudo {
-            $Current = $PSCommandPath | Split-Path -Parent
-            echo $Current
+            # $Current = $PSCommandPath | Split-Path -Parent
+            echo $PSCommandPath
             # $Current = Split-Path $Script:PSScriptRoot
             # Add-Type -Path "$Current\libs\Interop.UIAutomationClient.dll"
             # Add-Type -Path "$Current\libs\FlaUI.Core.dll"
