@@ -6,7 +6,7 @@ Opinionated post-installation scripts for Windows 11.
 
 ## For coding purpose
 
-<img src="https://fakeimg.pl/852x480/43d6b5/43d6b5" width="49.25%"/><img src="https://upload.wikimedia.org/wikipedia/commons/c/ca/1x1.png" width="1.5%"/><img src="https://fakeimg.pl/852x480/43d6b5/43d6b5" width="49.25%"/>
+<img src="https://fakeimg.pl/852x480/43d6b5/43d6b5" width="49.25%"/><img src="assets/img0.png" width="1.5%"/><img src="https://fakeimg.pl/852x480/43d6b5/43d6b5" width="49.25%"/>
 
 ### Features
 
@@ -24,7 +24,7 @@ powershell -ep bypass $env:temp\winhogen-main\src\codhogen.ps1
 
 ## For gaming purpose
 
-<img src="https://fakeimg.pl/852x480/ffa154/ffa154" width="49.25%"/><img src="https://upload.wikimedia.org/wikipedia/commons/c/ca/1x1.png" width="1.5%"/><img src="https://fakeimg.pl/852x480/ffa154/ffa154" width="49.25%"/>
+<img src="https://fakeimg.pl/852x480/ffa154/ffa154" width="49.25%"/><img src="assets/img0.png" width="1.5%"/><img src="https://fakeimg.pl/852x480/ffa154/ffa154" width="49.25%"/>
 
 ### Features
 
@@ -42,7 +42,7 @@ powershell -ep bypass $env:temp\winhogen-main\src\gamhogen.ps1
 
 ## For stream purpose
 
-<img src="https://fakeimg.pl/852x480/9bdb4d/9bdb4d" width="49.25%"/><img src="https://upload.wikimedia.org/wikipedia/commons/c/ca/1x1.png" width="1.5%"/><img src="https://fakeimg.pl/852x480/9bdb4d/9bdb4d" width="49.25%"/>
+<img src="https://fakeimg.pl/852x480/9bdb4d/9bdb4d" width="49.25%"/><img src="assets/img0.png" width="1.5%"/><img src="https://fakeimg.pl/852x480/9bdb4d/9bdb4d" width="49.25%"/>
 
 ### Features
 
