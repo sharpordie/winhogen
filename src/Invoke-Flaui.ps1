@@ -15,8 +15,8 @@ Function Update-Ldplayer {
         Add-Type -Path "src\Libs\System.Drawing.Common.dll"
         Add-Type -Path "src\Libs\System.Security.Permissions.dll"
         $Handler = [FlaUI.UIA3.UIA3Automation]::New()
-        $Invoked = [FlaUI.Core.Application]::Launch("$Using:Fetched")
-        $Window1 = $Invoked.GetMainWindow($Handler)
+        $Started = [FlaUI.Core.Application]::Launch("$Using:Fetched")
+        $Window1 = $Started.GetMainWindow($Handler)
         $Window1.Focus()
         $Scraped = $Window1.BoundingRectangle
         $FactorX = $Scraped.X + ($Scraped.Width / 2)
