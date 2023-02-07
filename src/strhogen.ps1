@@ -5,13 +5,13 @@ Clear-Host ; $Current = $Script:MyInvocation.MyCommand.Path
 $Host.UI.RawUI.WindowTitle = (Get-Item "$Current").BaseName.ToUpper()
 
 # Output greeting
-Write-Output "+-------------------------------------------------------------------------+"
-Write-Output "|                                                                         |"
-Write-Output "|  > STRHOGEN                                                             |"
-Write-Output "|                                                                         |"
-Write-Output "|  > CONFIGURATION SCRIPT FOR STREAM PURPOSE                              |"
-Write-Output "|                                                                         |"
-Write-Output "+-------------------------------------------------------------------------+"
+Write-Output "+---------------------------------------------------------------+"
+Write-Output "|                                                               |"
+Write-Output "|  > STRHOGEN                                                   |"
+Write-Output "|                                                               |"
+Write-Output "|  > CONFIGURATION SCRIPT FOR STREAM PURPOSE                    |"
+Write-Output "|                                                               |"
+Write-Output "+---------------------------------------------------------------+"
 
 # Import winhogen
 Import-Module "$(Split-Path "$Current")\winhogen.psm1" -Force
@@ -30,7 +30,7 @@ $Members = @(
 )
 
 # Output progress
-$Maximum = (75 - 20) * -1
+$Maximum = (65 - 20) * -1
 $Shaping = "`r{0,$Maximum}{1,-3}{2,-6}{3,-3}{4,-8}"
 $Heading = "$Shaping" -F "FUNCTION", " ", "STATUS", " ", "DURATION"
 Write-Host "$Heading"
