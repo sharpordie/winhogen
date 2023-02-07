@@ -65,6 +65,5 @@ Copy the generic template and make it yours.
 
 ```powershell
 git clone https://github.com/sharpordie/winhogen.git
-cd winhogen
-cp template.ps1 cushogen.ps1
+cp winhogen\src\template.ps1 winhogen\src\cushogen.ps1
 ```

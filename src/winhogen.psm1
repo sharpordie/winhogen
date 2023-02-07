@@ -1,10 +1,203 @@
 #!/usr/bin/env pwsh
 
+Function Assert-Pending {
+
+    $RegKey0 = "HKLM:\Software\Microsoft\Windows\CurrentVersion"
+    $RegKey1 = "$RegKey0\Component Based Servicing\RebootPending"
+    $RegKey2 = "$RegKey0\WindowsUpdate\Auto Update\RebootRequired"
+    $RegKey3 = "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager"
+    If (Get-ChildItem "$RegKey1" -EA Ignore) { Return $True }
+    If (Get-Item "$RegKey2" -EA Ignore) { Return $True }
+    If (Get-ItemProperty "$RegKey3" -Name PendingFileRenameOperations -EA Ignore) { Return $True }
+    Try { 
+        $Factors = [WmiClass]"\\.\root\ccm\clientsdk:CCM_ClientUtilities"
+        $Pending = $Factors.DetermineIfRebootPending()
+        If (($Null -Ne $Pending) -And $Pending.RebootPending) {
+            Return $True
+        }
+    }
+    Catch {}
+    Return $False
+
+}
+
+Function Enable-Feature {
+
+    Param(
+        [String] $Feature
+    )
+
+    Switch ($Feature) {
+        "HyperV" {
+            $Content = Invoke-Gsudo { (Get-WindowsOptionalFeature -FE "Microsoft-Hyper-V-All" -Online).State }
+            If ($Content.Value -Ne "Enabled") {
+                $Address = "https://cdn3.bluestacks.com/support_files/HD-EnableHyperV.exe"
+                $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
+		        (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
+                Invoke-Gsudo { Start-Process "$Using:Fetched" ; Start-Sleep 10 ; Stop-Process -Name "HD-EnableHyperV" }
+                Invoke-Restart
+            }
+        }
+        "Uac" {
+            $Content = @(
+                '$KeyPath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System"'
+                'Set-ItemProperty -Path "$KeyPath" -Name ConsentPromptBehaviorAdmin -Value 5'
+                'Set-ItemProperty -Path "$KeyPath" -Name PromptOnSecureDesktop -Value 1'
+            ) -Join "`n"
+            $Created = [IO.Path]::ChangeExtension([IO.Path]::GetTempFileName(), "ps1")
+            [IO.File]::WriteAllText("$Created", $Content)
+            Try { Start-Process "powershell" "-ep bypass -file `"$Created`"" -Verb RunAs -WindowStyle Hidden -Wait } Catch { }
+            Remove-Item "$Created" -Force
+        }
+        "Wsl" {
+            $Content = Invoke-Gsudo { (Get-WindowsOptionalFeature -FE "Microsoft-Windows-Subsystem-Linux" -Online).State }
+            If ($Content.Value -Ne "Enabled") {
+                Invoke-Gsudo {
+                    $ProgressPreference = "SilentlyContinue"
+                    Enable-WindowsOptionalFeature -Online -FE "VirtualMachinePlatform" -All -NoRestart *> $Null
+                    Enable-WindowsOptionalFeature -Online -FE "Microsoft-Windows-Subsystem-Linux" -All -NoRestart *> $Null
+                }
+                Invoke-Restart
+            }
+        }
+    }
+
+}
+
+Function Invoke-Restart {
+
+    # TODO: VERIFY
+
+    $Current = $Script:MyInvocation.MyCommand.Path
+    $Heading = (Get-Item "$Current").BaseName
+    $Deposit = "HKCU:\Software\Microsoft\Windows\CurrentVersion\RunOnce"
+    $Program = "$Env:LocalAppData\Microsoft\WindowsApps\wt.exe"
+    $Command = "$Program --title `"$Heading`" powershell -ep bypass -noexit -nologo -file `"$Current`""
+    New-ItemProperty "$Deposit" "$Heading" -Value "$Command"
+    Invoke-Gsudo { Get-LocalUser -Name "$Env:Username" | Set-LocalUser -Password ([SecureString]::New()) }
+    Start-Sleep 4 ; Restart-Computer -Force
+
+}
+
+Function Remove-Feature {
+
+    Param(
+        [String] $Feature
+    )
+
+    Switch ($Feature) {
+        "HyperV" {
+            $Content = Invoke-Gsudo { (Get-WindowsOptionalFeature -FE "Microsoft-Hyper-V-All" -Online).State }
+            If ($Content.Value -Eq "Enabled") {
+                $Address = "https://cdn3.bluestacks.com/support_files/HD-DisableHyperV_native_v2.exe"
+                $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
+		        (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
+                Invoke-Gsudo { Start-Process "$Using:Fetched" ; Start-Sleep 10 ; Stop-Process -Name "HD-DisableHyperV" }
+                If (Assert-Pending -Eq $True) { Invoke-Restart }
+            }
+        }
+        "Uac" {
+            $Content = @(
+                '$KeyPath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System"'
+                'Set-ItemProperty -Path "$KeyPath" -Name ConsentPromptBehaviorAdmin -Value 0'
+                'Set-ItemProperty -Path "$KeyPath" -Name PromptOnSecureDesktop -Value 0'
+            ) -Join "`n"
+            $Created = [IO.Path]::ChangeExtension([IO.Path]::GetTempFileName(), "ps1")
+            [IO.File]::WriteAllText("$Created", $Content)
+            Try { Start-Process "powershell" "-ep bypass -file `"$Created`"" -Verb RunAs -WindowStyle Hidden -Wait } Catch { }
+            Remove-Item "$Created" -Force
+        }
+    }
+
+}
+
+Function Rename-Machine {
+
+    Param(
+        [String] $Machine
+    )
+
+    If ([String]::IsNullOrWhiteSpace("$Machine")) { Return }
+    If ((Hostname) -Ne "$Machine") { Invoke-Gsudo { Rename-Computer -NewName "$Using:Machine" -EA SI *> $Null } }
+
+}
+
+Function Update-LnkFile {
+
+    Param(
+        [String] $LnkFile,
+        [String] $Starter,
+        [String] $ArgList,
+        [String] $Message,
+        [String] $Picture,
+        [String] $WorkDir,
+        [Switch] $AsAdmin
+    )
+
+    $Wscript = New-Object -ComObject WScript.Shell
+    $Element = $Wscript.CreateShortcut("$LnkFile")
+    If ($Starter) { $Element.TargetPath = "$Starter" }
+    If ($ArgList) { $Element.Arguments = "$ArgList" }
+    If ($Message) { $Element.Description = "$Message" }
+    $Element.IconLocation = If ($Picture -And (Test-Path "$Picture")) { "$Picture" } Else { "$Starter" }
+    $Element.WorkingDirectory = If ($WorkDir -And (Test-Path "$WorkDir")) { "$WorkDir" } Else { Split-Path "$Starter" }
+    $Element.Save()
+
+    If ($AsAdmin) { 
+        $Content = [IO.File]::ReadAllBytes("$LnkFile")
+        $Content[0x15] = $Content[0x15] -Bor 0x20
+        [IO.File]::WriteAllBytes("$LnkFile", $Content)
+    }
+
+}
+
+Function Update-PowPlan {
+
+    Param (
+        [String] $Payload = "Balanced"
+    )
+
+    $Program = "C:\Windows\System32\powercfg.exe"
+    $Picking = (Invoke-Expression "$Program /l" | ForEach-Object { If ($_.Contains("($Payload")) { $_.Split()[3] } })
+    If ([String]::IsNullOrEmpty("$Picking") -And $Payload -Eq "Ultra") { Return }
+    If ([String]::IsNullOrEmpty("$Picking")) { Start-Process "$Program" "/duplicatescheme e9a42b02-d5df-448d-aa00-03f14749eb61" -NoNewWindow -Wait }
+    $Picking = (Invoke-Expression "$Program /l" | ForEach-Object { If ($_.Contains("($Payload")) { $_.Split()[3] } })
+    Start-Process "$Program" "/s $Picking" -NoNewWindow -Wait
+
+    If ($Payload -Eq "Ultimate") {
+        $Desktop = $Null -Eq (Get-WmiObject Win32_SystemEnclosure -ComputerName "localhost" | Where-Object ChassisTypes -In "{9}", "{10}", "{14}")
+        $Desktop = $Desktop -Or $Null -Eq (Get-WmiObject Win32_Battery -ComputerName "localhost")
+        If (-Not $Desktop) { Start-Process "$Program" "/setacvalueindex $Picking sub_buttons lidaction 000" -NoNewWindow -Wait }
+    }
+
+}
+
+Function Update-SysPath {
+
+    Param (
+        [String] $Payload,
+        [ValidateSet("Machine", "Process", "User")] [String] $Section
+    )
+
+    If (-Not (Test-Path "$Payload")) { Return }
+
+    If ($Section -Ne "Process" ) {
+        $OldPath = [Environment]::GetEnvironmentVariable("PATH", "$Section")
+        $OldPath = $OldPath -Split ";" | Where-Object { $_ -NotMatch "^$([Regex]::Escape($Payload))\\?" }
+        $NewPath = ($OldPath + $Payload) -Join ";"
+        Invoke-Gsudo { [Environment]::SetEnvironmentVariable("PATH", "$Using:NewPath", "$Using:Section") }
+    }
+
+    $OldPath = $Env:Path -Split ";" | Where-Object { $_ -NotMatch "^$([Regex]::Escape($Payload))\\?" }
+    $NewPath = ($OldPath + $Payload) -Join ";" ; $Env:Path = $NewPath -Join ";"
+
+}
+
 Function Update-Ldplayer {
 
     $Current = (Get-Package "LDPlayer" -ProviderName "Programs" -EA SI).Version
     If ($Null -Eq $Current) { $Current = "0.0.0.0" }
-    # $Present = $Current -Ne "0.0.0.0"
+    $Present = $Current -Ne "0.0.0.0"
 
     $Address = "https://www.ldplayer.net/other/version-history-and-release-notes.html"
     $Pattern = "LDPlayer_([\d.]+).exe"
@@ -12,6 +205,8 @@ Function Update-Ldplayer {
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
 
     If (-Not $Updated) {
+        Remove-Feature "HyperV"
+
         $Address = "https://encdn.ldmnq.com/download/package/LDPlayer_$Version.exe"
         $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
         (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
@@ -43,6 +238,34 @@ Function Update-Ldplayer {
         Remove-Item "$Env:Public\Desktop\LDP*.lnk" -EA SI
         Remove-Item "$Env:UserProfile\Desktop\LDM*.lnk" -EA SI
         Remove-Item "$Env:UserProfile\Desktop\LDP*.lnk" -EA SI
+    }
+
+}
+
+Function Update-Windows {
+
+    Param (
+        [String] $Country = "Romance Standard Time",
+        [String] $Machine
+    )
+
+    # Update timezone
+    Set-TimeZone -Name "$Country"
+    Invoke-Gsudo {
+        Start-Process "w32tm" "/unregister" -WindowStyle Hidden -Wait
+        Start-Process "w32tm" "/register" -WindowStyle Hidden -Wait
+        Start-Process "net" "start w32time" -WindowStyle Hidden -Wait
+        Start-Process "w32tm" "/resync /force" -WindowStyle Hidden -Wait
+    }
+
+    # Rename machine
+    Rename-Machine "$Machine"
+
+    # Enable remote desktop
+    Invoke-Gsudo {
+        $RegPath = "HKLM:\System\CurrentControlSet\Control\Terminal Server"
+        Set-ItemProperty -Path "$RegPath" -Name "fDenyTSConnections" -Value 0
+        Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
     }
 
 }
