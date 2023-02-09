@@ -26,8 +26,9 @@ If (-Not $Correct) { Write-Host "$Failure" -FO Red ; Write-Host ; Exit }
 
 # Handle elements
 $Members = @(
-    "Update-Windows 'Romance Standard Time' 'CODHOGEN'"
-    "Update-Ldplayer"
+    "Invoke-Browser"
+    # "Update-Windows 'Romance Standard Time' 'CODHOGEN'"
+    # "Update-Ldplayer"
 )
 
 # Output progress

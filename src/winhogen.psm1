@@ -75,15 +75,45 @@ Function Enable-Feature {
 
 }
 
+Function Invoke-Browser {
+
+    Param(
+        [String] $Startup = "https://www.bing.com",
+        [String] $Factors
+    )
+
+    Update-Powershell
+    $Members = @("Microsoft.Bcl.AsyncInterfaces", "Microsoft.CodeAnalysis", "Microsoft.Playwright", "System.Text.Json")
+    Foreach ($Element In $Members) {
+        If (-Not (Get-Package -Name "$Element" -EA SI)) {
+            Install-Package "$Element" -Scope "CurrentUser" -Source "https://www.nuget.org/api/v2" -Force -SkipDependencies
+        }
+    }
+    $Members = @("System.Text.Json", "Microsoft.Bcl.AsyncInterfaces", "Microsoft.Playwright")
+    Foreach ($Element In $Members) {
+        If (-Not ([System.Management.Automation.PSTypeName]"$Element").Type ) {
+            $X = (Get-ChildItem -Filter "*.dll" -Recurse (Split-Path (Get-Package -Name "$Element").Source)).FullName | Where-Object { $_ -Like "*standard2.0*" } | Select-Object -Last 1
+            Try { Add-Type -Path "$X" -EA SI } Catch { $_.Exception.LoaderExceptions ; Return 1 }
+        }
+    }
+    [Microsoft.Playwright.Program]::Main(@("install", "chromium"))
+    $Handler = [Microsoft.Playwright.Playwright]::CreateAsync().GetAwaiter().GetResult()
+    $Browser = $Handler.Chromium.LaunchAsync(@{ "Headless" = $False }).GetAwaiter().GetResult()
+    $WebPage = $Browser.NewPageAsync().GetAwaiter().GetResult()
+    $WebPage.GoToAsync("http://www.bing.com").GetAwaiter().GetResult()
+    $WebPage.CloseAsync().GetAwaiter().GetResult()
+    $Browser.CloseAsync().GetAwaiter().GetResult()
+
+}
+
 Function Invoke-Restart {
 
-    # TODO: VERIFY
-
+    Update-Powershell
     $Current = $Script:MyInvocation.MyCommand.Path
     $Heading = (Get-Item "$Current").BaseName
     $Deposit = "HKCU:\Software\Microsoft\Windows\CurrentVersion\RunOnce"
     $Program = "$Env:LocalAppData\Microsoft\WindowsApps\wt.exe"
-    $Command = "$Program --title `"$Heading`" powershell -ep bypass -noexit -nologo -file `"$Current`""
+    $Command = "$Program --title `"$Heading`" pwsh -ep bypass -noexit -nologo -file `"$Current`""
     New-ItemProperty "$Deposit" "$Heading" -Value "$Command"
     Invoke-Gsudo { Get-LocalUser -Name "$Env:Username" | Set-LocalUser -Password ([SecureString]::New()) }
     Start-Sleep 4 ; Restart-Computer -Force
@@ -292,6 +322,21 @@ Function Update-Ldplayer {
             Start-Sleep 4 ; [FlaUI.Core.Input.Keyboard]::TypeSimultaneously($Factor1, $Factor2)
         }
         Remove-Desktop "LDM*.lnk" ; Remove-Desktop "LDP*.lnk"
+    }
+
+}
+
+Function Update-Powershell {
+
+    $Current = $PSVersionTable.PSVersion.ToString()
+
+    $Address = "https://api.github.com/repos/powershell/powershell/releases/latest"
+    $Version = [Regex]::Match((Invoke-WebRequest "$Address" | ConvertFrom-Json).tag_name, "[\d.]+").Value
+    $Updated = [Version] "$Current" -Ge [Version] "$Version"
+
+    If (-Not $Updated) {
+        Invoke-Gsudo { Invoke-Expression "& { $(Invoke-RestMethod https://aka.ms/install-powershell.ps1) } -UseMSI -Quiet" }
+        If ([Version] "$Current" -Ge [Version] "7.0.0.0") { Invoke-Restart }
     }
 
 }
