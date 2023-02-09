@@ -79,7 +79,9 @@ Function Invoke-Browser {
 
     Param(
         [String] $Startup = "https://www.bing.com",
-        [String] $Factors
+        [String] $Factors,
+        [Switch] $Firefox,
+        [Switch] $Visible
     )
 
     Update-Powershell
@@ -92,15 +94,17 @@ Function Invoke-Browser {
     $Members = @("System.Text.Json", "Microsoft.Bcl.AsyncInterfaces", "Microsoft.Playwright")
     Foreach ($Element In $Members) {
         If (-Not ([System.Management.Automation.PSTypeName]"$Element").Type ) {
-            $X = (Get-ChildItem -Filter "*.dll" -Recurse (Split-Path (Get-Package -Name "$Element").Source)).FullName | Where-Object { $_ -Like "*standard2.0*" } | Select-Object -Last 1
-            Try { Add-Type -Path "$X" -EA SI } Catch { $_.Exception.LoaderExceptions ; Return 1 }
+            $Results = (Get-ChildItem -Filter "*.dll" -Recurse (Split-Path (Get-Package -Name "$Element").Source)).FullName
+            $Content = $Results | Where-Object { $_ -Like "*standard2.0*" } | Select-Object -Last 1
+            Try { Add-Type -Path "$Content" -EA SI } Catch { $_.Exception.LoaderExceptions ; Return $False }
         }
     }
-    [Microsoft.Playwright.Program]::Main(@("install", "chromium"))
+    [Microsoft.Playwright.Program]::Main(@("install", (If ($Firefox) { "firefox" } Else { "chromium" })))
     $Handler = [Microsoft.Playwright.Playwright]::CreateAsync().GetAwaiter().GetResult()
-    $Browser = $Handler.Chromium.LaunchAsync(@{ "Headless" = $False }).GetAwaiter().GetResult()
+    If ($Firefox) { $Browser = $Handler.Firefox.LaunchAsync(@{ "Headless" = !$Visible }).GetAwaiter().GetResult() }
+    Else { $Browser = $Handler.Chromium.LaunchAsync(@{ "Headless" = !$Visible }).GetAwaiter().GetResult() }
     $WebPage = $Browser.NewPageAsync().GetAwaiter().GetResult()
-    $WebPage.GoToAsync("http://www.bing.com").GetAwaiter().GetResult()
+    $WebPage.GoToAsync("$Startup").GetAwaiter().GetResult()
     $WebPage.CloseAsync().GetAwaiter().GetResult()
     $Browser.CloseAsync().GetAwaiter().GetResult()
 
@@ -258,9 +262,7 @@ Function Update-Gsudo {
 
     $Current = (Get-Package "*gsudo*" -EA SI).Version
     If ($Null -Eq $Current) { $Current = "0.0.0.0" }
-    $Present = $Current -Ne "0.0.0.0"
-
-    If ($Present) { Return $True }
+    $Present = $Current -Ne "0.0.0.0" ; If ($Present) { Return $True }
 
     $Address = "https://api.github.com/repos/gerardog/gsudo/releases/latest"
     $Version = [Regex]::Match((Invoke-WebRequest "$Address" | ConvertFrom-Json).tag_name, "[\d.]+").Value

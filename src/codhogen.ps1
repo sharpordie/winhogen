@@ -26,7 +26,7 @@ If (-Not $Correct) { Write-Host "$Failure`n" -FO Red ; Exit } ; Update-Powershel
 
 # Handle elements
 $Members = @(
-    "Invoke-Browser"
+    "Invoke-Browser -Firefox -Visible"
     # "Update-Windows 'Romance Standard Time' 'CODHOGEN'"
     # "Update-Ldplayer"
 )
