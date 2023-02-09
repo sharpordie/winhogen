@@ -20,7 +20,7 @@ Import-Module "$(Split-Path "$Current")\winhogen.psm1" -Force
 $Loading = "`nTHE UPDATING DEPENDENCIES PROCESS HAS LAUNCHED"
 $Failure = "`rTHE UPDATING DEPENDENCIES PROCESS WAS CANCELED"
 Write-Host "$Loading" -FO DarkYellow -NoNewline
-Remove-Feature "Uac" ; Update-Element "Plan" "Ultimate"
+Remove-Feature "Uac" ; Update-Element "Plan" "Ultimate" ; Update-Powershell
 $Correct = (Update-Gsudo) -And ! (gsudo cache on -d -1 2>&1).ToString().Contains("Error")
 If (-Not $Correct) { Write-Host "$Failure" -FO Red ; Write-Host ; Exit }
 
