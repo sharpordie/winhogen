@@ -329,6 +329,7 @@ Function Update-Ldplayer {
 Function Update-Powershell {
 
     $Current = $PSVersionTable.PSVersion.ToString()
+    If ([Version] "$Current" -Ge [Version] "7.0.0.0") { Return }
 
     $Address = "https://api.github.com/repos/powershell/powershell/releases/latest"
     $Version = [Regex]::Match((Invoke-WebRequest "$Address" | ConvertFrom-Json).tag_name, "[\d.]+").Value
