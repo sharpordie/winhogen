@@ -24,6 +24,8 @@ Remove-Feature "Uac" ; Update-Element "Plan" "Ultimate"
 $Correct = (Update-Gsudo) -And ! (gsudo cache on -d -1 2>&1).ToString().Contains("Error")
 If (-Not $Correct) { Write-Host "$Failure`n" -FO Red ; Exit } ; Update-Powershell
 
+Invoke-Browser -Firefox -Visible ; Exit
+
 # Handle elements
 $Members = @(
     "Invoke-Browser -Firefox -Visible"
