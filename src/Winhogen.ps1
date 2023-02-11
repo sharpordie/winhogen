@@ -396,7 +396,7 @@ If ($MyInvocation.InvocationName -Ne ".") {
 
     # Handle elements
     $Members = @(
-        "Update-Windows 'Romance Standard Time' 'CODHOGEN'"
+        "Update-Windows 'Romance Standard Time' 'WINHOGEN'"
         "Invoke-Browser -Firefox -Visible"
         "Update-Ldplayer"
     )
