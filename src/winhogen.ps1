@@ -137,8 +137,7 @@ Function Invoke-Browser {
 Function Invoke-Restart {
 
     Update-Powershell
-    # $Current = $Script:MyInvocation.MyCommand.Path
-    $Current = $MyInvocation.PSCommandPath
+    $Current = $Script:MyInvocation.MyCommand.Path
     $Program = "$Env:LocalAppData\Microsoft\WindowsApps\wt.exe"
     $Heading = (Get-Item "$Current").BaseName
     $Command = "$Program --title $Heading pwsh -ep bypass -noexit -nologo -file $Current"
@@ -403,9 +402,6 @@ Function Main {
     Write-Output "|                                                               |"
     Write-Output "+---------------------------------------------------------------+"
 
-    # Import winhogen
-    # Import-Module "$(Split-Path "$Current")\winhogen.psm1" -Force
-
     # Handle security
     $Loading = "`nTHE UPDATING DEPENDENCIES PROCESS HAS LAUNCHED"
     $Failure = "`rTHE UPDATING DEPENDENCIES PROCESS WAS CANCELED"
@@ -457,4 +453,4 @@ Function Main {
 
 }
 
-# Main
+Main
