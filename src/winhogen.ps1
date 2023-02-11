@@ -39,7 +39,7 @@ Function Enable-Feature {
                 $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
 		        (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
                 Invoke-Gsudo { Start-Process "$Using:Fetched" ; Start-Sleep 10 ; Stop-Process -Name "HD-EnableHyperV" }
-                Invoke-Restart -Restart
+                Invoke-Restart
             }
         }
         "RemoteDesktop" {
@@ -68,7 +68,7 @@ Function Enable-Feature {
                     Enable-WindowsOptionalFeature -Online -FE "VirtualMachinePlatform" -All -NoRestart *> $Null
                     Enable-WindowsOptionalFeature -Online -FE "Microsoft-Windows-Subsystem-Linux" -All -NoRestart *> $Null
                 }
-                Invoke-Restart -Restart
+                Invoke-Restart
             }
         }
     }
@@ -136,25 +136,15 @@ Function Invoke-Browser {
 
 Function Invoke-Restart {
 
-    Param (
-        [Switch] $Restart
-    )
-
     Update-Powershell
     $Current = $Script:MyInvocation.MyCommand.Path
     $Program = "$Env:LocalAppData\Microsoft\WindowsApps\wt.exe"
     $Heading = (Get-Item "$Current").BaseName
-    If ($Restart) {
-        $Command = "$Program --title `"$Heading`" pwsh -ep bypass -noexit -nologo -file `"$Current`""
-        $RegPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\RunOnce"
-        New-ItemProperty "$RegPath" "$Heading" -Value "$Command"
-        Invoke-Gsudo { Get-LocalUser -Name "$Env:Username" | Set-LocalUser -Password ([SecureString]::New()) }
-        Start-Sleep 4 ; Restart-Computer -Force
-    }
-    Else {
-        $ArgList = "-w 0 nt pwsh -ep bypass -noexit -nologo -file `"$Current`""
-        Start-Process "$Program" "$ArgList" ; Exit
-    }
+    $Command = "$Program --title `"$Heading`" pwsh -ep bypass -noexit -nologo -file `"$Current`""
+    $RegPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\RunOnce"
+    New-ItemProperty "$RegPath" "$Heading" -Value "$Command"
+    Invoke-Gsudo { Get-LocalUser -Name "$Env:Username" | Set-LocalUser -Password ([SecureString]::New()) }
+    Start-Sleep 4 ; Restart-Computer -Force
 
 }
 
@@ -183,7 +173,7 @@ Function Remove-Feature {
                 $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
 		        (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
                 Invoke-Gsudo { Start-Process "$Using:Fetched" ; Start-Sleep 10 ; Stop-Process -Name "HD-DisableHyperV" }
-                If (Assert-Pending -Eq $True) { Invoke-Restart -Restart }
+                If (Assert-Pending -Eq $True) { Invoke-Restart }
             }
         }
         "Uac" {
