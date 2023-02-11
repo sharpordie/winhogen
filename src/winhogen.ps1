@@ -140,7 +140,7 @@ Function Invoke-Restart {
     $Current = $Script:MyInvocation.MyCommand.Path
     $Program = "$Env:LocalAppData\Microsoft\WindowsApps\wt.exe"
     $Heading = (Get-Item "$Current").BaseName
-    $Command = "$Program --title `"$Heading`" pwsh -ep bypass -noexit -nologo -file `"$Current`""
+    $Command = "$Program --title '$Heading' pwsh -ep bypass -noexit -nologo -file '$Current'"
     $RegPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\RunOnce"
     New-ItemProperty "$RegPath" "$Heading" -Value "$Command"
     Invoke-Gsudo { Get-LocalUser -Name "$Env:Username" | Set-LocalUser -Password ([SecureString]::New()) }
