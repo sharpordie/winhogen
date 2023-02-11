@@ -393,6 +393,8 @@ If ($MyInvocation.InvocationName -Ne ".") {
     $Correct = (Update-Gsudo) -And ! (gsudo cache on -d -1 2>&1).ToString().Contains("Error")
     If (-Not $Correct) { Write-Host "$Failure`n" -FO Red ; Exit } ; Update-Powershell 2>&1
 
+    Invoke-Browser -Firefox -Visible ; Exit
+
     # Handle elements
     $Members = @(
         "Update-Windows 'Romance Standard Time' 'WINHOGEN'"
