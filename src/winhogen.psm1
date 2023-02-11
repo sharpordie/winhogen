@@ -39,7 +39,7 @@ Function Enable-Feature {
                 $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
 		        (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
                 Invoke-Gsudo { Start-Process "$Using:Fetched" ; Start-Sleep 10 ; Stop-Process -Name "HD-EnableHyperV" }
-                Invoke-Restart
+                Invoke-Restart -Restart
             }
         }
         "RemoteDesktop" {
@@ -68,9 +68,26 @@ Function Enable-Feature {
                     Enable-WindowsOptionalFeature -Online -FE "VirtualMachinePlatform" -All -NoRestart *> $Null
                     Enable-WindowsOptionalFeature -Online -FE "Microsoft-Windows-Subsystem-Linux" -All -NoRestart *> $Null
                 }
-                Invoke-Restart
+                Invoke-Restart -Restart
             }
         }
+    }
+
+}
+
+Function Import-Library {
+
+    Param(
+        [String] $Library,
+        [Switch] $Testing
+    )
+
+    If (-Not ([Management.Automation.PSTypeName]"$Element").Type ) {
+        Install-Package "$Library" -Scope "CurrentUser" -Source "https://www.nuget.org/api/v2" -Force -SkipDependencies
+        $Results = (Get-ChildItem -Filter "*.dll" -Recurse (Split-Path (Get-Package -Name "$Element").Source)).FullName
+        $Content = $Results | Where-Object { $_ -Like "*standard2.0*" } | Select-Object -Last 1
+        If ($Testing) { Try { Add-Type -Path "$Content" -EA SI } Catch { $_.Exception.LoaderExceptions ; Return $False } }
+        Else { Add-Type -Path "$Content" -EA SI }
     }
 
 }
@@ -85,20 +102,27 @@ Function Invoke-Browser {
     )
 
     Update-Powershell
-    $Members = @("Microsoft.Bcl.AsyncInterfaces", "Microsoft.CodeAnalysis", "Microsoft.Playwright", "System.Text.Json")
-    Foreach ($Element In $Members) {
-        If (-Not (Get-Package -Name "$Element" -EA SI)) {
-            Install-Package "$Element" -Scope "CurrentUser" -Source "https://www.nuget.org/api/v2" -Force -SkipDependencies
-        }
-    }
-    $Members = @("System.Text.Json", "Microsoft.Bcl.AsyncInterfaces", "Microsoft.Playwright")
-    Foreach ($Element In $Members) {
-        If (-Not ([System.Management.Automation.PSTypeName]"$Element").Type ) {
-            $Results = (Get-ChildItem -Filter "*.dll" -Recurse (Split-Path (Get-Package -Name "$Element").Source)).FullName
-            $Content = $Results | Where-Object { $_ -Like "*standard2.0*" } | Select-Object -Last 1
-            Try { Add-Type -Path "$Content" -EA SI } Catch { $_.Exception.LoaderExceptions ; Return $False }
-        }
-    }
+    Import-Library "System.Text.Json"
+    Import-Library "Microsoft.Bcl.AsyncInterfaces"
+    Import-Library "Microsoft.CodeAnalysis"
+    Import-Library "Microsoft.Playwright"
+
+    # Update-Powershell
+    # $Members = @("Microsoft.Bcl.AsyncInterfaces", "Microsoft.CodeAnalysis", "Microsoft.Playwright", "System.Text.Json")
+    # Foreach ($Element In $Members) {
+    #     If (-Not (Get-Package -Name "$Element" -EA SI)) {
+    #         Install-Package "$Element" -Scope "CurrentUser" -Source "https://www.nuget.org/api/v2" -Force -SkipDependencies
+    #     }
+    # }
+    # $Members = @("System.Text.Json", "Microsoft.Bcl.AsyncInterfaces", "Microsoft.Playwright")
+    # Foreach ($Element In $Members) {
+    #     If (-Not ([System.Management.Automation.PSTypeName]"$Element").Type ) {
+    #         $Results = (Get-ChildItem -Filter "*.dll" -Recurse (Split-Path (Get-Package -Name "$Element").Source)).FullName
+    #         $Content = $Results | Where-Object { $_ -Like "*standard2.0*" } | Select-Object -Last 1
+    #         Try { Add-Type -Path "$Content" -EA SI } Catch { $_.Exception.LoaderExceptions ; Return $False }
+    #     }
+    # }
+
     [Microsoft.Playwright.Program]::Main(@("install", (If ($Firefox) { "firefox" } Else { "chromium" })))
     $Handler = [Microsoft.Playwright.Playwright]::CreateAsync().GetAwaiter().GetResult()
     If ($Firefox) { $Browser = $Handler.Firefox.LaunchAsync(@{ "Headless" = !$Visible }).GetAwaiter().GetResult() }
@@ -112,15 +136,26 @@ Function Invoke-Browser {
 
 Function Invoke-Restart {
 
+    Param (
+        [Switch] $Restart
+    )
+
     Update-Powershell
     $Current = $Script:MyInvocation.MyCommand.Path
-    $Heading = (Get-Item "$Current").BaseName
-    $Deposit = "HKCU:\Software\Microsoft\Windows\CurrentVersion\RunOnce"
     $Program = "$Env:LocalAppData\Microsoft\WindowsApps\wt.exe"
-    $Command = "$Program --title `"$Heading`" pwsh -ep bypass -noexit -nologo -file `"$Current`""
-    New-ItemProperty "$Deposit" "$Heading" -Value "$Command"
-    Invoke-Gsudo { Get-LocalUser -Name "$Env:Username" | Set-LocalUser -Password ([SecureString]::New()) }
-    Start-Sleep 4 ; Restart-Computer -Force
+    $Heading = (Get-Item "$Current").BaseName
+    If ($Restart) {
+        $Command = "$Program --title `"$Heading`" pwsh -ep bypass -noexit -nologo -file `"$Current`""
+        $RegPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\RunOnce"
+        New-ItemProperty "$RegPath" "$Heading" -Value "$Command"
+        Invoke-Gsudo { Get-LocalUser -Name "$Env:Username" | Set-LocalUser -Password ([SecureString]::New()) }
+        Start-Sleep 4 ; Restart-Computer -Force
+    }
+    Else {
+        $ArgList = "--title `"$Heading`" pwsh -ep bypass -noexit -nologo -file `"$Current`""
+        Start-Process "pwsh" "$ArgList"
+        Write-Host "`n" ; Exit
+    }
 
 }
 
@@ -149,7 +184,7 @@ Function Remove-Feature {
                 $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
 		        (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
                 Invoke-Gsudo { Start-Process "$Using:Fetched" ; Start-Sleep 10 ; Stop-Process -Name "HD-DisableHyperV" }
-                If (Assert-Pending -Eq $True) { Invoke-Restart }
+                If (Assert-Pending -Eq $True) { Invoke-Restart -Restart }
             }
         }
         "Uac" {
