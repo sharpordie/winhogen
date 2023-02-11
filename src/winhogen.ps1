@@ -82,10 +82,9 @@ Function Import-Library {
         [Switch] $Testing
     )
 
-    If (-Not ([Management.Automation.PSTypeName]"$Element").Type ) {
+    If (-Not ([Management.Automation.PSTypeName]"$Library").Type ) {
         Install-Package "$Library" -Scope "CurrentUser" -Source "https://www.nuget.org/api/v2" -Force -SkipDependencies
-        Start-Sleep 4
-        $Results = (Get-ChildItem -Filter "*.dll" -Recurse (Split-Path (Get-Package -Name "$Element").Source)).FullName
+        $Results = (Get-ChildItem -Filter "*.dll" -Recurse (Split-Path (Get-Package -Name "$Library").Source)).FullName
         $Content = $Results | Where-Object { $_ -Like "*standard2.0*" } | Select-Object -Last 1
         If ($Testing) { Try { Add-Type -Path "$Content" -EA SI } Catch { $_.Exception.LoaderExceptions ; Return $False } }
         Else { Add-Type -Path "$Content" -EA SI }
