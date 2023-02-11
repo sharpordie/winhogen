@@ -137,7 +137,8 @@ Function Invoke-Browser {
 Function Invoke-Restart {
 
     Update-Powershell
-    $Current = $Script:MyInvocation.MyCommand.Path
+    # $Current = $Script:MyInvocation.MyCommand.Path
+    $Current = $MyInvocation.PSCommandPath
     $Program = "$Env:LocalAppData\Microsoft\WindowsApps\wt.exe"
     $Heading = (Get-Item "$Current").BaseName
     $Command = "$Program --title $Heading pwsh -ep bypass -noexit -nologo -file $Current"
