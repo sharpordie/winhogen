@@ -152,9 +152,8 @@ Function Invoke-Restart {
         Start-Sleep 4 ; Restart-Computer -Force
     }
     Else {
-        $ArgList = "--title `"$Heading`" pwsh -ep bypass -noexit -nologo -file `"$Current`""
-        Start-Process "wt" "$ArgList"
-        Write-Host "`n" ; Exit
+        $ArgList = "-w 0 nt pwsh -ep bypass -noexit -nologo -file `"$Current`""
+        Start-Process "$Program" "$ArgList" ; Exit
     }
 
 }
@@ -407,14 +406,14 @@ Function Main {
     # Output greeting
     Write-Output "+---------------------------------------------------------------+"
     Write-Output "|                                                               |"
-    Write-Output "|  > CODHOGEN                                                   |"
+    Write-Output "|  > WINHOGEN                                                   |"
     Write-Output "|                                                               |"
-    Write-Output "|  > CONFIGURATION SCRIPT FOR CODING PURPOSE                    |"
+    Write-Output "|  > CONFIGURATION SCRIPT FOR WINDOWS 11                        |"
     Write-Output "|                                                               |"
     Write-Output "+---------------------------------------------------------------+"
 
     # Import winhogen
-    Import-Module "$(Split-Path "$Current")\winhogen.psm1" -Force
+    # Import-Module "$(Split-Path "$Current")\winhogen.psm1" -Force
 
     # Handle security
     $Loading = "`nTHE UPDATING DEPENDENCIES PROCESS HAS LAUNCHED"
