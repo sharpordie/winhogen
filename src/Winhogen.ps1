@@ -340,8 +340,9 @@ Function Update-Ldplayer {
 
 Function Update-Powershell {
 
-    $Starter = (Get-Item "$Env:ProgramFiles\PowerShell\*\pwsh.exe" -EA SI).FullName
-    $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
+    # $Starter = (Get-Item "$Env:ProgramFiles\PowerShell\*\pwsh.exe" -EA SI).FullName
+    # $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
+    $Current = $PSVersionTable.PSVersion.ToString()
     # $Present = $Current -Ne "0.0.0.0"
 
     $Address = "https://api.github.com/repos/powershell/powershell/releases/latest"
