@@ -337,10 +337,9 @@ Function Update-Ldplayer {
 
 Function Update-Powershell {
 
-    # $Starter = (Get-Item "$Env:ProgramFiles\PowerShell\*\pwsh.exe" -EA SI).FullName
-    # $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
-    $Current = $PSVersionTable.PSVersion.ToString()
-    # $Present = $Current -Ne "0.0.0.0"
+    $Starter = (Get-Item "$Env:ProgramFiles\PowerShell\*\pwsh.exe" -EA SI).FullName
+    $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
+    $Present = $Current -Ne "0.0.0.0"
 
     $Address = "https://api.github.com/repos/powershell/powershell/releases/latest"
     $Version = [Regex]::Match((Invoke-WebRequest "$Address" | ConvertFrom-Json).tag_name, "[\d.]+").Value
@@ -348,8 +347,9 @@ Function Update-Powershell {
 
     If (-Not $Updated) {
         Invoke-Gsudo { Invoke-Expression "& { $(Invoke-RestMethod https://aka.ms/install-powershell.ps1) } -UseMSI -Quiet" }
-        If ([Version] "$Current" -Lt [Version] "7.0.0.0") { Invoke-Restart }
     }
+
+    If ([Version] $PSVersionTable.PSVersion.ToString() -Lt [Version] "7.0.0.0") { Invoke-Restart }
 
 }
 
