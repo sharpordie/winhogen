@@ -334,7 +334,7 @@ Function Update-Ldplayer {
             # Add-Type -Path "$Using:Current\libs\FlaUI.UIA3.dll"
             # Add-Type -Path "$Using:Current\libs\System.Drawing.Common.dll"
             # Add-Type -Path "$Using:Current\libs\System.Security.Permissions.dll"
-            . $Script:MyInvocation.MyCommand.Path
+            . $Using:Script:MyInvocation.MyCommand.Path
             Import-Library "Interop.UIAutomationClient"
             Import-Library "FlaUI.Core"
             Import-Library "FlaUI.UIA3"
