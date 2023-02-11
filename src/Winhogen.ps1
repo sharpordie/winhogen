@@ -350,7 +350,7 @@ Function Update-Ldplayer {
             $Factor1 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::ALT
             $Factor2 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::F4
             Start-Sleep 4 ; [FlaUI.Core.Input.Keyboard]::TypeSimultaneously($Factor1, $Factor2)
-        }
+        } -LoadProfile
         Remove-Desktop "LDM*.lnk" ; Remove-Desktop "LDP*.lnk"
     }
 
