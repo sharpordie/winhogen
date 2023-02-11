@@ -349,7 +349,7 @@ Function Update-Powershell {
         Invoke-Gsudo { Invoke-Expression "& { $(Invoke-RestMethod https://aka.ms/install-powershell.ps1) } -UseMSI -Quiet" }
     }
 
-    If ([Version] $PSVersionTable.PSVersion.ToString() -Lt [Version] "7.0.0.0") { Invoke-Restart }
+    If ($PSVersionTable.PSVersion -Lt [Version] "7.0.0.0") { Invoke-Restart }
 
 }
 
