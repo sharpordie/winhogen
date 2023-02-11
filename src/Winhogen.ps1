@@ -100,9 +100,9 @@ Function Invoke-Browser {
     )
 
     Update-Powershell
-    Import-Library "System.Text.Json" -Testing
     Import-Library "Microsoft.Bcl.AsyncInterfaces" -Testing
     Import-Library "Microsoft.CodeAnalysis" -Testing
+    Import-Library "System.Text.Json" -Testing
     Import-Library "Microsoft.Playwright" -Testing
     [Microsoft.Playwright.Program]::Main(@("install", "firefox"))
     $Handler = [Microsoft.Playwright.Playwright]::CreateAsync().GetAwaiter().GetResult()
