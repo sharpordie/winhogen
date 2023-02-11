@@ -327,6 +327,7 @@ Function Update-Ldplayer {
         (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
         $Current = Split-Path $Script:MyInvocation.MyCommand.Path
         Invoke-Gsudo {
+            . $Using:Current
             # Add-Type -Path "$Using:Current\libs\Interop.UIAutomationClient.dll"
             # Add-Type -Path "$Using:Current\libs\FlaUI.Core.dll"
             # Add-Type -Path "$Using:Current\libs\FlaUI.UIA3.dll"
@@ -391,7 +392,7 @@ Function Update-Windows {
 
 }
 
-Function Main {
+If ($MyInvocation.InvocationName -Ne ".") {
 
     # Change headline
     Clear-Host ; $Current = $Script:MyInvocation.MyCommand.Path
@@ -456,5 +457,3 @@ Function Main {
     Write-Host "`n"
 
 }
-
-Main
