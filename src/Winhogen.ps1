@@ -100,6 +100,7 @@ Function Invoke-Browser {
     )
 
     Update-Powershell
+    Import-Library "System.Threading.Tasks.Extensions" -Testing
     Import-Library "Microsoft.Bcl.AsyncInterfaces" -Testing
     Import-Library "Microsoft.CodeAnalysis" -Testing
     Import-Library "System.Text.Json" -Testing
