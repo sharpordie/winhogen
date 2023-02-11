@@ -326,18 +326,17 @@ Function Update-Ldplayer {
         $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
         (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
         $Current = Split-Path $Script:MyInvocation.MyCommand.Path
-        Import-Library "Interop.UIAutomationClient"
-        Import-Library "FlaUI.Core"
-        Import-Library "FlaUI.UIA3"
-        Import-Library "System.Drawing.Common"
-        Import-Library "System.Security.Permissions"
         Invoke-Gsudo {
             # Add-Type -Path "$Using:Current\libs\Interop.UIAutomationClient.dll"
             # Add-Type -Path "$Using:Current\libs\FlaUI.Core.dll"
             # Add-Type -Path "$Using:Current\libs\FlaUI.UIA3.dll"
             # Add-Type -Path "$Using:Current\libs\System.Drawing.Common.dll"
             # Add-Type -Path "$Using:Current\libs\System.Security.Permissions.dll"
-
+            Import-Library "Interop.UIAutomationClient"
+            Import-Library "FlaUI.Core"
+            Import-Library "FlaUI.UIA3"
+            Import-Library "System.Drawing.Common"
+            Import-Library "System.Security.Permissions"
             $Handler = [FlaUI.UIA3.UIA3Automation]::New()
             $Started = [FlaUI.Core.Application]::Launch("$Using:Fetched")
             $Window1 = $Started.GetMainWindow($Handler)
