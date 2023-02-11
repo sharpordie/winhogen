@@ -84,6 +84,7 @@ Function Import-Library {
         Install-Package "$Library" -Scope "CurrentUser" -Source "https://www.nuget.org/api/v2" -Force -SkipDependencies
         $Results = (Get-ChildItem -Filter "*.dll" -Recurse (Split-Path (Get-Package -Name "$Library").Source)).FullName
         $Content = $Results | Where-Object { $_ -Like "*standard2.0*" } | Select-Object -Last 1
+        echo $Content
         If ($Testing) { Try { Add-Type -Path "$Content" -EA SI } Catch { $_.Exception.LoaderExceptions } }
         Else { Add-Type -Path "$Content" -EA SI }
     }
