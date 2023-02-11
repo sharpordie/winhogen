@@ -102,10 +102,18 @@ Function Invoke-Browser {
     )
 
     Update-Powershell
-    Import-Library "System.Text.Json" -Testing
-    Import-Library "Microsoft.Bcl.AsyncInterfaces" -Testing
-    Import-Library "Microsoft.CodeAnalysis" -Testing
-    Import-Library "Microsoft.Playwright" -Testing
+    Import-Library "System.Text.Json"
+    Import-Library "Microsoft.Bcl.AsyncInterfaces"
+    Import-Library "Microsoft.CodeAnalysis"
+    Import-Library "Microsoft.Playwright"
+    [Microsoft.Playwright.Program]::Main(@("install", "firefox"))
+    $Handler = [Microsoft.Playwright.Playwright]::CreateAsync().GetAwaiter().GetResult()
+    If ($Firefox) { $Browser = $Handler.Firefox.LaunchAsync(@{ "Headless" = !$Visible }).GetAwaiter().GetResult() }
+    Else { $Browser = $Handler.Chromium.LaunchAsync(@{ "Headless" = !$Visible }).GetAwaiter().GetResult() }
+    $WebPage = $Browser.NewPageAsync().GetAwaiter().GetResult()
+    $WebPage.GoToAsync("$Startup").GetAwaiter().GetResult()
+    $WebPage.CloseAsync().GetAwaiter().GetResult()
+    $Browser.CloseAsync().GetAwaiter().GetResult()
 
     # Update-Powershell
     # $Members = @("Microsoft.Bcl.AsyncInterfaces", "Microsoft.CodeAnalysis", "Microsoft.Playwright", "System.Text.Json")
@@ -122,15 +130,6 @@ Function Invoke-Browser {
     #         Try { Add-Type -Path "$Content" -EA SI } Catch { $_.Exception.LoaderExceptions ; Return $False }
     #     }
     # }
-
-    [Microsoft.Playwright.Program]::Main(@("install", "firefox"))
-    $Handler = [Microsoft.Playwright.Playwright]::CreateAsync().GetAwaiter().GetResult()
-    If ($Firefox) { $Browser = $Handler.Firefox.LaunchAsync(@{ "Headless" = !$Visible }).GetAwaiter().GetResult() }
-    Else { $Browser = $Handler.Chromium.LaunchAsync(@{ "Headless" = !$Visible }).GetAwaiter().GetResult() }
-    $WebPage = $Browser.NewPageAsync().GetAwaiter().GetResult()
-    $WebPage.GoToAsync("$Startup").GetAwaiter().GetResult()
-    $WebPage.CloseAsync().GetAwaiter().GetResult()
-    $Browser.CloseAsync().GetAwaiter().GetResult()
 
 }
 
@@ -327,12 +326,18 @@ Function Update-Ldplayer {
         $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
         (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
         $Current = Split-Path $Script:MyInvocation.MyCommand.Path
+        Import-Library "Interop.UIAutomationClient"
+        Import-Library "FlaUI.Core"
+        Import-Library "FlaUI.UIA3"
+        Import-Library "System.Drawing.Common"
+        Import-Library "System.Security.Permissions"
         Invoke-Gsudo {
-            Add-Type -Path "$Using:Current\libs\Interop.UIAutomationClient.dll"
-            Add-Type -Path "$Using:Current\libs\FlaUI.Core.dll"
-            Add-Type -Path "$Using:Current\libs\FlaUI.UIA3.dll"
-            Add-Type -Path "$Using:Current\libs\System.Drawing.Common.dll"
-            Add-Type -Path "$Using:Current\libs\System.Security.Permissions.dll"
+            # Add-Type -Path "$Using:Current\libs\Interop.UIAutomationClient.dll"
+            # Add-Type -Path "$Using:Current\libs\FlaUI.Core.dll"
+            # Add-Type -Path "$Using:Current\libs\FlaUI.UIA3.dll"
+            # Add-Type -Path "$Using:Current\libs\System.Drawing.Common.dll"
+            # Add-Type -Path "$Using:Current\libs\System.Security.Permissions.dll"
+
             $Handler = [FlaUI.UIA3.UIA3Automation]::New()
             $Started = [FlaUI.Core.Application]::Launch("$Using:Fetched")
             $Window1 = $Started.GetMainWindow($Handler)
@@ -391,7 +396,7 @@ Function Main {
 
     # Change headline
     Clear-Host ; $Current = $Script:MyInvocation.MyCommand.Path
-    $Host.UI.RawUI.WindowTitle = (Get-Item "$Current").BaseName.ToUpper()
+    $Host.UI.RawUI.WindowTitle = (Get-Item "$Current").BaseName
 
     # Output greeting
     Write-Output "+---------------------------------------------------------------+"
@@ -410,7 +415,7 @@ Function Main {
     $Correct = (Update-Gsudo) -And ! (gsudo cache on -d -1 2>&1).ToString().Contains("Error")
     If (-Not $Correct) { Write-Host "$Failure`n" -FO Red ; Exit } ; Update-Powershell
 
-    Invoke-Browser -Firefox -Visible ; Exit
+    Update-Ldplayer ; Exit
 
     # Handle elements
     $Members = @(
