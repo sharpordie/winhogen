@@ -123,7 +123,7 @@ Function Invoke-Browser {
     #     }
     # }
 
-    [Microsoft.Playwright.Program]::Main(@("install", (If ($Firefox) { "firefox" } Else { "chromium" })))
+    [Microsoft.Playwright.Program]::Main(@("install", "firefox"))
     $Handler = [Microsoft.Playwright.Playwright]::CreateAsync().GetAwaiter().GetResult()
     If ($Firefox) { $Browser = $Handler.Firefox.LaunchAsync(@{ "Headless" = !$Visible }).GetAwaiter().GetResult() }
     Else { $Browser = $Handler.Chromium.LaunchAsync(@{ "Headless" = !$Visible }).GetAwaiter().GetResult() }
@@ -456,4 +456,4 @@ Function Main {
 
 }
 
-Main
+# Main
