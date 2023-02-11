@@ -325,7 +325,8 @@ Function Update-Ldplayer {
         $Address = "https://encdn.ldmnq.com/download/package/LDPlayer_$Version.exe"
         $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
         (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
-        $Current = Split-Path $Script:MyInvocation.MyCommand.Path
+        # $Current = Split-Path $Script:MyInvocation.MyCommand.Path
+        $Current = $Script:MyInvocation.MyCommand.Path
         Invoke-Gsudo {
             . $Using:Current
             # Add-Type -Path "$Using:Current\libs\Interop.UIAutomationClient.dll"
