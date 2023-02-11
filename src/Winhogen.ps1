@@ -1,7 +1,5 @@
 #!/usr/bin/env pwsh
 
-$ProgressPreference = "SilentlyContinue"
-
 #Region Services
 
 Function Assert-Pending {
@@ -374,10 +372,11 @@ Function Update-Windows {
 If ($MyInvocation.InvocationName -Ne ".") {
 
     # Change headline
-    Clear-Host ; $Current = $Script:MyInvocation.MyCommand.Path
+    $Current = $Script:MyInvocation.MyCommand.Path
     $Host.UI.RawUI.WindowTitle = (Get-Item "$Current").BaseName
 
     # Output greeting
+    Clear-Host ; $ProgressPreference = "SilentlyContinue"
     Write-Output "+---------------------------------------------------------------+"
     Write-Output "|                                                               |"
     Write-Output "|  > WINHOGEN                                                   |"
