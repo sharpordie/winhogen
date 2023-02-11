@@ -153,7 +153,7 @@ Function Invoke-Restart {
     }
     Else {
         $ArgList = "--title `"$Heading`" pwsh -ep bypass -noexit -nologo -file `"$Current`""
-        Start-Process "pwsh" "$ArgList"
+        Start-Process "wt" "$ArgList"
         Write-Host "`n" ; Exit
     }
 
@@ -365,7 +365,7 @@ Function Update-Ldplayer {
 
 Function Update-Powershell {
 
-    $Starter = (Get-Item "$Env:ProgramFiles\PowerShell\*\pwsh.exe").FullName
+    $Starter = (Get-Item "$Env:ProgramFiles\PowerShell\*\pwsh.exe" -EA SI).FullName
     $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
     # $Present = $Current -Ne "0.0.0.0"
 

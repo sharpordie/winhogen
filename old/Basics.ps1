@@ -323,7 +323,7 @@ Function Update-AndroidStudio {
 
 Function Update-Bluestacks {
 
-    $Starter = (Get-Item "$Env:ProgramFiles\BlueStacks*\HD-Player.exe").FullName
+    $Starter = (Get-Item "$Env:ProgramFiles\BlueStacks*\HD-Player.exe" -EA SI).FullName
     $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
     # $Present = $Current -Ne "0.0.0.0"
 
