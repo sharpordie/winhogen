@@ -328,12 +328,13 @@ Function Update-Ldplayer {
         # $Current = Split-Path $Script:MyInvocation.MyCommand.Path
         $Current = $Script:MyInvocation.MyCommand.Path
         Invoke-Gsudo {
-            . $Using:Current
+            # . $Using:Current
             # Add-Type -Path "$Using:Current\libs\Interop.UIAutomationClient.dll"
             # Add-Type -Path "$Using:Current\libs\FlaUI.Core.dll"
             # Add-Type -Path "$Using:Current\libs\FlaUI.UIA3.dll"
             # Add-Type -Path "$Using:Current\libs\System.Drawing.Common.dll"
             # Add-Type -Path "$Using:Current\libs\System.Security.Permissions.dll"
+            . $Script:MyInvocation.MyCommand.Path
             Import-Library "Interop.UIAutomationClient"
             Import-Library "FlaUI.Core"
             Import-Library "FlaUI.UIA3"
