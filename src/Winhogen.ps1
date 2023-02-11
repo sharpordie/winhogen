@@ -115,22 +115,6 @@ Function Invoke-Browser {
     $WebPage.CloseAsync().GetAwaiter().GetResult()
     $Browser.CloseAsync().GetAwaiter().GetResult()
 
-    # Update-Powershell
-    # $Members = @("Microsoft.Bcl.AsyncInterfaces", "Microsoft.CodeAnalysis", "Microsoft.Playwright", "System.Text.Json")
-    # Foreach ($Element In $Members) {
-    #     If (-Not (Get-Package -Name "$Element" -EA SI)) {
-    #         Install-Package "$Element" -Scope "CurrentUser" -Source "https://www.nuget.org/api/v2" -Force -SkipDependencies
-    #     }
-    # }
-    # $Members = @("System.Text.Json", "Microsoft.Bcl.AsyncInterfaces", "Microsoft.Playwright")
-    # Foreach ($Element In $Members) {
-    #     If (-Not ([System.Management.Automation.PSTypeName]"$Element").Type ) {
-    #         $Results = (Get-ChildItem -Filter "*.dll" -Recurse (Split-Path (Get-Package -Name "$Element").Source)).FullName
-    #         $Content = $Results | Where-Object { $_ -Like "*standard2.0*" } | Select-Object -Last 1
-    #         Try { Add-Type -Path "$Content" -EA SI } Catch { $_.Exception.LoaderExceptions ; Return $False }
-    #     }
-    # }
-
 }
 
 Function Invoke-Restart {
@@ -408,15 +392,13 @@ If ($MyInvocation.InvocationName -Ne ".") {
     Write-Host "$Loading" -FO DarkYellow -NoNewline
     Remove-Feature "Uac" ; Update-Element "Plan" "Ultimate"
     $Correct = (Update-Gsudo) -And ! (gsudo cache on -d -1 2>&1).ToString().Contains("Error")
-    If (-Not $Correct) { Write-Host "$Failure`n" -FO Red ; Exit } ; Update-Powershell
-
-    Update-Ldplayer ; Exit
+    If (-Not $Correct) { Write-Host "$Failure`n" -FO Red ; Exit } ; Update-Powershell 2>&1
 
     # Handle elements
     $Members = @(
+        "Update-Windows 'Romance Standard Time' 'CODHOGEN'"
         "Invoke-Browser -Firefox -Visible"
-        # "Update-Windows 'Romance Standard Time' 'CODHOGEN'"
-        # "Update-Ldplayer"
+        "Update-Ldplayer"
     )
 
     # Output progress
