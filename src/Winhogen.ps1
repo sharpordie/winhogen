@@ -345,8 +345,9 @@ Function Update-Powershell {
     $Version = [Regex]::Match((Invoke-WebRequest "$Address" | ConvertFrom-Json).tag_name, "[\d.]+").Value
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
 
-    If (-Not $Updated) {
-        Invoke-Gsudo { Invoke-Expression "& { $(Invoke-RestMethod https://aka.ms/install-powershell.ps1) } -UseMSI -Quiet" }
+    If (-Not $Updated) { # TODO: VERIFY
+        # Invoke-Gsudo { Invoke-Expression "& { $(Invoke-RestMethod https://aka.ms/install-powershell.ps1) } -UseMSI -Quiet" }
+        Invoke-Gsudo { & { $(Invoke-RestMethod https://aka.ms/install-powershell.ps1) } -UseMSI -Quiet }
     }
 
     If ($PSVersionTable.PSVersion -Lt [Version] "7.0.0.0") { Invoke-Restart }
