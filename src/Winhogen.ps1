@@ -338,7 +338,7 @@ Function Update-Gsudo {
     $Present = $Current -Ne "0.0.0.0" ; If ($Present) { Return $True }
 
     $Address = "https://api.github.com/repos/gerardog/gsudo/releases/latest"
-    $Version = [Regex]::Match((Invoke-Scraper "$Address" | Convert-FromJson).tag_name, "[\d.]+").Value
+    $Version = [Regex]::Match((Invoke-Scraper "$Address" | ConvertFrom-Json).tag_name, "[\d.]+").Value
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
 
     Try {
@@ -408,7 +408,7 @@ Function Update-Powershell {
     # $Present = $Current -Ne "0.0.0.0"
 
     $Address = "https://api.github.com/repos/powershell/powershell/releases/latest"
-    $Version = [Regex]::Match((Invoke-Scraper "$Address" | Convert-FromJson).tag_name, "[\d.]+").Value
+    $Version = [Regex]::Match((Invoke-Scraper "$Address" | ConvertFrom-Json).tag_name, "[\d.]+").Value
     # $Version = [Regex]::Matches((Invoke-WebRequest "$Address"), "v([\d.]+) Release of").Groups[1].Value
     # $Version = [Regex]::Matches((New-Object Net.WebClient).DownloadString("$Address"), "v([\d.]+) Release of").Groups[1].Value
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
