@@ -152,19 +152,28 @@ Function Invoke-Scraper {
         [String] $Address
     )
 
-    Try {
-        Invoke-WebRequest "$Address"
-    }
-    Catch {
-        $Handler = Invoke-Browser
-        $Browser = $Handler.Chromium.LaunchAsync(@{ "Headless" = $True }).GetAwaiter().GetResult()
-        $WebPage = $Browser.NewPageAsync().GetAwaiter().GetResult()
-        $WebPage.GoToAsync("$Address").GetAwaiter().GetResult()
-        $Scraped = $WebPage.ContentAsync().GetAwaiter().GetResult()
-        $WebPage.CloseAsync().GetAwaiter().GetResult()
-        $Browser.CloseAsync().GetAwaiter().GetResult()
-        $Scraped
-    }
+    $Handler = Invoke-Browser
+    $Browser = $Handler.Chromium.LaunchAsync(@{ "Headless" = $True }).GetAwaiter().GetResult()
+    $WebPage = $Browser.NewPageAsync().GetAwaiter().GetResult()
+    $WebPage.GoToAsync("$Address").GetAwaiter().GetResult()
+    $Scraped = $WebPage.ContentAsync().GetAwaiter().GetResult()
+    $WebPage.CloseAsync().GetAwaiter().GetResult()
+    $Browser.CloseAsync().GetAwaiter().GetResult()
+    $Scraped
+
+    # Try {
+    #     Invoke-WebRequest "$Address"
+    # }
+    # Catch {
+    #     $Handler = Invoke-Browser
+    #     $Browser = $Handler.Chromium.LaunchAsync(@{ "Headless" = $True }).GetAwaiter().GetResult()
+    #     $WebPage = $Browser.NewPageAsync().GetAwaiter().GetResult()
+    #     $WebPage.GoToAsync("$Address").GetAwaiter().GetResult()
+    #     $Scraped = $WebPage.ContentAsync().GetAwaiter().GetResult()
+    #     $WebPage.CloseAsync().GetAwaiter().GetResult()
+    #     $Browser.CloseAsync().GetAwaiter().GetResult()
+    #     $Scraped
+    # }
 
 }
 
