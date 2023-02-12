@@ -378,6 +378,7 @@ Function Update-Powershell {
     $Updated = [Version] "$Current" -Ge [Version] "$Version" -And [Version] $PSVersionTable.PSVersion.ToString() -Ge [Version] "7.0.0.0"
 
     Write-Output "$Current >= $Version"
+    echo "PSVersionTable: $($PSVersionTable.PSVersion.ToString())"
     Write-Output "Updated: $Updated"
 
     If (-Not $Updated) {
