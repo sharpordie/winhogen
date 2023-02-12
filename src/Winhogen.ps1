@@ -85,7 +85,6 @@ Function Export-Members {
         "Development" {
             Return @(
                 "Update-Windows '$Country' '$Machine'"
-                "Invoke-Browser -Firefox -Visible"
                 # "Update-Noxplayer"
             )
         }
@@ -98,7 +97,7 @@ Function Export-Members {
         "Gaming" {
             Return @(
                 "Update-Windows '$Country' '$Machine'"
-                "Update-Ldplayer"
+                "Update-Bluestacks"
             )
         }
     }
@@ -303,6 +302,48 @@ Function Update-SysPath {
 
 #EndRegion
 
+Function Update-Bluestacks {
+
+    Param(
+        [ValidateSet("7", "9", "11")] [String] $Android = "11"
+
+    )
+
+    Remove-Feature "HyperV"
+
+    $Starter = (Get-Item "$Env:ProgramFiles\BlueStacks*\HD-Player.exe" -EA SI).FullName
+    $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
+    # $Present = $Current -Ne "0.0.0.0"
+
+    $Address = "https://support.bluestacks.com/hc/en-us/articles/4402611273485-BlueStacks-5-offline-installer"
+    $Results = [Regex]::Matches((Invoke-Scraper "$Address"), "windows/nxt/([\d.]+)/(?<sha>[0-9a-f]+)/")
+    $Version = $Results.Groups[1].Value
+    $Hashing = $results.Groups[2].Value
+    $Updated = [Version] "$Current" -Ge [Version] ($Version.SubString(0, 6))
+
+    If (-Not $Updated) {
+        $Address = "https://cdn3.bluestacks.com/downloads/windows/nxt/$Version/$Hashing/FullInstaller/x64/BlueStacksFullInstaller_${Version}_amd64_native.exe"
+        $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
+		(New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
+        $ArgList = "--defaultImageName Rvc64 --imageToLaunch Rvc64"
+        If ($Android -Eq "7") { $ArgList = "-s --defaultImageName Nougat64 --imageToLaunch Nougat64" }
+        If ($Android -Eq "9") { $ArgList = "-s --defaultImageName Pie64 --imageToLaunch Pie64" }
+        Invoke-Gsudo { Start-Process "$Using:Fetched" "$Using:ArgList" -Wait }
+        Start-Sleep 4 ; Remove-Desktop "BlueStacks*.lnk"
+    }
+
+    # $Content = Invoke-Gsudo { (Get-WindowsOptionalFeature -FE "Microsoft-Hyper-V-All" -Online).State }
+    # If ($Content.Value -Eq "Enabled" -And $Android -Eq "7") {
+    #     $Altered = (Get-Item "$Env:ProgramData\Microsoft\Windows\Start Menu\Programs\BlueStacks*.lnk" -EA SI).FullName
+    #     If ($Null -Ne $Altered) {
+    #         $Content = [IO.File]::ReadAllBytes("$Altered")
+    #         $Content[0x15] = $Content[0x15] -Bor 0x20
+    #         Invoke-Gsudo { [IO.File]::WriteAllBytes("$Using:Altered", $Using:Content) }
+    #     }
+    # }
+
+}
+
 Function Update-Gsudo {
 
     $Starter = "${Env:ProgramFiles(x86)}\gsudo\gsudo.exe"
@@ -431,11 +472,11 @@ If ($MyInvocation.InvocationName -Ne ".") {
     Remove-Feature "Uac" ; Update-Element "Plan" "Ultimate"
     $Correct = (Update-Gsudo) -And ! (gsudo cache on -d -1 2>&1).ToString().Contains("Error")
     If (-Not $Correct) { Write-Host "$Failure`n" -FO Red ; Exit } ; Update-Powershell
-    
-    Update-Ldplayer ; Exit
+
+    Update-Bluestacks ; Exit
 
     # Handle elements
-    $Members = Export-Members -Variant "Development" -Machine "WINHOGEN"
+    $Members = Export-Members -Variant "Gaming" -Machine "WINHOGEN"
 
     # Output progress
     $Maximum = (65 - 20) * -1
