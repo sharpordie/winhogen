@@ -426,7 +426,7 @@ If ($MyInvocation.InvocationName -Ne ".") {
     Write-Host "$Loading" -FO DarkYellow -NoNewline
     Remove-Feature "Uac" ; Update-Element "Plan" "Ultimate"
     $Correct = (Update-Gsudo) -And ! (gsudo cache on -d -1 2>&1).ToString().Contains("Error")
-    If (-Not $Correct) { Write-Host "$Failure`n" -FO Red ; Exit } ; Update-Powershell 2>&1
+    If (-Not $Correct) { Write-Host "$Failure`n" -FO Red ; Exit }
 
     # Handle elements
     $Members = Export-Members -Variant "Development" -Machine "WINHOGEN"
