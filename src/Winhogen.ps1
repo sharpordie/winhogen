@@ -152,14 +152,19 @@ Function Invoke-Scraper {
         [String] $Address
     )
 
-    $Handler = Invoke-Browser
-    $Browser = $Handler.Chromium.LaunchAsync(@{ "Headless" = $True }).GetAwaiter().GetResult()
-    $WebPage = $Browser.NewPageAsync().GetAwaiter().GetResult()
-    $WebPage.GoToAsync("$Address").GetAwaiter().GetResult()
-    $Scraped = $WebPage.ContentAsync().GetAwaiter().GetResult()
-    $WebPage.CloseAsync().GetAwaiter().GetResult()
-    $Browser.CloseAsync().GetAwaiter().GetResult()
-    $Scraped
+    If ($PSVersionTable.PSVersion -Lt [Version] "7.0.0.0") {
+        Invoke-WebRequest "$Address"
+    }
+    Else {
+        $Handler = Invoke-Browser
+        $Browser = $Handler.Chromium.LaunchAsync(@{ "Headless" = $True }).GetAwaiter().GetResult()
+        $WebPage = $Browser.NewPageAsync().GetAwaiter().GetResult()
+        $WebPage.GoToAsync("$Address").GetAwaiter().GetResult()
+        $Scraped = $WebPage.ContentAsync().GetAwaiter().GetResult()
+        $WebPage.CloseAsync().GetAwaiter().GetResult()
+        $Browser.CloseAsync().GetAwaiter().GetResult()
+        $Scraped
+    }
 
     # Try {
     #     Invoke-WebRequest "$Address"
