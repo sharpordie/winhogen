@@ -151,7 +151,7 @@ Function Invoke-Browser {
 
 Function Invoke-Restart {
 
-    If ($PSVersionTable.PSVersion -Lt [Version] "7.0.0.0") { Update-Powershell }
+    Update-Powershell
     $Current = $Script:MyInvocation.MyCommand.Path
     $Program = "$Env:LocalAppData\Microsoft\WindowsApps\wt.exe"
     $Heading = (Get-Item "$Current").BaseName.ToUpper()
@@ -375,13 +375,12 @@ Function Update-Powershell {
 
     $Address = "https://github.com/powershell/powershell/releases/latest"
     $Version = [Regex]::Matches((Invoke-WebRequest "$Address"), "v([\d.]+) Release of").Groups[1].Value
-    $Updated = [Version] "$Current" -Ge [Version] "$Version"
+    $Updated = [Version] "$Current" -Ge [Version] "$Version" -And $PSVersionTable.PSVersion -Lt [Version] "7.0.0.0"
 
     If (-Not $Updated) {
         Invoke-Gsudo { Invoke-Expression "& { $(Invoke-RestMethod https://aka.ms/install-powershell.ps1) } -UseMSI -Quiet" }
+        If ($PSVersionTable.PSVersion -Lt [Version] "7.0.0.0") { Invoke-Restart }
     }
-
-    If ($PSVersionTable.PSVersion -Lt [Version] "7.0.0.0") { Invoke-Restart }
 
 }
 
