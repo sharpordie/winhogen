@@ -375,7 +375,7 @@ Function Update-Powershell {
 
     $Address = "https://github.com/powershell/powershell/releases/latest"
     $Version = [Regex]::Matches((Invoke-WebRequest "$Address"), "v([\d.]+) Release of").Groups[1].Value
-    $Updated = [Version] "$Current" -Ge [Version] "$Version" -And $PSVersionTable.PSVersion -Lt [Version] "7.0.0.0"
+    $Updated = [Version] "$Current" -Ge [Version] "$Version" -And $PSVersionTable.PSVersion -Ge [Version] "7.0.0.0"
 
     If (-Not $Updated) {
         Invoke-Gsudo { Invoke-Expression "& { $(Invoke-RestMethod https://aka.ms/install-powershell.ps1) } -UseMSI -Quiet" }
