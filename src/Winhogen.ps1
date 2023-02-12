@@ -368,6 +368,7 @@ Function Update-Gsudo {
     $Present = $Current -Ne "0.0.0.0"
 
     $Address = "https://api.github.com/repos/gerardog/gsudo/releases/latest"
+    $dd = Invoke-Scraper "$Address"
     $Version = [Regex]::Match((Invoke-Scraper "$Address" | ConvertFrom-Json).tag_name, "[\d.]+").Value
     # $Address = "https://github.com/gerardog/gsudo/releases/latest"
     # $Version = [Regex]::Matches((Invoke-Scraper "$Address"), "gsudo v([\d.]+)").Groups[1].Value
