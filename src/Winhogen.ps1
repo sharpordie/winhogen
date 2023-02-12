@@ -161,6 +161,7 @@ Function Invoke-Scraper {
         $WebPage = $Browser.NewPageAsync().GetAwaiter().GetResult()
         $WebPage.GoToAsync("$Address").GetAwaiter().GetResult()
         $Scraped = $WebPage.ContentAsync().GetAwaiter().GetResult()
+        Write-Output $Scraped
         $WebPage.CloseAsync().GetAwaiter().GetResult()
         $Browser.CloseAsync().GetAwaiter().GetResult()
         $Scraped
