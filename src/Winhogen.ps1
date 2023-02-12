@@ -132,7 +132,6 @@ Function Invoke-BrowserOld {
         [Switch] $Visible
     )
 
-    Update-Powershell
     Import-Library "System.Text.Json" -Testing
     Import-Library "Microsoft.Bcl.AsyncInterfaces" -Testing
     Import-Library "Microsoft.CodeAnalysis" -Testing
@@ -151,7 +150,6 @@ Function Invoke-BrowserOld {
 
 Function Invoke-Browser {
 
-    Update-Powershell
     Import-Library "System.Text.Json"
     Import-Library "Microsoft.Bcl.AsyncInterfaces"
     Import-Library "Microsoft.CodeAnalysis"
@@ -166,8 +164,7 @@ Function Invoke-Restart {
     $Current = $Script:MyInvocation.MyCommand.Path
     $Program = "$Env:LocalAppData\Microsoft\WindowsApps\wt.exe"
     $Heading = (Get-Item "$Current").BaseName.ToUpper()
-    $Execute = If ($PSVersionTable.PSVersion -Lt [Version] "7.0") {"powershell"} Else {"pwsh"}
-    $Command = "$Program --title $Heading $Execute -ep bypass -noexit -nologo -file $Current"
+    $Command = "$Program --title $Heading pwsh -ep bypass -noexit -nologo -file $Current"
     $RegPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\RunOnce"
     New-ItemProperty "$RegPath" "$Heading" -Value "$Command"
     Invoke-Gsudo { Get-LocalUser -Name "$Env:Username" | Set-LocalUser -Password ([SecureString]::New()) }
@@ -405,12 +402,9 @@ Function Update-Powershell {
 
     $Starter = (Get-Item "$Env:ProgramFiles\PowerShell\*\pwsh.exe" -EA SI).FullName
     $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
-    # $Present = $Current -Ne "0.0.0.0"
 
     $Address = "https://api.github.com/repos/powershell/powershell/releases/latest"
     $Version = [Regex]::Match((Invoke-Scraper "$Address" | ConvertFrom-Json).tag_name, "[\d.]+").Value
-    # $Version = [Regex]::Matches((Invoke-WebRequest "$Address"), "v([\d.]+) Release of").Groups[1].Value
-    # $Version = [Regex]::Matches((New-Object Net.WebClient).DownloadString("$Address"), "v([\d.]+) Release of").Groups[1].Value
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
 
     If (-Not $Updated) {
@@ -461,7 +455,7 @@ If ($MyInvocation.InvocationName -Ne ".") {
     Write-Host "$Loading" -FO DarkYellow -NoNewline
     Remove-Feature "Uac" ; Update-Element "Plan" "Ultimate"
     $Correct = (Update-Gsudo) -And ! (gsudo cache on -d -1 2>&1).ToString().Contains("Error")
-    If (-Not $Correct) { Write-Host "$Failure`n" -FO Red ; Exit }
+    If (-Not $Correct) { Write-Host "$Failure`n" -FO Red ; Exit } ; Update-Powershell *> $Null
 
     Invoke-BrowserOld ; Update-Ldplayer ; Exit
 
