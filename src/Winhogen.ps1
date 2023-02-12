@@ -123,31 +123,6 @@ Function Import-Library {
 
 }
 
-Function Invoke-BrowserOld {
-
-    Param(
-        [String] $Startup = "https://www.bing.com",
-        [String] $Factors,
-        [Switch] $Firefox,
-        [Switch] $Visible
-    )
-
-    Import-Library "System.Text.Json" -Testing
-    Import-Library "Microsoft.Bcl.AsyncInterfaces" -Testing
-    Import-Library "Microsoft.CodeAnalysis" -Testing
-    Import-Library "Microsoft.Playwright" -Testing
-    [Microsoft.Playwright.Program]::Main(@("install", "firefox"))
-    $Handler = [Microsoft.Playwright.Playwright]::CreateAsync().GetAwaiter().GetResult()
-    If ($Firefox) { $Browser = $Handler.Firefox.LaunchAsync(@{ "Headless" = !$Visible }).GetAwaiter().GetResult() }
-    Else { $Browser = $Handler.Chromium.LaunchAsync(@{ "Headless" = !$Visible }).GetAwaiter().GetResult() }
-
-    $WebPage = $Browser.NewPageAsync().GetAwaiter().GetResult()
-    $WebPage.GoToAsync("$Startup").GetAwaiter().GetResult()
-    $WebPage.CloseAsync().GetAwaiter().GetResult()
-    $Browser.CloseAsync().GetAwaiter().GetResult()
-
-}
-
 Function Invoke-Browser {
 
     Import-Library "System.Text.Json"
@@ -330,9 +305,9 @@ Function Update-SysPath {
 
 Function Update-Gsudo {
 
-    $Current = (Get-Package "*gsudo*" -EA SI).Version
-    If ($Null -Eq $Current) { $Current = "0.0.0.0" }
-    $Present = $Current -Ne "0.0.0.0" ; If ($Present) { Return $True }
+    $Starter = "${Env:ProgramFiles(x86)}\gsudo\gsudo.exe"
+    $Current = Try { (Get-Item "$Starter" -EA SI).VersionInfo.FileVersion.ToString() } Catch { "0.0.0.0" }
+    $Present = $Current -Ne "0.0.0.0"
 
     $Address = "https://api.github.com/repos/gerardog/gsudo/releases/latest"
     $Version = [Regex]::Match((Invoke-Scraper "$Address" | ConvertFrom-Json).tag_name, "[\d.]+").Value
@@ -408,7 +383,7 @@ Function Update-Powershell {
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
 
     If (-Not $Updated) {
-        Invoke-Gsudo { Invoke-Expression "& { $(Invoke-RestMethod https://aka.ms/install-powershell.ps1) } -UseMSI -Quiet" }
+        Invoke-Gsudo { Invoke-Expression "& { $(Invoke-RestMethod https://aka.ms/install-powershell.ps1) } -UseMSI -Quiet -Verbose:$False" }
     }
 
     If ($PSVersionTable.PSVersion -Lt [Version] "7.0.0.0") { Invoke-Restart }
@@ -456,8 +431,8 @@ If ($MyInvocation.InvocationName -Ne ".") {
     Remove-Feature "Uac" ; Update-Element "Plan" "Ultimate"
     $Correct = (Update-Gsudo) -And ! (gsudo cache on -d -1 2>&1).ToString().Contains("Error")
     If (-Not $Correct) { Write-Host "$Failure`n" -FO Red ; Exit } ; Update-Powershell *> $Null
-
-    Invoke-BrowserOld ; Update-Ldplayer ; Exit
+    
+    Update-Ldplayer ; Exit
 
     # Handle elements
     $Members = Export-Members -Variant "Development" -Machine "WINHOGEN"
