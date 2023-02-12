@@ -141,7 +141,7 @@ Function Invoke-Browser {
     $Handler = [Microsoft.Playwright.Playwright]::CreateAsync().GetAwaiter().GetResult()
     If ($Firefox) { $Browser = $Handler.Firefox.LaunchAsync(@{ "Headless" = !$Visible }).GetAwaiter().GetResult() }
     Else { $Browser = $Handler.Chromium.LaunchAsync(@{ "Headless" = !$Visible }).GetAwaiter().GetResult() }
-    
+
     $WebPage = $Browser.NewPageAsync().GetAwaiter().GetResult()
     $WebPage.GoToAsync("$Startup").GetAwaiter().GetResult()
     $WebPage.CloseAsync().GetAwaiter().GetResult()
@@ -379,9 +379,7 @@ Function Update-Powershell {
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
 
     If (-Not $Updated) {
-        # TODO: VERIFY
-        # Invoke-Gsudo { Invoke-Expression "& { $(Invoke-RestMethod https://aka.ms/install-powershell.ps1) } -UseMSI -Quiet" }
-        Invoke-Gsudo { & { $(Invoke-RestMethod https://aka.ms/install-powershell.ps1) } -UseMSI -Quiet }
+        Invoke-Gsudo { Invoke-Expression "& { $(Invoke-RestMethod https://aka.ms/install-powershell.ps1) } -UseMSI -Quiet" }
     }
 
     If ($PSVersionTable.PSVersion -Lt [Version] "7.0.0.0") { Invoke-Restart }
