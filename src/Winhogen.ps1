@@ -160,7 +160,7 @@ Function Invoke-Scraper {
         $Browser = $Handler.Chromium.LaunchAsync(@{ "Headless" = $True }).GetAwaiter().GetResult()
         $WebPage = $Browser.NewPageAsync().GetAwaiter().GetResult()
         $WebPage.GoToAsync("$Address").GetAwaiter().GetResult()
-        $Scraped = $WebPage.ContentAsync().GetAwaiter().GetResult()
+        $Scraped = $WebPage.InnerTextAsync("pre").GetAwaiter().GetResult()
         Write-Output $Scraped
         $WebPage.CloseAsync().GetAwaiter().GetResult()
         $Browser.CloseAsync().GetAwaiter().GetResult()
