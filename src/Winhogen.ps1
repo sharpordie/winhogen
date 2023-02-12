@@ -375,7 +375,7 @@ Function Update-Powershell {
 
     $Address = "https://github.com/powershell/powershell/releases/latest"
     $Version = [Regex]::Matches((Invoke-WebRequest "$Address"), "v([\d.]+) Release of").Groups[1].Value
-    $Updated = [Version] "$Current" -Ge [Version] "$Version" -And $PSVersionTable.PSVersion -Ge [Version] "7.0.0.0"
+    $Updated = ([Version] "$Current" -Ge [Version] "$Version") -And ($PSVersionTable.PSVersion -Ge [Version] "7.0.0.0")
 
     Write-Output "$Current >= $Version"
     Write-Output "Updated: $Updated"
