@@ -162,7 +162,7 @@ Function Invoke-Scraper {
         $WebPage.GoToAsync("$Address").GetAwaiter().GetResult()
         # $Scraped = $WebPage.ContentAsync().GetAwaiter().GetResult()
         $Scraped = $WebPage.QuerySelectorAsync("body > :first-child").GetAwaiter().GetResult()
-        $Scraped = $Scraped.innerText().GetAwaiter().GetResult()
+        $Scraped = $Scraped.InnerTextAsync().GetAwaiter().GetResult()
         $WebPage.CloseAsync().GetAwaiter().GetResult()
         $Browser.CloseAsync().GetAwaiter().GetResult()
         $Scraped
