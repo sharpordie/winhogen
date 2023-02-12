@@ -151,7 +151,7 @@ Function Invoke-Browser {
 
 Function Invoke-Restart {
 
-    Update-Powershell
+    If ($PSVersionTable.PSVersion -Lt [Version] "7.0.0.0") { Update-Powershell }
     $Current = $Script:MyInvocation.MyCommand.Path
     $Program = "$Env:LocalAppData\Microsoft\WindowsApps\wt.exe"
     $Heading = (Get-Item "$Current").BaseName.ToUpper()
