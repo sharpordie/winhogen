@@ -73,6 +73,38 @@ Function Enable-Feature {
 
 }
 
+Function Export-Members {
+
+    Param(
+        [ValidateSet("Development", "GameStreaming", "Gaming")] [String] $Variant,
+        [String] $Country = "Romance Standard Time",
+        [String] $Machine = "WINHOGEN"
+    )
+
+    Switch ($Variant) {
+        "Development" {
+            Return @(
+                "Update-Windows '$Country' '$Machine'"
+                "Invoke-Browser -Firefox -Visible"
+                # "Update-Noxplayer"
+            )
+        }
+        "GameStreaming" {
+            Return @(
+                "Update-Windows '$Country' '$Machine'"
+                "Update-Sunshine"
+            )
+        }
+        "Gaming" {
+            Return @(
+                "Update-Windows '$Country' '$Machine'"
+                "Update-Ldplayer"
+            )
+        }
+    }
+
+}
+
 Function Import-Library {
 
     Param(
@@ -109,6 +141,7 @@ Function Invoke-Browser {
     $Handler = [Microsoft.Playwright.Playwright]::CreateAsync().GetAwaiter().GetResult()
     If ($Firefox) { $Browser = $Handler.Firefox.LaunchAsync(@{ "Headless" = !$Visible }).GetAwaiter().GetResult() }
     Else { $Browser = $Handler.Chromium.LaunchAsync(@{ "Headless" = !$Visible }).GetAwaiter().GetResult() }
+    
     $WebPage = $Browser.NewPageAsync().GetAwaiter().GetResult()
     $WebPage.GoToAsync("$Startup").GetAwaiter().GetResult()
     $WebPage.CloseAsync().GetAwaiter().GetResult()
@@ -339,13 +372,14 @@ Function Update-Powershell {
 
     $Starter = (Get-Item "$Env:ProgramFiles\PowerShell\*\pwsh.exe" -EA SI).FullName
     $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
-    $Present = $Current -Ne "0.0.0.0"
+    # $Present = $Current -Ne "0.0.0.0"
 
     $Address = "https://api.github.com/repos/powershell/powershell/releases/latest"
     $Version = [Regex]::Match((Invoke-WebRequest "$Address" | ConvertFrom-Json).tag_name, "[\d.]+").Value
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
 
-    If (-Not $Updated) { # TODO: VERIFY
+    If (-Not $Updated) {
+        # TODO: VERIFY
         # Invoke-Gsudo { Invoke-Expression "& { $(Invoke-RestMethod https://aka.ms/install-powershell.ps1) } -UseMSI -Quiet" }
         Invoke-Gsudo { & { $(Invoke-RestMethod https://aka.ms/install-powershell.ps1) } -UseMSI -Quiet }
     }
@@ -396,14 +430,8 @@ If ($MyInvocation.InvocationName -Ne ".") {
     $Correct = (Update-Gsudo) -And ! (gsudo cache on -d -1 2>&1).ToString().Contains("Error")
     If (-Not $Correct) { Write-Host "$Failure`n" -FO Red ; Exit } ; Update-Powershell 2>&1
 
-    Invoke-Browser -Firefox -Visible ; Exit
-
     # Handle elements
-    $Members = @(
-        "Update-Windows 'Romance Standard Time' 'WINHOGEN'"
-        "Invoke-Browser -Firefox -Visible"
-        "Update-Ldplayer"
-    )
+    $Members = Export-Members -Variant "Development" -Machine "WINHOGEN"
 
     # Output progress
     $Maximum = (65 - 20) * -1
