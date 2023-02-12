@@ -123,7 +123,7 @@ Function Import-Library {
 
 }
 
-Function Invoke-Browser {
+Function Invoke-BrowserOld {
 
     Param(
         [String] $Startup = "https://www.bing.com",
@@ -149,6 +149,17 @@ Function Invoke-Browser {
 
 }
 
+Function Invoke-Browser {
+
+	    Import-Library "System.Text.Json"
+	    Import-Library "Microsoft.Bcl.AsyncInterfaces"
+	    Import-Library "Microsoft.CodeAnalysis"
+	    Import-Library "Microsoft.Playwright"
+	    [Microsoft.Playwright.Program]::Main(@("install", "chromium"))
+	    [Microsoft.Playwright.Playwright]::CreateAsync().GetAwaiter().GetResult()
+
+}
+
 Function Invoke-Restart {
 
     Update-Powershell
@@ -160,6 +171,28 @@ Function Invoke-Restart {
     New-ItemProperty "$RegPath" "$Heading" -Value "$Command"
     Invoke-Gsudo { Get-LocalUser -Name "$Env:Username" | Set-LocalUser -Password ([SecureString]::New()) }
     Start-Sleep 4 ; Restart-Computer -Force
+
+}
+
+Function Invoke-Scraper {
+
+    Param(
+        [String] $Address
+    )
+
+    Try {
+        Invoke-WebRequest "$Address"
+    }
+    Catch {
+	    $Handler = Invoke-Browser
+	    $Browser = $Handler.Chromium.LaunchAsync(@{ "Headless" = $True }).GetAwaiter().GetResult()
+	    $WebPage = $Browser.NewPageAsync().GetAwaiter().GetResult()
+	    $WebPage.GoToAsync("$Address").GetAwaiter().GetResult()
+	    $Scraped = $WebPage.ContentAsync().GetAwaiter().GetResult()
+	    $WebPage.CloseAsync().GetAwaiter().GetResult()
+	    $Browser.CloseAsync().GetAwaiter().GetResult()
+	    $Scraped
+    }
 
 }
 
@@ -303,9 +336,8 @@ Function Update-Gsudo {
     If ($Null -Eq $Current) { $Current = "0.0.0.0" }
     $Present = $Current -Ne "0.0.0.0" ; If ($Present) { Return $True }
 
-    $Address = "https://github.com/gerardog/gsudo/releases/latest"
-    # $Version = [Regex]::Matches((Invoke-WebRequest "$Address"), "gsudo v([\d.]+)").Groups[1].Value
-    $Version = [Regex]::Matches((New-Object Net.WebClient).DownloadString("$Address"), "gsudo v([\d.]+)").Groups[1].Value
+    $Address = "https://api.github.com/repos/gerardog/gsudo/releases/latest"
+    $Version = [Regex]::Match((Invoke-Scraper "$Address" | Convert-FromJson).tag_name, "[\d.]+").Value
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
 
     Try {
@@ -333,7 +365,7 @@ Function Update-Ldplayer {
     $Present = $Current -Ne "0.0.0.0"
 
     $Address = "https://www.ldplayer.net/other/version-history-and-release-notes.html"
-    $Version = [Regex]::Matches((Invoke-WebRequest "$Address"), "LDPlayer_([\d.]+).exe").Groups[1].Value
+    $Version = [Regex]::Matches((Invoke-Scraper "$Address"), "LDPlayer_([\d.]+).exe").Groups[1].Value
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
 
     If (-Not $Updated) {
@@ -374,9 +406,10 @@ Function Update-Powershell {
     $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
     # $Present = $Current -Ne "0.0.0.0"
 
-    $Address = "https://github.com/powershell/powershell/releases/latest"
+    $Address = "https://api.github.com/repos/powershell/powershell/releases/latest"
+    $Version = [Regex]::Match((Invoke-Scraper "$Address" | Convert-FromJson).tag_name, "[\d.]+").Value
     # $Version = [Regex]::Matches((Invoke-WebRequest "$Address"), "v([\d.]+) Release of").Groups[1].Value
-    $Version = [Regex]::Matches((New-Object Net.WebClient).DownloadString("$Address"), "v([\d.]+) Release of").Groups[1].Value
+    # $Version = [Regex]::Matches((New-Object Net.WebClient).DownloadString("$Address"), "v([\d.]+) Release of").Groups[1].Value
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
 
     If (-Not $Updated) {
