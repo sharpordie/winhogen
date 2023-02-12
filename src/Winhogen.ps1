@@ -151,22 +151,23 @@ Function Invoke-BrowserOld {
 
 Function Invoke-Browser {
 
-	    Import-Library "System.Text.Json"
-	    Import-Library "Microsoft.Bcl.AsyncInterfaces"
-	    Import-Library "Microsoft.CodeAnalysis"
-	    Import-Library "Microsoft.Playwright"
-	    [Microsoft.Playwright.Program]::Main(@("install", "chromium"))
-	    [Microsoft.Playwright.Playwright]::CreateAsync().GetAwaiter().GetResult()
+    Update-Powershell
+    Import-Library "System.Text.Json"
+    Import-Library "Microsoft.Bcl.AsyncInterfaces"
+    Import-Library "Microsoft.CodeAnalysis"
+    Import-Library "Microsoft.Playwright"
+    [Microsoft.Playwright.Program]::Main(@("install", "chromium"))
+    [Microsoft.Playwright.Playwright]::CreateAsync().GetAwaiter().GetResult()
 
 }
 
 Function Invoke-Restart {
 
-    Update-Powershell
     $Current = $Script:MyInvocation.MyCommand.Path
     $Program = "$Env:LocalAppData\Microsoft\WindowsApps\wt.exe"
     $Heading = (Get-Item "$Current").BaseName.ToUpper()
-    $Command = "$Program --title $Heading pwsh -ep bypass -noexit -nologo -file $Current"
+    $Execute = If ($PSVersionTable.PSVersion -Lt [Version] "7.0") {"powershell"} Else {"pwsh"}
+    $Command = "$Program --title $Heading $Execute -ep bypass -noexit -nologo -file $Current"
     $RegPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\RunOnce"
     New-ItemProperty "$RegPath" "$Heading" -Value "$Command"
     Invoke-Gsudo { Get-LocalUser -Name "$Env:Username" | Set-LocalUser -Password ([SecureString]::New()) }
@@ -184,14 +185,14 @@ Function Invoke-Scraper {
         Invoke-WebRequest "$Address"
     }
     Catch {
-	    $Handler = Invoke-Browser
-	    $Browser = $Handler.Chromium.LaunchAsync(@{ "Headless" = $True }).GetAwaiter().GetResult()
-	    $WebPage = $Browser.NewPageAsync().GetAwaiter().GetResult()
-	    $WebPage.GoToAsync("$Address").GetAwaiter().GetResult()
-	    $Scraped = $WebPage.ContentAsync().GetAwaiter().GetResult()
-	    $WebPage.CloseAsync().GetAwaiter().GetResult()
-	    $Browser.CloseAsync().GetAwaiter().GetResult()
-	    $Scraped
+        $Handler = Invoke-Browser
+        $Browser = $Handler.Chromium.LaunchAsync(@{ "Headless" = $True }).GetAwaiter().GetResult()
+        $WebPage = $Browser.NewPageAsync().GetAwaiter().GetResult()
+        $WebPage.GoToAsync("$Address").GetAwaiter().GetResult()
+        $Scraped = $WebPage.ContentAsync().GetAwaiter().GetResult()
+        $WebPage.CloseAsync().GetAwaiter().GetResult()
+        $Browser.CloseAsync().GetAwaiter().GetResult()
+        $Scraped
     }
 
 }
@@ -462,7 +463,7 @@ If ($MyInvocation.InvocationName -Ne ".") {
     $Correct = (Update-Gsudo) -And ! (gsudo cache on -d -1 2>&1).ToString().Contains("Error")
     If (-Not $Correct) { Write-Host "$Failure`n" -FO Red ; Exit }
 
-    Invoke-Browser -Firefox -Visible ; Exit
+    Invoke-BrowserOld ; Update-Ldplayer ; Exit
 
     # Handle elements
     $Members = Export-Members -Variant "Development" -Machine "WINHOGEN"
