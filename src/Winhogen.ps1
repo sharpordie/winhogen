@@ -161,8 +161,8 @@ Function Invoke-Scraper {
         $WebPage = $Browser.NewPageAsync().GetAwaiter().GetResult()
         $WebPage.GoToAsync("$Address").GetAwaiter().GetResult()
         # $Scraped = $WebPage.ContentAsync().GetAwaiter().GetResult()
-        $Scraped = $WebPage.QuerySelectorAsync("body:first-child").GetAwaiter().GetResult()
-        $Scraped = $Scraped.innerText()
+        $Scraped = $WebPage.QuerySelectorAsync("body > :first-child").GetAwaiter().GetResult()
+        $Scraped = $Scraped.innerText().GetAwaiter().GetResult()
         $WebPage.CloseAsync().GetAwaiter().GetResult()
         $Browser.CloseAsync().GetAwaiter().GetResult()
         $Scraped
@@ -366,10 +366,10 @@ Function Update-Gsudo {
     $Current = Try { (Get-Item "$Starter" -EA SI).VersionInfo.FileVersion.ToString() } Catch { "0.0.0.0" }
     $Present = $Current -Ne "0.0.0.0"
 
-    # $Address = "https://api.github.com/repos/gerardog/gsudo/releases/latest"
-    # $Version = [Regex]::Match((Invoke-Scraper "$Address" | ConvertFrom-Json).tag_name, "[\d.]+").Value
-    $Address = "https://github.com/gerardog/gsudo/releases/latest"
-    $Version = [Regex]::Matches((Invoke-Scraper "$Address"), "gsudo v([\d.]+)").Groups[1].Value
+    $Address = "https://api.github.com/repos/gerardog/gsudo/releases/latest"
+    $Version = [Regex]::Match((Invoke-Scraper "$Address" | ConvertFrom-Json).tag_name, "[\d.]+").Value
+    # $Address = "https://github.com/gerardog/gsudo/releases/latest"
+    # $Version = [Regex]::Matches((Invoke-Scraper "$Address"), "gsudo v([\d.]+)").Groups[1].Value
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
 
     Try {
