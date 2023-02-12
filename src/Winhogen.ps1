@@ -154,7 +154,7 @@ Function Invoke-Restart {
     Update-Powershell
     $Current = $Script:MyInvocation.MyCommand.Path
     $Program = "$Env:LocalAppData\Microsoft\WindowsApps\wt.exe"
-    $Heading = (Get-Item "$Current").BaseName
+    $Heading = (Get-Item "$Current").BaseName.ToUpper()
     $Command = "$Program --title $Heading pwsh -ep bypass -noexit -nologo -file $Current"
     $RegPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\RunOnce"
     New-ItemProperty "$RegPath" "$Heading" -Value "$Command"
@@ -408,7 +408,7 @@ If ($MyInvocation.InvocationName -Ne ".") {
 
     # Change headline
     $Current = $Script:MyInvocation.MyCommand.Path
-    $Host.UI.RawUI.WindowTitle = (Get-Item "$Current").BaseName
+    $Host.UI.RawUI.WindowTitle = (Get-Item "$Current").BaseName.ToUpper()
 
     # Output greeting
     Clear-Host ; $ProgressPreference = "SilentlyContinue"
