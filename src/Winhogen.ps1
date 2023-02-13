@@ -157,7 +157,7 @@ Function Invoke-Scraper {
     )
 
     $Handler = Invoke-Browser
-    $Browser = $Handler.Chromium.LaunchAsync(@{ "Headless" = $False }).GetAwaiter().GetResult()
+    $Browser = $Handler.Chromium.LaunchAsync(@{ "Headless" = $True }).GetAwaiter().GetResult()
     $WebPage = $Browser.NewPageAsync().GetAwaiter().GetResult()
     $WebPage.GoToAsync("$Address").GetAwaiter().GetResult()
     # If ($Scraper -Eq "Html") { $Scraped = $WebPage.ContentAsync().GetAwaiter().GetResult() }
@@ -468,7 +468,7 @@ Function Update-Powershell {
     $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
 
     $Address = "https://api.github.com/repos/powershell/powershell/releases/latest"
-    $Version = [Regex]::Match((Invoke-Scraper "Json" "$Address" | ConvertFrom-Json).tag_name, "[\d.]+").Value
+    $Version = [Regex]::Match((Invoke-Scraper "Json" "$Address").tag_name, "[\d.]+").Value
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
 
     If (-Not $Updated) {
