@@ -99,6 +99,7 @@ Function Export-Members {
                 "Update-Windows '$Country' '$Machine'"
                 "Update-Bluestacks"
                 "Update-Ldplayer"
+                "Update-Noxplayer"
             )
         }
     }
@@ -128,7 +129,7 @@ Function Invoke-Browser {
     Import-Library "Microsoft.Bcl.AsyncInterfaces"
     Import-Library "Microsoft.CodeAnalysis"
     Import-Library "Microsoft.Playwright"
-    $Null = [Microsoft.Playwright.Program]::Main(@("install", "chromium"))
+    [Microsoft.Playwright.Program]::Main(@("install", "chromium")) | Out-Null
     [Microsoft.Playwright.Playwright]::CreateAsync().GetAwaiter().GetResult()
 
 }
@@ -149,7 +150,6 @@ Function Invoke-Fetcher {
     $Attempt.PathAsync().GetAwaiter().GetResult() | Out-Null
     $Suggest = $Attempt.SuggestedFilename
     $Fetched = Join-Path "$Env:Temp" "$Suggest"
-    # If (Test-Path "$Fetched") { Remove-Item "$Fetched" }
     $Attempt.SaveAsAsync("$Fetched").GetAwaiter().GetResult() | Out-Null
     $WebPage.CloseAsync().GetAwaiter().GetResult() | Out-Null
     $Browser.CloseAsync().GetAwaiter().GetResult() | Out-Null
@@ -190,7 +190,7 @@ Function Invoke-Scraper {
             $Handler = Invoke-Browser
             $Browser = $Handler.Chromium.LaunchAsync(@{ "Headless" = $False }).GetAwaiter().GetResult()
             $WebPage = $Browser.NewPageAsync().GetAwaiter().GetResult()
-            $WebPage.GoToAsync("$Address").GetAwaiter().GetResult()
+            $WebPage.GoToAsync("$Address").GetAwaiter().GetResult() | Out-Null
             If ($Scraper -Eq "Html") { $Scraped = $WebPage.QuerySelectorAsync("body").GetAwaiter().GetResult() }
             If ($Scraper -Eq "Json") { $Scraped = $WebPage.QuerySelectorAsync("body > :first-child").GetAwaiter().GetResult() }
             $Scraped = $Scraped.InnerHtmlAsync().GetAwaiter().GetResult()
@@ -440,7 +440,7 @@ Function Update-Ldplayer {
             $Factor1 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::ALT
             $Factor2 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::F4
             Start-Sleep 4 ; [FlaUI.Core.Input.Keyboard]::TypeSimultaneously($Factor1, $Factor2)
-            Start-Sleep 4 ; $Started.Dispose() ; $Handler.Dispose()
+            Start-Sleep 4 ; $Started.Dispose() | Out-Null ; $Handler.Dispose() | Out-Null
         }
         Remove-Desktop "LDM*.lnk" ; Remove-Desktop "LDP*.lnk"
     }
@@ -468,8 +468,6 @@ Function Update-Noxplayer {
             Import-Library "FlaUI.UIA3"
             Import-Library "System.Drawing.Common"
             Import-Library "System.Security.Permissions"
-            # $Handler = [FlaUI.UIA3.UIA3Automation]::New()
-            # $Started = [FlaUI.Core.Application]::Launch("$Using:Fetched")
             Start-Process "$Using:Fetched"
             Add-Type -AssemblyName System.Windows.Forms
             $FactorX = ([Windows.Forms.SystemInformation]::PrimaryMonitorSize.Width / 2)
@@ -481,8 +479,7 @@ Function Update-Noxplayer {
             $Centrum = [Drawing.Point]::New($FactorX, $FactorY)
             Start-Sleep 6 ; [FlaUI.Core.Input.Mouse]::LeftClick($Centrum) ; Start-Sleep 6
             While (-Not (Test-Path "$Env:UserProfile\Desktop\Nox*.lnk")) { Start-Sleep 2 }
-            # Start-Sleep 4 ; $Started.Dispose() ; $Handler.Dispose()
-            Stop-Process -Name "*nox*setup*" -EA SI
+            Start-Sleep 4 ; Stop-Process -Name "*nox*setup*" -EA SI
         }
         Remove-Desktop "Nox*.lnk" ; Remove-Desktop "Nox*Ass*.lnk"
     }
@@ -547,8 +544,6 @@ If ($MyInvocation.InvocationName -Ne ".") {
     Remove-Feature "Uac" ; Update-Element "Plan" "Ultimate"
     $Correct = (Update-Gsudo) -And ! (gsudo cache on -d -1 2>&1).ToString().Contains("Error")
     If (-Not $Correct) { Write-Host "$Failure`n" -FO Red ; Exit } ; Update-Powershell
-
-    Update-Ldplayer ; Update-Noxplayer ; Exit
 
     # Handle elements
     $Members = Export-Members -Variant "Gaming" -Machine "WINHOGEN"
