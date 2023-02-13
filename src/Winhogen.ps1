@@ -372,8 +372,8 @@ Function Update-Bluestacks {
         $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
 		(New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
         $ArgList = "--defaultImageName Rvc64 --imageToLaunch Rvc64"
-        If ($Android -Eq "7") { $ArgList = "-s --defaultImageName Nougat64 --imageToLaunch Nougat64" }
         If ($Android -Eq "9") { $ArgList = "-s --defaultImageName Pie64 --imageToLaunch Pie64" }
+        If ($Android -Eq "7") { $ArgList = "-s --defaultImageName Nougat64 --imageToLaunch Nougat64" }
         Invoke-Gsudo { Start-Process "$Using:Fetched" "$Using:ArgList" -Wait }
         Start-Sleep 4 ; Remove-Desktop "BlueStacks*.lnk"
     }
