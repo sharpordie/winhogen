@@ -169,7 +169,8 @@ Function Invoke-Scraper {
         $WebPage.CloseAsync().GetAwaiter().GetResult()
         $Browser.CloseAsync().GetAwaiter().GetResult()
         # $Browser = $Null
-        ($Scraped.ToString() | ConvertFrom-Json).tag_name
+        # ($Scraped.ToString() | ConvertFrom-Json).tag_name
+        $Scraped.ToString()
     }
 
     # Try {
@@ -497,8 +498,6 @@ If ($MyInvocation.InvocationName -Ne ".") {
     Remove-Feature "Uac" ; Update-Element "Plan" "Ultimate"
     $Correct = (Update-Gsudo) -And ! (gsudo cache on -d -1 2>&1).ToString().Contains("Error")
     If (-Not $Correct) { Write-Host "$Failure`n" -FO Red ; Exit } ; Update-Powershell
-
-    Invoke-Scraper "https://api.github.com/repos/gerardog/gsudo/releases/latest"
 
     # Handle elements
     $Members = Export-Members -Variant "Gaming" -Machine "WINHOGEN"
