@@ -112,9 +112,7 @@ Function Import-Library {
     )
 
     If (-Not ([Management.Automation.PSTypeName]"$Library").Type ) {
-        if (-Not (Get-Package "$Library")) {
-            Install-Package "$Library" -Scope "CurrentUser" -Source "https://www.nuget.org/api/v2" -Force -SkipDependencies
-        }
+        if (-Not (Get-Package "$Library")) { Install-Package "$Library" -Scope "CurrentUser" -Source "https://www.nuget.org/api/v2" -Force -SkipDependencies }
         $Results = (Get-ChildItem -Filter "*.dll" -Recurse (Split-Path (Get-Package -Name "$Library").Source)).FullName
         $Content = $Results | Where-Object { $_ -Like "*standard2.0*" } | Select-Object -Last 1
         If ($Testing) { Try { Add-Type -Path "$Content" -EA SI } Catch { $_.Exception.LoaderExceptions } }
@@ -129,9 +127,7 @@ Function Invoke-Browser {
     Import-Library "Microsoft.Bcl.AsyncInterfaces"
     Import-Library "Microsoft.CodeAnalysis"
     Import-Library "Microsoft.Playwright"
-    # & taskkill /f /im node.exe
     $Null = [Microsoft.Playwright.Program]::Main(@("install", "chromium"))
-    # & taskkill /f /im node.exe
     [Microsoft.Playwright.Playwright]::CreateAsync().GetAwaiter().GetResult()
 
 }
@@ -179,46 +175,6 @@ Function Invoke-Scraper {
             If ($Scraper -Eq "Json") { Return $Scraped.ToString() | ConvertFrom-Json }
         }
     }
-
-    # If ($PSVersionTable.PSVersion -Lt [Version] "7.0.0.0") {
-    #     Invoke-WebRequest "$Address"
-    # }
-    # Else {
-    #     Try {
-    #         Invoke-WebRequest "$Address"
-    #     }
-    #     Catch {
-    #         $Handler = Invoke-Browser
-    #         $Browser = $Handler.Chromium.LaunchAsync(@{ "Headless" = $False }).GetAwaiter().GetResult()
-    #         $WebPage = $Browser.NewPageAsync().GetAwaiter().GetResult()
-    #         $WebPage.GoToAsync("$Address").GetAwaiter().GetResult()
-    #         # If ($Scraper -Eq "Html") { $Scraped = $WebPage.ContentAsync().GetAwaiter().GetResult() }
-    #         If ($Scraper -Eq "Html") { $Scraped = $WebPage.QuerySelectorAsync("body").GetAwaiter().GetResult() }
-    #         If ($Scraper -Eq "Json") { $Scraped = $WebPage.QuerySelectorAsync("body > :first-child").GetAwaiter().GetResult() }
-    #         $Scraped = $Scraped.InnerTextAsync().GetAwaiter().GetResult()
-    #         $WebPage.CloseAsync().GetAwaiter().GetResult()
-    #         $Browser.CloseAsync().GetAwaiter().GetResult()
-    #         # $Browser = $Null
-    #         # ($Scraped.ToString() | ConvertFrom-Json).tag_name
-    #         # Write-Output $Scraped.ToString()
-    #         If ($Scraper -Eq "Html") { Return $Scraped.ToString() }
-    #         If ($Scraper -Eq "Json") { Return $Scraped.ToString() | ConvertFrom-Json }
-    #     }
-    # }
-
-    # Try {
-    #     Invoke-WebRequest "$Address"
-    # }
-    # Catch {
-    #     $Handler = Invoke-Browser
-    #     $Browser = $Handler.Chromium.LaunchAsync(@{ "Headless" = $True }).GetAwaiter().GetResult()
-    #     $WebPage = $Browser.NewPageAsync().GetAwaiter().GetResult()
-    #     $WebPage.GoToAsync("$Address").GetAwaiter().GetResult()
-    #     $Scraped = $WebPage.ContentAsync().GetAwaiter().GetResult()
-    #     $WebPage.CloseAsync().GetAwaiter().GetResult()
-    #     $Browser.CloseAsync().GetAwaiter().GetResult()
-    #     $Scraped
-    # }
 
 }
 
@@ -379,7 +335,7 @@ Function Update-Bluestacks {
         $Address = "https://cdn3.bluestacks.com/downloads/windows/nxt/$Version/$Hashing/FullInstaller/x64/BlueStacksFullInstaller_${Version}_amd64_native.exe"
         $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
 		(New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
-        $ArgList = "--defaultImageName Rvc64 --imageToLaunch Rvc64"
+        $ArgList = "-s --defaultImageName Rvc64 --imageToLaunch Rvc64"
         If ($Android -Eq "9") { $ArgList = "-s --defaultImageName Pie64 --imageToLaunch Pie64" }
         If ($Android -Eq "7") { $ArgList = "-s --defaultImageName Nougat64 --imageToLaunch Nougat64" }
         Invoke-Gsudo { Start-Process "$Using:Fetched" "$Using:ArgList" -Wait }
@@ -406,13 +362,13 @@ Function Update-Gsudo {
 
     $Address = "https://api.github.com/repos/gerardog/gsudo/releases/latest"
     $Version = [Regex]::Match((Invoke-Scraper "Json" "$Address").tag_name , "[\d.]+").Value
-    # $Address = "https://github.com/gerardog/gsudo/releases/latest"
-    # $Version = [Regex]::Matches((Invoke-Scraper "$Address"), "gsudo v([\d.]+)").Groups[1].Value
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
 
     Try {
         If (-Not $Updated) {
-            $Address = "https://github.com/gerardog/gsudo/releases/download/v$Version/gsudoSetup.msi"
+            # $Address = "https://github.com/gerardog/gsudo/releases/download/v$Version/gsudoSetup.msi"
+            $Results = (Invoke-Scraper "Json" "$Address").assets
+            $Address = $Results.Where( { $_.browser_download_url -Like "*.msi" } ).browser_download_url
             $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
     	    (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
             If (-Not $Present) { Start-Process "msiexec" "/i `"$Fetched`" /qn" -Verb RunAs -Wait }
@@ -528,8 +484,6 @@ If ($MyInvocation.InvocationName -Ne ".") {
     Remove-Feature "Uac" ; Update-Element "Plan" "Ultimate"
     $Correct = (Update-Gsudo) -And ! (gsudo cache on -d -1 2>&1).ToString().Contains("Error")
     If (-Not $Correct) { Write-Host "$Failure`n" -FO Red ; Exit } ; Update-Powershell
-
-    Update-Bluestacks ; Exit
 
     # Handle elements
     $Members = Export-Members -Variant "Gaming" -Machine "WINHOGEN"
