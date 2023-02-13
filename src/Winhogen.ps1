@@ -129,9 +129,9 @@ Function Invoke-Browser {
     Import-Library "Microsoft.Bcl.AsyncInterfaces"
     Import-Library "Microsoft.CodeAnalysis"
     Import-Library "Microsoft.Playwright"
-    & taskkill /f /im node.exe
+    # & taskkill /f /im node.exe
     $Null = [Microsoft.Playwright.Program]::Main(@("install", "chromium"))
-    & taskkill /f /im node.exe
+    # & taskkill /f /im node.exe
     [Microsoft.Playwright.Playwright]::CreateAsync().GetAwaiter().GetResult()
 
 }
@@ -168,7 +168,7 @@ Function Invoke-Scraper {
         $Scraped = $Scraped.InnerTextAsync().GetAwaiter().GetResult()
         $WebPage.CloseAsync().GetAwaiter().GetResult()
         $Browser.CloseAsync().GetAwaiter().GetResult()
-        $Browser = $Null
+        # $Browser = $Null
         Write-Output ($Scraped.ToString() | ConvertFrom-Json).tag_name
     }
 
