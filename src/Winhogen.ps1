@@ -420,7 +420,7 @@ Function Update-Ldplayer {
         (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
         $Current = $Script:MyInvocation.MyCommand.Path
         Invoke-Gsudo {
-            . $Using:Current
+            . $Using:Current ; Start-Sleep 4
             Import-Library "Interop.UIAutomationClient"
             Import-Library "FlaUI.Core"
             Import-Library "FlaUI.UIA3"
@@ -457,10 +457,11 @@ Function Update-Noxplayer {
 
     If (-Not $Updated) {
         $Address = "https://www.bignox.com/en/download/fullPackage/win_64_9?formal"
-        $Fetched = Invoke-Fetcher "$Address"
+        # $Fetched = Invoke-Fetcher "$Address"
+        $Fetched = "C:\Users\Admin\AppData\Local\Temp\nox_setup_v7.0.5.2_full_intl.exe"
         $Current = $Script:MyInvocation.MyCommand.Path
         Invoke-Gsudo {
-            . $Using:Current
+            . $Using:Current ; Start-Sleep 4
             Import-Library "Interop.UIAutomationClient"
             Import-Library "FlaUI.Core"
             Import-Library "FlaUI.UIA3"
