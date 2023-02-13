@@ -170,7 +170,8 @@ Function Invoke-Scraper {
         $Browser.CloseAsync().GetAwaiter().GetResult()
         # $Browser = $Null
         # ($Scraped.ToString() | ConvertFrom-Json).tag_name
-        Write-Output $Scraped.ToString()
+        # Write-Output $Scraped.ToString()
+        $Scraped.ToString()
     }
 
     # Try {
