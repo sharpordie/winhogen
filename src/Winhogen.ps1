@@ -469,11 +469,19 @@ Function Update-Noxplayer {
             Import-Library "System.Security.Permissions"
             $Handler = [FlaUI.UIA3.UIA3Automation]::New()
             $Started = [FlaUI.Core.Application]::Launch("$Using:Fetched")
-            echo "GETMAINWINDOW"
-            $Window1 = $Started.GetMainWindow($Handler)
-            $Window1.Focus()
-            $Scraped = $Window1.BoundingRectangle
-            echo $Window1
+            # $Window1 = $Started.GetMainWindow($Handler)
+            # $Window1.Focus()
+            # $Scraped = $Window1.BoundingRectangle
+            Add-Type -AssemblyName System.Windows.Forms
+            $FactorX = ([Windows.Forms.SystemInformation]::PrimaryMonitorSize.Width / 2)
+            $FactorY = ([Windows.Forms.SystemInformation]::PrimaryMonitorSize.Height / 2) + 85
+            $Centrum = [Drawing.Point]::New($FactorX, $FactorY)
+            Start-Sleep 12 ; [FlaUI.Core.Input.Mouse]::LeftClick($Centrum) ; Start-Sleep 6
+            $FactorX = ([Windows.Forms.SystemInformation]::PrimaryMonitorSize.Width / 2) + 100
+            $FactorY = ([Windows.Forms.SystemInformation]::PrimaryMonitorSize.Height / 2) + 185
+            $Centrum = [Drawing.Point]::New($FactorX, $FactorY)
+            Start-Sleep 12 ; [FlaUI.Core.Input.Mouse]::LeftClick($Centrum) ; Start-Sleep 6
+
             # $FactorX = $Scraped.X + ($Scraped.Width / 2)
             # $FactorY = $Scraped.Y + ($Scraped.Height / 2) + 85
             # $Centrum = [Drawing.Point]::New($FactorX, $FactorY)
@@ -482,8 +490,8 @@ Function Update-Noxplayer {
             # $FactorY = $Scraped.Y + ($Scraped.Height / 2) + 185
             # $Centrum = [Drawing.Point]::New($FactorX, $FactorY)
             # Start-Sleep 12 ; [FlaUI.Core.Input.Mouse]::LeftClick($Centrum)
-            # While (-Not (Test-Path "$Env:UserProfile\Desktop\Nox*.lnk")) { Start-Sleep 2 }
-            # Start-Sleep 4 ; Stop-Process -Name "*nox*setup*" -EA SI
+            While (-Not (Test-Path "$Env:UserProfile\Desktop\Nox*.lnk")) { Start-Sleep 2 }
+            Start-Sleep 4 ; Stop-Process -Name "*nox*setup*" -EA SI
         }
         Remove-Desktop "Nox*.lnk" ; Remove-Desktop "Nox*Ass*.lnk"
     }
