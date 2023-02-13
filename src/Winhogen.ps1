@@ -362,6 +362,7 @@ Function Update-Bluestacks {
     # $Present = $Current -Ne "0.0.0.0"
 
     $Address = "https://support.bluestacks.com/hc/en-us/articles/4402611273485-BlueStacks-5-offline-installer"
+    Invoke-Scraper "Html" "$Address" ; exit
     $Results = [Regex]::Matches((Invoke-Scraper "Html" "$Address"), "windows/nxt/([\d.]+)/(?<sha>[0-9a-f]+)/")
     $Version = $Results.Groups[1].Value
     $Hashing = $results.Groups[2].Value
