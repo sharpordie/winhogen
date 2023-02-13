@@ -142,10 +142,13 @@ Function Invoke-Fetcher {
     $Handler = Invoke-Browser
     $Browser = $Handler.Chromium.LaunchAsync(@{ "Headless" = $False }).GetAwaiter().GetResult()
     $WebPage = $Browser.NewPageAsync().GetAwaiter().GetResult()
+    $WebPage.GoToAsync("about:blank").GetAwaiter().GetResult()
     $waitForDownloadTask = $WebPage.WaitForDownloadAsync()
     $WebPage.GoToAsync("$Address").GetAwaiter().GetResult()
     $download = $waitForDownloadTask.GetAwaiter().GetResult()
-    $Fetched = $download.PathAsync().GetAwaiter().GetResult()
+    $download.PathAsync().GetAwaiter().GetResult()
+    $Fetched = $download.SuggestedFilename
+    $download.SaveAsAsync("$Fetched").GetAwaiter().GetResult()
     $WebPage.CloseAsync().GetAwaiter().GetResult()
     $Browser.CloseAsync().GetAwaiter().GetResult()
     Return $Fetched
