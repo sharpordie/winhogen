@@ -142,17 +142,17 @@ Function Invoke-Fetcher {
     $Handler = Invoke-Browser
     $Browser = $Handler.Chromium.LaunchAsync(@{ "Headless" = $False }).GetAwaiter().GetResult()
     $WebPage = $Browser.NewPageAsync().GetAwaiter().GetResult()
-    $WebPage.GoToAsync("about:blank").GetAwaiter().GetResult()
+    $WebPage.GoToAsync("about:blank").GetAwaiter().GetResult() | Out-Null
     $Waiting = $WebPage.WaitForDownloadAsync()
-    $WebPage.GoToAsync("$Address")
+    $WebPage.GoToAsync("$Address") | Out-Null
     $Attempt = $Waiting.GetAwaiter().GetResult()
-    $Attempt.PathAsync().GetAwaiter().GetResult()
+    $Attempt.PathAsync().GetAwaiter().GetResult() | Out-Null
     $Suggest = $Attempt.SuggestedFilename
     $Fetched = Join-Path "$Env:Temp" "$Suggest"
     # If (Test-Path "$Fetched") { Remove-Item "$Fetched" }
-    $Attempt.SaveAsAsync("$Fetched").GetAwaiter().GetResult()
-    $Null = $WebPage.CloseAsync().GetAwaiter().GetResult()
-    $Null = $Browser.CloseAsync().GetAwaiter().GetResult()
+    $Attempt.SaveAsAsync("$Fetched").GetAwaiter().GetResult() | Out-Null
+    $WebPage.CloseAsync().GetAwaiter().GetResult() | Out-Null
+    $Browser.CloseAsync().GetAwaiter().GetResult() | Out-Null
     Return $Fetched
 
 }
