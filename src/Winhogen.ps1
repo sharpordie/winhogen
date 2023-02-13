@@ -513,8 +513,6 @@ If ($MyInvocation.InvocationName -Ne ".") {
     Write-Output "|                                                               |"
     Write-Output "+---------------------------------------------------------------+"
 
-    Update-Gsudo ; Exit
-
     # Handle security
     $Loading = "`nTHE UPDATING DEPENDENCIES PROCESS HAS LAUNCHED"
     $Failure = "`rTHE UPDATING DEPENDENCIES PROCESS WAS CANCELED"
