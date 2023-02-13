@@ -140,7 +140,7 @@ Function Invoke-Restart {
     $Heading = (Get-Item "$Current").BaseName.ToUpper()
     $Command = "$Program --title $Heading pwsh -ep bypass -noexit -nologo -file $Current"
     $RegPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\RunOnce"
-    New-ItemProperty "$RegPath" "$Heading" -Value "$Command"
+    New-ItemProperty "$RegPath" "$Heading" -Value "$Command" | Out-Null
     Invoke-Gsudo { Get-LocalUser -Name "$Env:Username" | Set-LocalUser -Password ([SecureString]::New()) }
     Start-Sleep 4 ; Restart-Computer -Force
 
