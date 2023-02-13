@@ -171,7 +171,7 @@ Function Invoke-Scraper {
         # $Browser = $Null
         # ($Scraped.ToString() | ConvertFrom-Json).tag_name
         # Write-Output $Scraped.ToString()
-        Write-Output $Scraped
+        $Scraped.ToString() | ConvertFrom-Json
     }
 
     # Try {
@@ -374,7 +374,7 @@ Function Update-Gsudo {
 
     $Address = "https://api.github.com/repos/gerardog/gsudo/releases/latest"
     $Address = "https://api.github.com/repos/powershell/powershell/releases/latest"
-    (Invoke-Scraper "$Address" | ConvertFrom-Json).tag_name ; exit
+    (Invoke-Scraper "$Address").tag_name ; exit
     $Version = [Regex]::Match(((Invoke-Scraper "$Address") | ConvertFrom-Json).tag_name, "[\d.]+").Value
     # $Address = "https://github.com/gerardog/gsudo/releases/latest"
     # $Version = [Regex]::Matches((Invoke-Scraper "$Address"), "gsudo v([\d.]+)").Groups[1].Value
