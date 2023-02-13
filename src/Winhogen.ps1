@@ -384,10 +384,11 @@ Function Update-Gsudo {
 Function Update-Noxplayer {
 
     $Address = "https://support.bignox.com/en/win-release"
-    $Version = [Regex]::Matches((Invoke-Scraper "Html" "$Address"), "V([\d.]+) Release Note").Groups[1].Value
+    $Address
+    $Version = [Regex]::Matches((Invoke-Scraper "Html" "$Address"), ".*V([\d.]+) Release Note").Groups[1].Value
+    $Version
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
 
-    echo $Version
 
 }
 
