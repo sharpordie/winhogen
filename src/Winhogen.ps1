@@ -404,40 +404,6 @@ Function Update-Gsudo {
 
 }
 
-Function Update-Noxplayer {
-
-    $Starter = (Get-Item "C:\LDPlayer\LDPlayer*\???.exe" -EA SI).FullName
-    $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
-    # $Present = $Current -Ne "0.0.0.0"
-
-    $Address = "https://support.bignox.com/en/win-release"
-    $Version = [Regex]::Matches((Invoke-Scraper "Html" "$Address"), ".*V([\d.]+) Release Note").Groups[1].Value
-    $Updated = [Version] "$Current" -Ge [Version] "$Version"
-
-    If (-Not $Updated) {
-        $Address = "https://www.bignox.com/en/download/fullPackage/win_64_9?formal"
-        $Fetched = Invoke-Fetcher "$Address"
-        $Current = $Script:MyInvocation.MyCommand.Path
-        Invoke-Gsudo {
-            . $Using:Current
-            Import-Library "Interop.UIAutomationClient"
-            Import-Library "FlaUI.Core"
-            Import-Library "FlaUI.UIA3"
-            Import-Library "System.Drawing.Common"
-            Import-Library "System.Security.Permissions"
-            $Handler = [FlaUI.UIA3.UIA3Automation]::New()
-            $Started = [FlaUI.Core.Application]::Launch("$Using:Fetched")
-            $Window1 = $Started.GetMainWindow($Handler)
-            $Window1.Focus()
-            Start-Sleep 3600
-            # $Factor1 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::ALT
-            # $Factor2 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::F4
-            # Start-Sleep 4 ; [FlaUI.Core.Input.Keyboard]::TypeSimultaneously($Factor1, $Factor2)
-        }
-    }
-
-}
-
 Function Update-Ldplayer {
 
     $Starter = (Get-Item "C:\LDPlayer\LDPlayer*\dnplayer.exe" -EA SI).FullName
@@ -475,6 +441,48 @@ Function Update-Ldplayer {
             Start-Sleep 4 ; [FlaUI.Core.Input.Keyboard]::TypeSimultaneously($Factor1, $Factor2)
         }
         Remove-Desktop "LDM*.lnk" ; Remove-Desktop "LDP*.lnk"
+    }
+
+}
+
+Function Update-Noxplayer {
+
+    $Starter = (Get-Item "C:\LDPlayer\LDPlayer*\???.exe" -EA SI).FullName
+    $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
+    # $Present = $Current -Ne "0.0.0.0"
+
+    $Address = "https://support.bignox.com/en/win-release"
+    $Version = [Regex]::Matches((Invoke-Scraper "Html" "$Address"), ".*V([\d.]+) Release Note").Groups[1].Value
+    $Updated = [Version] "$Current" -Ge [Version] "$Version"
+
+    If (-Not $Updated) {
+        $Address = "https://www.bignox.com/en/download/fullPackage/win_64_9?formal"
+        $Fetched = Invoke-Fetcher "$Address"
+        $Current = $Script:MyInvocation.MyCommand.Path
+        Invoke-Gsudo {
+            . $Using:Current
+            Import-Library "Interop.UIAutomationClient"
+            Import-Library "FlaUI.Core"
+            Import-Library "FlaUI.UIA3"
+            Import-Library "System.Drawing.Common"
+            Import-Library "System.Security.Permissions"
+            $Handler = [FlaUI.UIA3.UIA3Automation]::New()
+            $Started = [FlaUI.Core.Application]::Launch("$Using:Fetched")
+            $Window1 = $Started.GetMainWindow($Handler)
+            $Window1.Focus()
+            $Scraped = $Window1.BoundingRectangle
+            $FactorX = $Scraped.X + ($Scraped.Width / 2)
+            $FactorY = $Scraped.Y + ($Scraped.Height / 2) + 85
+            $Centrum = [Drawing.Point]::New($FactorX, $FactorY)
+            Start-Sleep 12 ; [FlaUI.Core.Input.Mouse]::LeftClick($Centrum) ; Start-Sleep 6
+            $FactorX = $Scraped.X + ($Scraped.Width / 2) + 100
+            $FactorY = $Scraped.Y + ($Scraped.Height / 2) + 185
+            $Centrum = [Drawing.Point]::New($FactorX, $FactorY)
+            Start-Sleep 12 ; [FlaUI.Core.Input.Mouse]::LeftClick($Centrum)
+            While (-Not (Test-Path "$Env:UserProfile\Desktop\Nox*.lnk")) { Start-Sleep 2 }
+            Start-Sleep 4 ; Stop-Process -Name "*nox*setup*" -EA SI
+        }
+        Remove-Desktop "Nox*.lnk" ; Remove-Desktop "Nox*Ass*.lnk"
     }
 
 }
