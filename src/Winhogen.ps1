@@ -152,27 +152,51 @@ Function Invoke-Restart {
 Function Invoke-Scraper {
 
     Param(
+        [String] $Scraper,
         [String] $Address
     )
 
-    If ($PSVersionTable.PSVersion -Lt [Version] "7.0.0.0") {
-        Invoke-WebRequest "$Address"
-    }
-    Else {
-        $Handler = Invoke-Browser
-        $Browser = $Handler.Chromium.LaunchAsync(@{ "Headless" = $False }).GetAwaiter().GetResult()
-        $WebPage = $Browser.NewPageAsync().GetAwaiter().GetResult()
-        $WebPage.GoToAsync("$Address").GetAwaiter().GetResult()
-        # $Scraped = $WebPage.ContentAsync().GetAwaiter().GetResult()
-        $Scraped = $WebPage.QuerySelectorAsync("body > :first-child").GetAwaiter().GetResult()
-        $Scraped = $Scraped.InnerTextAsync().GetAwaiter().GetResult()
-        $WebPage.CloseAsync().GetAwaiter().GetResult()
-        $Browser.CloseAsync().GetAwaiter().GetResult()
-        # $Browser = $Null
-        # ($Scraped.ToString() | ConvertFrom-Json).tag_name
-        # Write-Output $Scraped.ToString()
-        $Scraped.ToString() | ConvertFrom-Json
-    }
+    $Handler = Invoke-Browser
+    $Browser = $Handler.Chromium.LaunchAsync(@{ "Headless" = $False }).GetAwaiter().GetResult()
+    $WebPage = $Browser.NewPageAsync().GetAwaiter().GetResult()
+    $WebPage.GoToAsync("$Address").GetAwaiter().GetResult()
+    # If ($Scraper -Eq "Html") { $Scraped = $WebPage.ContentAsync().GetAwaiter().GetResult() }
+    If ($Scraper -Eq "Html") { $Scraped = $WebPage.QuerySelectorAsync("body").GetAwaiter().GetResult() }
+    If ($Scraper -Eq "Json") { $Scraped = $WebPage.QuerySelectorAsync("body > :first-child").GetAwaiter().GetResult() }
+    $Scraped = $Scraped.InnerTextAsync().GetAwaiter().GetResult()
+    $WebPage.CloseAsync().GetAwaiter().GetResult()
+    $Browser.CloseAsync().GetAwaiter().GetResult()
+    # $Browser = $Null
+    # ($Scraped.ToString() | ConvertFrom-Json).tag_name
+    # Write-Output $Scraped.ToString()
+    If ($Scraper -Eq "Html") { Return $Scraped.ToString() }
+    If ($Scraper -Eq "Json") { Return $Scraped.ToString() | ConvertFrom-Json }
+
+    # If ($PSVersionTable.PSVersion -Lt [Version] "7.0.0.0") {
+    #     Invoke-WebRequest "$Address"
+    # }
+    # Else {
+    #     Try {
+    #         Invoke-WebRequest "$Address"
+    #     }
+    #     Catch {
+    #         $Handler = Invoke-Browser
+    #         $Browser = $Handler.Chromium.LaunchAsync(@{ "Headless" = $False }).GetAwaiter().GetResult()
+    #         $WebPage = $Browser.NewPageAsync().GetAwaiter().GetResult()
+    #         $WebPage.GoToAsync("$Address").GetAwaiter().GetResult()
+    #         # If ($Scraper -Eq "Html") { $Scraped = $WebPage.ContentAsync().GetAwaiter().GetResult() }
+    #         If ($Scraper -Eq "Html") { $Scraped = $WebPage.QuerySelectorAsync("body").GetAwaiter().GetResult() }
+    #         If ($Scraper -Eq "Json") { $Scraped = $WebPage.QuerySelectorAsync("body > :first-child").GetAwaiter().GetResult() }
+    #         $Scraped = $Scraped.InnerTextAsync().GetAwaiter().GetResult()
+    #         $WebPage.CloseAsync().GetAwaiter().GetResult()
+    #         $Browser.CloseAsync().GetAwaiter().GetResult()
+    #         # $Browser = $Null
+    #         # ($Scraped.ToString() | ConvertFrom-Json).tag_name
+    #         # Write-Output $Scraped.ToString()
+    #         If ($Scraper -Eq "Html") { Return $Scraped.ToString() }
+    #         If ($Scraper -Eq "Json") { Return $Scraped.ToString() | ConvertFrom-Json }
+    #     }
+    # }
 
     # Try {
     #     Invoke-WebRequest "$Address"
@@ -374,7 +398,7 @@ Function Update-Gsudo {
 
     $Address = "https://api.github.com/repos/gerardog/gsudo/releases/latest"
     $Address = "https://api.github.com/repos/powershell/powershell/releases/latest"
-    (Invoke-Scraper "$Address").tag_name ; exit
+    (Invoke-Scraper "Json" "$Address").tag_name ; exit
     $Version = [Regex]::Match(((Invoke-Scraper "$Address") | ConvertFrom-Json).tag_name, "[\d.]+").Value
     # $Address = "https://github.com/gerardog/gsudo/releases/latest"
     # $Version = [Regex]::Matches((Invoke-Scraper "$Address"), "gsudo v([\d.]+)").Groups[1].Value
