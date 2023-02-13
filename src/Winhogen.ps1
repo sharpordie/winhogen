@@ -169,7 +169,7 @@ Function Invoke-Scraper {
         $WebPage.CloseAsync().GetAwaiter().GetResult()
         $Browser.CloseAsync().GetAwaiter().GetResult()
         $Browser = $Null
-        Return $Scraped
+        Write-Ouput $Scraped.ToString()
     }
 
     # Try {
@@ -371,8 +371,6 @@ Function Update-Gsudo {
     $Present = $Current -Ne "0.0.0.0"
 
     $Address = "https://api.github.com/repos/gerardog/gsudo/releases/latest"
-    $dd = Invoke-Scraper "$Address"
-    $dd
     $Version = [Regex]::Match((Invoke-Scraper "$Address" | ConvertFrom-Json).tag_name, "[\d.]+").Value
     # $Address = "https://github.com/gerardog/gsudo/releases/latest"
     # $Version = [Regex]::Matches((Invoke-Scraper "$Address"), "gsudo v([\d.]+)").Groups[1].Value
@@ -489,6 +487,9 @@ If ($MyInvocation.InvocationName -Ne ".") {
     Write-Output "|                                                               |"
     Write-Output "+---------------------------------------------------------------+"
 
+    Invoke-Scraper "https://api.github.com/repos/gerardog/gsudo/releases/latest"
+    Exit
+
     # Handle security
     $Loading = "`nTHE UPDATING DEPENDENCIES PROCESS HAS LAUNCHED"
     $Failure = "`rTHE UPDATING DEPENDENCIES PROCESS WAS CANCELED"
@@ -497,7 +498,7 @@ If ($MyInvocation.InvocationName -Ne ".") {
     $Correct = (Update-Gsudo) -And ! (gsudo cache on -d -1 2>&1).ToString().Contains("Error")
     If (-Not $Correct) { Write-Host "$Failure`n" -FO Red ; Exit } ; Update-Powershell
 
-    Update-Bluestacks ; Exit
+    Invoke-Scraper "https://api.github.com/repos/gerardog/gsudo/releases/latest"
 
     # Handle elements
     $Members = Export-Members -Variant "Gaming" -Machine "WINHOGEN"
