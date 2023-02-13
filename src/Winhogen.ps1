@@ -459,8 +459,7 @@ Function Update-Noxplayer {
 
     If (-Not $Updated) {
         $Address = "https://www.bignox.com/en/download/fullPackage/win_64_9?formal"
-        # $Fetched = Invoke-Fetcher "$Address"
-        $Fetched = "C:\Users\Admin\AppData\Local\Temp\nox_setup_v7.0.5.2_full_intl.exe"
+        $Fetched = Invoke-Fetcher "$Address"
         $Current = $Script:MyInvocation.MyCommand.Path
         Invoke-Gsudo {
             . $Using:Current ; Start-Sleep 4
@@ -548,7 +547,7 @@ If ($MyInvocation.InvocationName -Ne ".") {
     $Correct = (Update-Gsudo) -And ! (gsudo cache on -d -1 2>&1).ToString().Contains("Error")
     If (-Not $Correct) { Write-Host "$Failure`n" -FO Red ; Exit } ; Update-Powershell
 
-    Update-Noxplayer ; Exit
+    Update-Ldplayer ; Update-Noxplayer ; Exit
 
     # Handle elements
     $Members = Export-Members -Variant "Gaming" -Machine "WINHOGEN"
