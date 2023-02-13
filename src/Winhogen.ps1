@@ -383,12 +383,19 @@ Function Update-Gsudo {
 
 Function Update-Noxplayer {
 
+    $Starter = (Get-Item "C:\LDPlayer\LDPlayer*\???.exe" -EA SI).FullName
+    $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
+    # $Present = $Current -Ne "0.0.0.0"
+
     $Address = "https://support.bignox.com/en/win-release"
-    $Address
     $Version = [Regex]::Matches((Invoke-Scraper "Html" "$Address"), ".*V([\d.]+) Release Note").Groups[1].Value
-    $Version
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
 
+    If (-Not $Updated) {
+        $Address = "https://www.bignox.com/en/download/fullPackage/win_64_9?formal"
+        $Fetched = Join-Path "$Env:Temp" "nox_setup_v${Version}_full_intl.exe"
+        (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
+    }
 
 }
 
@@ -403,7 +410,6 @@ Function Update-Ldplayer {
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
 
     If (-Not $Updated) {
-        Remove-Feature "HyperV"
         $Address = "https://encdn.ldmnq.com/download/package/LDPlayer_$Version.exe"
         $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
         (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
