@@ -144,10 +144,11 @@ Function Invoke-Fetcher {
     $WebPage = $Browser.NewPageAsync().GetAwaiter().GetResult()
     $WebPage.GoToAsync("about:blank").GetAwaiter().GetResult()
     $waitForDownloadTask = $WebPage.WaitForDownloadAsync()
-    $WebPage.GoToAsync("$Address").GetAwaiter().GetResult()
+    $WebPage.GoToAsync("$Address")
     $download = $waitForDownloadTask.GetAwaiter().GetResult()
     $download.PathAsync().GetAwaiter().GetResult()
-    $Fetched = $download.SuggestedFilename
+    $Suggest = $download.SuggestedFilename
+    $Fetched = Join-Path "$Env:Temp" "$Suggest"
     $download.SaveAsAsync("$Fetched").GetAwaiter().GetResult()
     $WebPage.CloseAsync().GetAwaiter().GetResult()
     $Browser.CloseAsync().GetAwaiter().GetResult()
