@@ -412,7 +412,7 @@ Function Update-Ldplayer {
 
     $Address = "https://www.ldplayer.net/other/version-history-and-release-notes.html"
     $Version = [Regex]::Matches((Invoke-Scraper "Html" "$Address"), "LDPlayer_([\d.]+).exe").Groups[1].Value
-    $Updated = [Version] "$Current" -Ge [Version] "$Version"
+    $Updated = [Version] "$Current" -Ge [Version] $Version.SubString(0, 6)
 
     If (-Not $Updated) {
         $Address = "https://encdn.ldmnq.com/download/package/LDPlayer_$Version.exe"
@@ -459,8 +459,7 @@ Function Update-Noxplayer {
 
     If (-Not $Updated) {
         $Address = "https://www.bignox.com/en/download/fullPackage/win_64_9?formal"
-        # $Fetched = Invoke-Fetcher "$Address"
-        $Fetched = "C:\Users\Admin\AppData\Local\Temp\nox_setup_v7.0.5.2_full_intl.exe"
+        $Fetched = Invoke-Fetcher "$Address"
         $Current = $Script:MyInvocation.MyCommand.Path
         Invoke-Gsudo {
             . $Using:Current ; Start-Sleep 4
