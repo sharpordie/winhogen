@@ -468,11 +468,12 @@ Function Update-Noxplayer {
             Import-Library "System.Drawing.Common"
             Import-Library "System.Security.Permissions"
             $Handler = [FlaUI.UIA3.UIA3Automation]::New()
-            $Started = [FlaUI.Core.Application]::Launch("$Using:Fetched") ; Start-Sleep 4
+            $Started = [FlaUI.Core.Application]::Launch("$Using:Fetched")
+            echo "GETMAINWINDOW"
             $Window1 = $Started.GetMainWindow($Handler)
             $Window1.Focus()
             $Scraped = $Window1.BoundingRectangle
-            echo $Scraped
+            echo $Window1
             # $FactorX = $Scraped.X + ($Scraped.Width / 2)
             # $FactorY = $Scraped.Y + ($Scraped.Height / 2) + 85
             # $Centrum = [Drawing.Point]::New($FactorX, $FactorY)
