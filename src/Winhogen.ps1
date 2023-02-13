@@ -381,12 +381,20 @@ Function Update-Gsudo {
 
 }
 
+Function Update-Noxplayer {
+
+    $Address = "https://support.bignox.com/en/win-release"
+    $Version = [Regex]::Matches((Invoke-Scraper "Html" "$Address"), "V([\d.]+) Release Note").Groups[1].Value
+    $Updated = [Version] "$Current" -Ge [Version] "$Version"
+
+    echo $Version
+
+}
+
 Function Update-Ldplayer {
 
-    Remove-Feature "HyperV"
-
-    $Current = (Get-Package "*ldplayer*" -EA SI).Version
-    If ($Null -Eq $Current) { $Current = "0.0.0.0" }
+    $Starter = (Get-Item "C:\LDPlayer\LDPlayer*\dnplayer.exe" -EA SI).FullName
+    $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
     # $Present = $Current -Ne "0.0.0.0"
 
     $Address = "https://www.ldplayer.net/other/version-history-and-release-notes.html"
@@ -483,6 +491,8 @@ If ($MyInvocation.InvocationName -Ne ".") {
     Remove-Feature "Uac" ; Update-Element "Plan" "Ultimate"
     $Correct = (Update-Gsudo) -And ! (gsudo cache on -d -1 2>&1).ToString().Contains("Error")
     If (-Not $Correct) { Write-Host "$Failure`n" -FO Red ; Exit } ; Update-Powershell
+
+    Update-Noxplayer ; Exit
 
     # Handle elements
     $Members = Export-Members -Variant "Gaming" -Machine "WINHOGEN"
