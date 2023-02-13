@@ -317,10 +317,7 @@ Function Update-Bluestacks {
 
     Param(
         [ValidateSet("7", "9", "11")] [String] $Android = "11"
-
     )
-
-    Remove-Feature "HyperV"
 
     $Starter = (Get-Item "$Env:ProgramFiles\BlueStacks*\HD-Player.exe" -EA SI).FullName
     $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
@@ -343,15 +340,15 @@ Function Update-Bluestacks {
         Start-Sleep 4 ; Remove-Desktop "BlueStacks*.lnk"
     }
 
-    # $Content = Invoke-Gsudo { (Get-WindowsOptionalFeature -FE "Microsoft-Hyper-V-All" -Online).State }
-    # If ($Content.Value -Eq "Enabled" -And $Android -Eq "7") {
-    #     $Altered = (Get-Item "$Env:ProgramData\Microsoft\Windows\Start Menu\Programs\BlueStacks*.lnk" -EA SI).FullName
-    #     If ($Null -Ne $Altered) {
-    #         $Content = [IO.File]::ReadAllBytes("$Altered")
-    #         $Content[0x15] = $Content[0x15] -Bor 0x20
-    #         Invoke-Gsudo { [IO.File]::WriteAllBytes("$Using:Altered", $Using:Content) }
-    #     }
-    # }
+    $Content = Invoke-Gsudo { (Get-WindowsOptionalFeature -FE "Microsoft-Hyper-V-All" -Online).State }
+    If ($Content.Value -Eq "Enabled" -And $Android -Eq "7") {
+        $Altered = (Get-Item "$Env:ProgramData\Microsoft\Windows\Start Menu\Programs\BlueStacks*.lnk" -EA SI).FullName
+        If ($Null -Ne $Altered) {
+            $Content = [IO.File]::ReadAllBytes("$Altered")
+            $Content[0x15] = $Content[0x15] -Bor 0x20
+            Invoke-Gsudo { [IO.File]::WriteAllBytes("$Using:Altered", $Using:Content) }
+        }
+    }
 
 }
 
@@ -367,7 +364,6 @@ Function Update-Gsudo {
 
     Try {
         If (-Not $Updated) {
-            # $Address = "https://github.com/gerardog/gsudo/releases/download/v$Version/gsudoSetup.msi"
             $Results = (Invoke-Scraper "Json" "$Address").assets
             $Address = $Results.Where( { $_.browser_download_url -Like "*.msi" } ).browser_download_url
             $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
@@ -391,7 +387,7 @@ Function Update-Ldplayer {
 
     $Current = (Get-Package "*ldplayer*" -EA SI).Version
     If ($Null -Eq $Current) { $Current = "0.0.0.0" }
-    $Present = $Current -Ne "0.0.0.0"
+    # $Present = $Current -Ne "0.0.0.0"
 
     $Address = "https://www.ldplayer.net/other/version-history-and-release-notes.html"
     $Version = [Regex]::Matches((Invoke-Scraper "Html" "$Address"), "LDPlayer_([\d.]+).exe").Groups[1].Value
