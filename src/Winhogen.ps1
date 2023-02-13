@@ -468,8 +468,9 @@ Function Update-Noxplayer {
             Import-Library "FlaUI.UIA3"
             Import-Library "System.Drawing.Common"
             Import-Library "System.Security.Permissions"
-            $Handler = [FlaUI.UIA3.UIA3Automation]::New()
-            $Started = [FlaUI.Core.Application]::Launch("$Using:Fetched")
+            # $Handler = [FlaUI.UIA3.UIA3Automation]::New()
+            # $Started = [FlaUI.Core.Application]::Launch("$Using:Fetched")
+            Start-Process "$Using:Fetched"
             Add-Type -AssemblyName System.Windows.Forms
             $FactorX = ([Windows.Forms.SystemInformation]::PrimaryMonitorSize.Width / 2)
             $FactorY = ([Windows.Forms.SystemInformation]::PrimaryMonitorSize.Height / 2) + 85
@@ -480,7 +481,7 @@ Function Update-Noxplayer {
             $Centrum = [Drawing.Point]::New($FactorX, $FactorY)
             Start-Sleep 6 ; [FlaUI.Core.Input.Mouse]::LeftClick($Centrum) ; Start-Sleep 6
             While (-Not (Test-Path "$Env:UserProfile\Desktop\Nox*.lnk")) { Start-Sleep 2 }
-            Start-Sleep 4 ; $Started.Dispose() ; $Handler.Dispose()
+            # Start-Sleep 4 ; $Started.Dispose() ; $Handler.Dispose()
             Stop-Process -Name "*nox*setup*" -EA SI
         }
         Remove-Desktop "Nox*.lnk" ; Remove-Desktop "Nox*Ass*.lnk"
