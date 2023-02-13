@@ -152,6 +152,7 @@ Function Invoke-Fetcher {
     $Attempt.SaveAsAsync("$Fetched").GetAwaiter().GetResult()
     $WebPage.CloseAsync().GetAwaiter().GetResult()
     $Browser.CloseAsync().GetAwaiter().GetResult()
+    $Handler.Dispose()
     Return $Fetched
 
 }
