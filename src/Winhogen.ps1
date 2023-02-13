@@ -403,6 +403,8 @@ Function Update-Gsudo {
     # $Version = [Regex]::Matches((Invoke-Scraper "$Address"), "gsudo v([\d.]+)").Groups[1].Value
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
 
+    echo $Version
+
     If (-Not $Updated) {
         $Address = "https://github.com/gerardog/gsudo/releases/download/v$Version/gsudoSetup.msi"
         $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
