@@ -156,21 +156,29 @@ Function Invoke-Scraper {
         [String] $Address
     )
 
-    $Handler = Invoke-Browser
-    $Browser = $Handler.Chromium.LaunchAsync(@{ "Headless" = $False }).GetAwaiter().GetResult()
-    $WebPage = $Browser.NewPageAsync().GetAwaiter().GetResult()
-    $WebPage.GoToAsync("$Address").GetAwaiter().GetResult()
-    # If ($Scraper -Eq "Html") { $Scraped = $WebPage.ContentAsync().GetAwaiter().GetResult() }
-    If ($Scraper -Eq "Html") { $Scraped = $WebPage.QuerySelectorAsync("body").GetAwaiter().GetResult() }
-    If ($Scraper -Eq "Json") { $Scraped = $WebPage.QuerySelectorAsync("body > :first-child").GetAwaiter().GetResult() }
-    $Scraped = $Scraped.InnerHtmlAsync().GetAwaiter().GetResult()
-    $WebPage.CloseAsync().GetAwaiter().GetResult()
-    $Browser.CloseAsync().GetAwaiter().GetResult()
-    # $Browser = $Null
-    # ($Scraped.ToString() | ConvertFrom-Json).tag_name
-    # Write-Output $Scraped.ToString()
-    If ($Scraper -Eq "Html") { Return $Scraped.ToString() }
-    If ($Scraper -Eq "Json") { Return $Scraped.ToString() | ConvertFrom-Json }
+    If ($PSVersionTable.PSVersion -Lt [Version] "7.0.0.0") {
+        If ($Scraper -Eq "Html") { Return Invoke-WebRequest "$Address" }
+        If ($Scraper -Eq "Json") { Return Invoke-WebRequest "$Address" | ConvertFrom-Json }
+    }
+    Else {
+        Try {
+            If ($Scraper -Eq "Html") { Return Invoke-WebRequest "$Address" }
+            If ($Scraper -Eq "Json") { Return Invoke-WebRequest "$Address" | ConvertFrom-Json }
+        }
+        Catch {
+            $Handler = Invoke-Browser
+            $Browser = $Handler.Chromium.LaunchAsync(@{ "Headless" = $False }).GetAwaiter().GetResult()
+            $WebPage = $Browser.NewPageAsync().GetAwaiter().GetResult()
+            $WebPage.GoToAsync("$Address").GetAwaiter().GetResult()
+            If ($Scraper -Eq "Html") { $Scraped = $WebPage.QuerySelectorAsync("body").GetAwaiter().GetResult() }
+            If ($Scraper -Eq "Json") { $Scraped = $WebPage.QuerySelectorAsync("body > :first-child").GetAwaiter().GetResult() }
+            $Scraped = $Scraped.InnerHtmlAsync().GetAwaiter().GetResult()
+            $WebPage.CloseAsync().GetAwaiter().GetResult()
+            $Browser.CloseAsync().GetAwaiter().GetResult()
+            If ($Scraper -Eq "Html") { Return $Scraped.ToString() }
+            If ($Scraper -Eq "Json") { Return $Scraped.ToString() | ConvertFrom-Json }
+        }
+    }
 
     # If ($PSVersionTable.PSVersion -Lt [Version] "7.0.0.0") {
     #     Invoke-WebRequest "$Address"
