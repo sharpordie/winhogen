@@ -129,7 +129,7 @@ Function Invoke-Browser {
     Import-Library "Microsoft.CodeAnalysis"
     Import-Library "Microsoft.Playwright"
     & taskkill /f /im node.exe
-    [Microsoft.Playwright.Program]::Main(@("install", "chromium"))
+    $Null = [Microsoft.Playwright.Program]::Main(@("install", "chromium"))
     & taskkill /f /im node.exe
     [Microsoft.Playwright.Playwright]::CreateAsync().GetAwaiter().GetResult()
 
