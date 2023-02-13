@@ -397,39 +397,26 @@ Function Update-Gsudo {
     $Present = $Current -Ne "0.0.0.0"
 
     $Address = "https://api.github.com/repos/gerardog/gsudo/releases/latest"
-    $Address = "https://api.github.com/repos/powershell/powershell/releases/latest"
     $Version = [Regex]::Match((Invoke-Scraper "Json" "$Address").tag_name , "[\d.]+").Value
     # $Address = "https://github.com/gerardog/gsudo/releases/latest"
     # $Version = [Regex]::Matches((Invoke-Scraper "$Address"), "gsudo v([\d.]+)").Groups[1].Value
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
 
-    echo $Version
-
-    If (-Not $Updated) {
-        $Address = "https://github.com/gerardog/gsudo/releases/download/v$Version/gsudoSetup.msi"
-        $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
-        (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
-        If (-Not $Present) { Start-Process "msiexec" "/i `"$Fetched`" /qn" -Verb RunAs -Wait }
-        Else { Invoke-Gsudo { msiexec /i "$Using:Fetched" /qn } }
-        Start-Sleep 4
+    Try {
+        If (-Not $Updated) {
+            $Address = "https://github.com/gerardog/gsudo/releases/download/v$Version/gsudoSetup.msi"
+            $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
+    	    (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
+            If (-Not $Present) { Start-Process "msiexec" "/i `"$Fetched`" /qn" -Verb RunAs -Wait }
+            Else { Invoke-Gsudo { msiexec /i "$Using:Fetched" /qn } }
+            Start-Sleep 4
+        }
+        Update-SysPath "${Env:ProgramFiles(x86)}\gsudo" "Process"
+        Return $True
     }
-    Update-SysPath "${Env:ProgramFiles(x86)}\gsudo" "Process"
-
-    # Try {
-    #     If (-Not $Updated) {
-    #         $Address = "https://github.com/gerardog/gsudo/releases/download/v$Version/gsudoSetup.msi"
-    #         $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
-    # 	    (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
-    #         If (-Not $Present) { Start-Process "msiexec" "/i `"$Fetched`" /qn" -Verb RunAs -Wait }
-    #         Else { Invoke-Gsudo { msiexec /i "$Using:Fetched" /qn } }
-    #         Start-Sleep 4
-    #     }
-    #     Update-SysPath "${Env:ProgramFiles(x86)}\gsudo" "Process"
-    #     Return $True
-    # }
-    # Catch { 
-    #     Return $False
-    # }
+    Catch { 
+        Return $False
+    }
 
 }
 
