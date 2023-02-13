@@ -113,7 +113,7 @@ Function Import-Library {
     )
 
     If (-Not ([Management.Automation.PSTypeName]"$Library").Type ) {
-        If (-Not (Get-Package "$Library")) { Install-Package "$Library" -Scope "CurrentUser" -Source "https://www.nuget.org/api/v2" -Force -SkipDependencies }
+        If (-Not (Get-Package "$Library" -EA SI)) { Install-Package "$Library" -Scope "CurrentUser" -Source "https://www.nuget.org/api/v2" -Force -SkipDependencies }
         $Results = (Get-ChildItem -Filter "*.dll" -Recurse (Split-Path (Get-Package -Name "$Library").Source)).FullName
         $Content = $Results | Where-Object { $_ -Like "*standard2.0*" } | Select-Object -Last 1
         If ($Testing) { Try { Add-Type -Path "$Content" -EA SI } Catch { $_.Exception.LoaderExceptions } }
@@ -459,7 +459,8 @@ Function Update-Noxplayer {
 
     If (-Not $Updated) {
         $Address = "https://www.bignox.com/en/download/fullPackage/win_64_9?formal"
-        $Fetched = Invoke-Fetcher "$Address"
+        # $Fetched = Invoke-Fetcher "$Address"
+        $Fetched = "C:\Users\Admin\AppData\Local\Temp\nox_setup_v7.0.5.2_full_intl.exe"
         $Current = $Script:MyInvocation.MyCommand.Path
         Invoke-Gsudo {
             . $Using:Current ; Start-Sleep 4
