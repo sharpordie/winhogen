@@ -163,7 +163,7 @@ Function Invoke-Scraper {
     # If ($Scraper -Eq "Html") { $Scraped = $WebPage.ContentAsync().GetAwaiter().GetResult() }
     If ($Scraper -Eq "Html") { $Scraped = $WebPage.QuerySelectorAsync("body").GetAwaiter().GetResult() }
     If ($Scraper -Eq "Json") { $Scraped = $WebPage.QuerySelectorAsync("body > :first-child").GetAwaiter().GetResult() }
-    $Scraped = $Scraped.InnerTextAsync().GetAwaiter().GetResult()
+    $Scraped = $Scraped.InnerHtmlAsync().GetAwaiter().GetResult()
     $WebPage.CloseAsync().GetAwaiter().GetResult()
     $Browser.CloseAsync().GetAwaiter().GetResult()
     # $Browser = $Null
