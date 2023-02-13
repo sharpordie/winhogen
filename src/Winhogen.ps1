@@ -169,7 +169,7 @@ Function Invoke-Scraper {
         $WebPage.CloseAsync().GetAwaiter().GetResult()
         $Browser.CloseAsync().GetAwaiter().GetResult()
         $Browser = $Null
-        Write-Ouput $Scraped.ToString()
+        Write-Output $Scraped.ToString()
     }
 
     # Try {
