@@ -8,6 +8,10 @@ Opinionated post-installation scripts for Windows 11.
 iwr https://github.com/sharpordie/winhogen/archive/refs/heads/main.zip -o $env:temp\main.zip
 expand-archive $env:temp\main.zip -destinationpath $env:temp -force
 powershell -ep bypass $env:temp\winhogen-main\src\winhogen.ps1
+
+iwr https://github.com/sharpordie/winhogen/archive/refs/heads/main.zip -o $env:temp\main.zip
+expand-archive $env:temp\main.zip -destinationpath $env:temp -force
+pwsh -ep bypass $env:temp\winhogen-main\src\winhogen.ps1
 ```
 
 <!-- 
