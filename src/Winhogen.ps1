@@ -98,6 +98,7 @@ Function Export-Members {
             Return @(
                 "Update-Windows '$Country' '$Machine'"
                 "Update-Bluestacks"
+                "Update-Ldplayer"
             )
         }
     }
@@ -385,6 +386,8 @@ Function Update-Gsudo {
 }
 
 Function Update-Ldplayer {
+
+    Remove-Feature "HyperV"
 
     $Current = (Get-Package "*ldplayer*" -EA SI).Version
     If ($Null -Eq $Current) { $Current = "0.0.0.0" }
