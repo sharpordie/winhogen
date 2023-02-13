@@ -133,6 +133,25 @@ Function Invoke-Browser {
 
 }
 
+Function Invoke-Fetcher {
+
+    Param(
+        [String] $Address
+    )
+
+    $Handler = Invoke-Browser
+    $Browser = $Handler.Chromium.LaunchAsync(@{ "Headless" = $False }).GetAwaiter().GetResult()
+    $WebPage = $Browser.NewPageAsync().GetAwaiter().GetResult()
+    $waitForDownloadTask = $WebPage.WaitForDownloadAsync()
+    $WebPage.GoToAsync("$Address").GetAwaiter().GetResult()
+    $download = $waitForDownloadTask.GetAwaiter().GetResult()
+    $Fetched = $download.PathAsync().GetAwaiter().GetResult()
+    $WebPage.CloseAsync().GetAwaiter().GetResult()
+    $Browser.CloseAsync().GetAwaiter().GetResult()
+    Return $Fetched
+
+}
+
 Function Invoke-Restart {
 
     $Current = $Script:MyInvocation.MyCommand.Path
@@ -393,8 +412,10 @@ Function Update-Noxplayer {
 
     If (-Not $Updated) {
         $Address = "https://www.bignox.com/en/download/fullPackage/win_64_9?formal"
-        $Fetched = Join-Path "$Env:Temp" "nox_setup_v${Version}_full_intl.exe"
-        (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
+        $Fetched = Invoke-Fetcher "$Address"
+        Write-Output "$Fetched"
+        # $Fetched = Join-Path "$Env:Temp" "nox_setup_v${Version}_full_intl.exe"
+        # (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
     }
 
 }
