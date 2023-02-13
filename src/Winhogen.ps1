@@ -488,9 +488,6 @@ If ($MyInvocation.InvocationName -Ne ".") {
     Write-Output "|                                                               |"
     Write-Output "+---------------------------------------------------------------+"
 
-    Invoke-Scraper "https://api.github.com/repos/gerardog/gsudo/releases/latest"
-    Exit
-
     # Handle security
     $Loading = "`nTHE UPDATING DEPENDENCIES PROCESS HAS LAUNCHED"
     $Failure = "`rTHE UPDATING DEPENDENCIES PROCESS WAS CANCELED"
@@ -498,6 +495,8 @@ If ($MyInvocation.InvocationName -Ne ".") {
     Remove-Feature "Uac" ; Update-Element "Plan" "Ultimate"
     $Correct = (Update-Gsudo) -And ! (gsudo cache on -d -1 2>&1).ToString().Contains("Error")
     If (-Not $Correct) { Write-Host "$Failure`n" -FO Red ; Exit } ; Update-Powershell
+
+    Update-Bluestacks ; Exit
 
     # Handle elements
     $Members = Export-Members -Variant "Gaming" -Machine "WINHOGEN"
