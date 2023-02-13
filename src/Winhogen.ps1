@@ -143,13 +143,13 @@ Function Invoke-Fetcher {
     $Browser = $Handler.Chromium.LaunchAsync(@{ "Headless" = $False }).GetAwaiter().GetResult()
     $WebPage = $Browser.NewPageAsync().GetAwaiter().GetResult()
     $WebPage.GoToAsync("about:blank").GetAwaiter().GetResult()
-    $waitForDownloadTask = $WebPage.WaitForDownloadAsync()
+    $Waiting = $WebPage.WaitForDownloadAsync()
     $WebPage.GoToAsync("$Address")
-    $download = $waitForDownloadTask.GetAwaiter().GetResult()
-    $download.PathAsync().GetAwaiter().GetResult()
-    $Suggest = $download.SuggestedFilename
+    $Attempt = $Waiting.GetAwaiter().GetResult()
+    $Attempt.PathAsync().GetAwaiter().GetResult()
+    $Suggest = $Attempt.SuggestedFilename
     $Fetched = Join-Path "$Env:Temp" "$Suggest"
-    $download.SaveAsAsync("$Fetched").GetAwaiter().GetResult()
+    $Attempt.SaveAsAsync("$Fetched").GetAwaiter().GetResult()
     $WebPage.CloseAsync().GetAwaiter().GetResult()
     $Browser.CloseAsync().GetAwaiter().GetResult()
     Return $Fetched
@@ -417,9 +417,23 @@ Function Update-Noxplayer {
     If (-Not $Updated) {
         $Address = "https://www.bignox.com/en/download/fullPackage/win_64_9?formal"
         $Fetched = Invoke-Fetcher "$Address"
-        Write-Output "$Fetched"
-        # $Fetched = Join-Path "$Env:Temp" "nox_setup_v${Version}_full_intl.exe"
-        # (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
+        $Current = $Script:MyInvocation.MyCommand.Path
+        Invoke-Gsudo {
+            . $Using:Current
+            Import-Library "Interop.UIAutomationClient"
+            Import-Library "FlaUI.Core"
+            Import-Library "FlaUI.UIA3"
+            Import-Library "System.Drawing.Common"
+            Import-Library "System.Security.Permissions"
+            $Handler = [FlaUI.UIA3.UIA3Automation]::New()
+            $Started = [FlaUI.Core.Application]::Launch("$Using:Fetched")
+            $Window1 = $Started.GetMainWindow($Handler)
+            $Window1.Focus()
+            Start-Sleep 3600
+            # $Factor1 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::ALT
+            # $Factor2 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::F4
+            # Start-Sleep 4 ; [FlaUI.Core.Input.Keyboard]::TypeSimultaneously($Factor1, $Factor2)
+        }
     }
 
 }
