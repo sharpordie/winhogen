@@ -163,10 +163,9 @@ Function Invoke-Scraper {
         # $Scraped = $WebPage.ContentAsync().GetAwaiter().GetResult()
         $Scraped = $WebPage.QuerySelectorAsync("body > pre").GetAwaiter().GetResult()
         $Scraped = $Scraped.InnerTextAsync().GetAwaiter().GetResult().ToString()
-        echo $Scraped
         $WebPage.CloseAsync().GetAwaiter().GetResult()
         $Browser.CloseAsync().GetAwaiter().GetResult()
-        $Scraped
+        Return $Scraped
     }
 
     # Try {
