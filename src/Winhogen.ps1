@@ -362,7 +362,7 @@ Function Update-Bluestacks {
     # $Present = $Current -Ne "0.0.0.0"
 
     $Address = "https://support.bluestacks.com/hc/en-us/articles/4402611273485-BlueStacks-5-offline-installer"
-    $Results = [Regex]::Matches((Invoke-Scraper "$Address"), "windows/nxt/([\d.]+)/(?<sha>[0-9a-f]+)/")
+    $Results = [Regex]::Matches((Invoke-Scraper "Html" "$Address"), "windows/nxt/([\d.]+)/(?<sha>[0-9a-f]+)/")
     $Version = $Results.Groups[1].Value
     $Hashing = $results.Groups[2].Value
     $Updated = [Version] "$Current" -Ge [Version] ($Version.SubString(0, 6))
@@ -398,8 +398,7 @@ Function Update-Gsudo {
 
     $Address = "https://api.github.com/repos/gerardog/gsudo/releases/latest"
     $Address = "https://api.github.com/repos/powershell/powershell/releases/latest"
-    (Invoke-Scraper "Json" "$Address").tag_name ; exit
-    $Version = [Regex]::Match(((Invoke-Scraper "$Address") | ConvertFrom-Json).tag_name, "[\d.]+").Value
+    $Version = [Regex]::Match((Invoke-Scraper "Json" "$Address").tag_name , "[\d.]+").Value
     # $Address = "https://github.com/gerardog/gsudo/releases/latest"
     # $Version = [Regex]::Matches((Invoke-Scraper "$Address"), "gsudo v([\d.]+)").Groups[1].Value
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
@@ -429,7 +428,7 @@ Function Update-Ldplayer {
     $Present = $Current -Ne "0.0.0.0"
 
     $Address = "https://www.ldplayer.net/other/version-history-and-release-notes.html"
-    $Version = [Regex]::Matches((Invoke-Scraper "$Address"), "LDPlayer_([\d.]+).exe").Groups[1].Value
+    $Version = [Regex]::Matches((Invoke-Scraper "Html" "$Address"), "LDPlayer_([\d.]+).exe").Groups[1].Value
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
 
     If (-Not $Updated) {
@@ -470,7 +469,7 @@ Function Update-Powershell {
     $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
 
     $Address = "https://api.github.com/repos/powershell/powershell/releases/latest"
-    $Version = [Regex]::Match((Invoke-Scraper "$Address" | ConvertFrom-Json).tag_name, "[\d.]+").Value
+    $Version = [Regex]::Match((Invoke-Scraper "Json" "$Address" | ConvertFrom-Json).tag_name, "[\d.]+").Value
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
 
     If (-Not $Updated) {
