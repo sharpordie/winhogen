@@ -149,7 +149,7 @@ Function Invoke-Fetcher {
     $Attempt.PathAsync().GetAwaiter().GetResult()
     $Suggest = $Attempt.SuggestedFilename
     $Fetched = Join-Path "$Env:Temp" "$Suggest"
-    If (Test-Path "$Fetched") { Return $Fetched }
+    If (Test-Path "$Fetched") { Remove-Item "$Fetched" }
     $Attempt.SaveAsAsync("$Fetched").GetAwaiter().GetResult()
     $WebPage.CloseAsync().GetAwaiter().GetResult()
     $Browser.CloseAsync().GetAwaiter().GetResult()
