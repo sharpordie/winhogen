@@ -403,21 +403,31 @@ Function Update-Gsudo {
     # $Version = [Regex]::Matches((Invoke-Scraper "$Address"), "gsudo v([\d.]+)").Groups[1].Value
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
 
-    Try {
-        If (-Not $Updated) {
-            $Address = "https://github.com/gerardog/gsudo/releases/download/v$Version/gsudoSetup.msi"
-            $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
-		    (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
-            If (-Not $Present) { Start-Process "msiexec" "/i `"$Fetched`" /qn" -Verb RunAs -Wait }
-            Else { Invoke-Gsudo { msiexec /i "$Using:Fetched" /qn } }
-            Start-Sleep 4
-        }
-        Update-SysPath "${Env:ProgramFiles(x86)}\gsudo" "Process"
-        Return $True
+    If (-Not $Updated) {
+        $Address = "https://github.com/gerardog/gsudo/releases/download/v$Version/gsudoSetup.msi"
+        $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
+        (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
+        If (-Not $Present) { Start-Process "msiexec" "/i `"$Fetched`" /qn" -Verb RunAs -Wait }
+        Else { Invoke-Gsudo { msiexec /i "$Using:Fetched" /qn } }
+        Start-Sleep 4
     }
-    Catch { 
-        Return $False
-    }
+    Update-SysPath "${Env:ProgramFiles(x86)}\gsudo" "Process"
+
+    # Try {
+    #     If (-Not $Updated) {
+    #         $Address = "https://github.com/gerardog/gsudo/releases/download/v$Version/gsudoSetup.msi"
+    #         $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
+    # 	    (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
+    #         If (-Not $Present) { Start-Process "msiexec" "/i `"$Fetched`" /qn" -Verb RunAs -Wait }
+    #         Else { Invoke-Gsudo { msiexec /i "$Using:Fetched" /qn } }
+    #         Start-Sleep 4
+    #     }
+    #     Update-SysPath "${Env:ProgramFiles(x86)}\gsudo" "Process"
+    #     Return $True
+    # }
+    # Catch { 
+    #     Return $False
+    # }
 
 }
 
