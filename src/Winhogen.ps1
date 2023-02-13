@@ -468,20 +468,21 @@ Function Update-Noxplayer {
             Import-Library "System.Drawing.Common"
             Import-Library "System.Security.Permissions"
             $Handler = [FlaUI.UIA3.UIA3Automation]::New()
-            $Started = [FlaUI.Core.Application]::Launch("$Using:Fetched")
+            $Started = [FlaUI.Core.Application]::Launch("$Using:Fetched") ; Start-Sleep 4
             $Window1 = $Started.GetMainWindow($Handler)
             $Window1.Focus()
             $Scraped = $Window1.BoundingRectangle
-            $FactorX = $Scraped.X + ($Scraped.Width / 2)
-            $FactorY = $Scraped.Y + ($Scraped.Height / 2) + 85
-            $Centrum = [Drawing.Point]::New($FactorX, $FactorY)
-            Start-Sleep 12 ; [FlaUI.Core.Input.Mouse]::LeftClick($Centrum) ; Start-Sleep 6
-            $FactorX = $Scraped.X + ($Scraped.Width / 2) + 100
-            $FactorY = $Scraped.Y + ($Scraped.Height / 2) + 185
-            $Centrum = [Drawing.Point]::New($FactorX, $FactorY)
-            Start-Sleep 12 ; [FlaUI.Core.Input.Mouse]::LeftClick($Centrum)
-            While (-Not (Test-Path "$Env:UserProfile\Desktop\Nox*.lnk")) { Start-Sleep 2 }
-            Start-Sleep 4 ; Stop-Process -Name "*nox*setup*" -EA SI
+            echo $Scraped
+            # $FactorX = $Scraped.X + ($Scraped.Width / 2)
+            # $FactorY = $Scraped.Y + ($Scraped.Height / 2) + 85
+            # $Centrum = [Drawing.Point]::New($FactorX, $FactorY)
+            # Start-Sleep 12 ; [FlaUI.Core.Input.Mouse]::LeftClick($Centrum) ; Start-Sleep 6
+            # $FactorX = $Scraped.X + ($Scraped.Width / 2) + 100
+            # $FactorY = $Scraped.Y + ($Scraped.Height / 2) + 185
+            # $Centrum = [Drawing.Point]::New($FactorX, $FactorY)
+            # Start-Sleep 12 ; [FlaUI.Core.Input.Mouse]::LeftClick($Centrum)
+            # While (-Not (Test-Path "$Env:UserProfile\Desktop\Nox*.lnk")) { Start-Sleep 2 }
+            # Start-Sleep 4 ; Stop-Process -Name "*nox*setup*" -EA SI
         }
         Remove-Desktop "Nox*.lnk" ; Remove-Desktop "Nox*Ass*.lnk"
     }
