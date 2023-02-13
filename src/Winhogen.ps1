@@ -152,8 +152,7 @@ Function Invoke-Fetcher {
     $Attempt.SaveAsAsync("$Fetched").GetAwaiter().GetResult()
     $WebPage.CloseAsync().GetAwaiter().GetResult()
     $Browser.CloseAsync().GetAwaiter().GetResult()
-    $Handler.Dispose()
-    Return $Fetched
+    Start-Sleep 4 ; Return $Fetched
 
 }
 
@@ -449,7 +448,6 @@ Function Update-Ldplayer {
 
 Function Update-Noxplayer {
 
-    
     $Starter = "${Env:ProgramFiles(x86)}\Nox\bin\Nox.exe"
     $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
     # $Present = $Current -Ne "0.0.0.0"
