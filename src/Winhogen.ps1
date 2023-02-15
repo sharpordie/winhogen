@@ -395,13 +395,13 @@ Function Update-Antidote {
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
 
     If (-Not $Updated) {
-        $Fetched = Invoke-Fetcher "Filecr" "$Address"
-        # $Fetched = "C:\Users\Admin\AppData\Local\Temp\Antidote 11 v3.2 [FileCR].zip"
+        # $Fetched = Invoke-Fetcher "Filecr" "$Address"
+        $Fetched = "C:\Users\Admin\AppData\Local\Temp\Antidote 11 v3.2 [FileCR].zip"
         $Deposit = Invoke-Extract "$Fetched" -Secrets "123"
         # $Deposit = "C:\Users\Admin\AppData\Local\Temp\ad5d8b05-1c49-4a88-af84-9b1eb48bcf9b"
         $RootDir = (Get-Item "$Deposit\Ant*\Ant*").FullName
-        $Program = (Get-Item "$RootDir\Anti*.exe").FullName
-        $Extract = Invoke-Extract "$Program"
+        $Archive = (Get-Item "$RootDir\Anti*.exe").FullName
+        $Extract = Invoke-Extract "$Archive"
         # $Extract = "C:\Users\Admin\AppData\Local\Temp\dd4e2e4a-dea1-48c2-b4e8-b67f2159e8c0"
         $Modules = (Get-Item "$Extract\*\msi\druide").FullName
         $Adjunct = "TRANSFORMS=`"$Modules\Antidote11-Interface-en.mst`""
