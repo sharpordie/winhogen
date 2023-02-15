@@ -212,7 +212,7 @@ Function Invoke-Scraper {
     }
     Else {
         Try {
-            If ($Scraper -Eq "Html") { Return (Invoke-WebRequest "$Address").Content  }
+            If ($Scraper -Eq "Html") { Return (Invoke-WebRequest "$Address").Content }
             If ($Scraper -Eq "Json") { Return Invoke-WebRequest "$Address" | ConvertFrom-Json }
         }
         Catch {
@@ -368,18 +368,19 @@ Function Update-SysPath {
 
 Function Update-Antidote {
 
-    $Current = "0.0.0.0"
+    $Starter = (Get-Item "$Env:ProgramFiles\Drui*\Anti*\Appl*\Bin6*\Anti*.exe" -EA SI).FullName
+    $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
+    # $Present = $Current -Ne "0.0.0.0"
 
     $Address = "https://filecr.com/windows/antidote"
-    $Results = [Regex]::Matches((Invoke-Scraper "Html" "$Address"), "<title>Antidote ([\\d]+) v([\\d.]+) .*</title>")
-    $Results.Groups
-    # $Match01 = $Results.Groups[1].Value
-    # $Match02 = $Results.Groups[2].Value
-    # $Version = "$Match01.$Match02"
-    # $Updated = [Version] "$Current" -Ge [Version] "$Version"
+    $Results = [Regex]::Matches((Invoke-Scraper "Html" "$Address"), "<title>Antidote ([\d]+) v([\d.]+) .*</title>")
+    $Version = "$($Results.Groups[1].Value).$($Results.Groups[2].Value)"
+    $Updated = [Version] "$Current" -Ge [Version] "$Version"
 
-    # $Fetched = Invoke-Fetcher "Filecr" "$Address"
-    # Write-Output "$Fetched"
+    If (-Not $Updated) {
+        $Fetched = Invoke-Fetcher "Filecr" "$Address"
+        Write-Output "$Fetched"
+    }
 
 }
 
