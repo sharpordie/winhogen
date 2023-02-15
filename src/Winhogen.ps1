@@ -372,12 +372,11 @@ Function Update-Antidote {
 
     $Address = "https://filecr.com/windows/antidote"
     $Results = [Regex]::Matches((Invoke-Scraper "Html" "$Address"), "<title>Antidote ([\\d]+) v([\\d.]+) .*</title>")
-    $Match01 = $Results.Groups[1].Value
-    $Match02 = $Results.Groups[2].Value
-    $Version = "$Match01.$Match02"
-    $Updated = [Version] "$Current" -Ge [Version] "$Version"
-
-    Write-Output $Version
+    $Results
+    # $Match01 = $Results.Groups[1].Value
+    # $Match02 = $Results.Groups[2].Value
+    # $Version = "$Match01.$Match02"
+    # $Updated = [Version] "$Current" -Ge [Version] "$Version"
 
     # $Fetched = Invoke-Fetcher "Filecr" "$Address"
     # Write-Output "$Fetched"
