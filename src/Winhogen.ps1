@@ -368,8 +368,19 @@ Function Update-SysPath {
 
 Function Update-Antidote {
 
-    $Fetched = Invoke-Fetcher "Filecr" "https://filecr.com/windows/antidote"
-    Write-Output "$Fetched"
+    $Current = "0.0.0.0"
+
+    $Address = "https://filecr.com/windows/antidote"
+    $Version = [Regex]::Matches((Invoke-Scraper "Html" "$Address"), "<h1> Antidote ([\\d]+) v([\\d.]+) </h1>")
+    $Match01 = $Results.Groups[1].Value
+    $Match02 = $Results.Groups[2].Value
+    $Version = "$Match01.$Match02"
+    $Updated = [Version] "$Current" -Ge [Version] "$Version"
+
+    Write-Output $Version
+
+    # $Fetched = Invoke-Fetcher "Filecr" "$Address"
+    # Write-Output "$Fetched"
 
 }
 
@@ -386,7 +397,7 @@ Function Update-Bluestacks {
     $Address = "https://support.bluestacks.com/hc/en-us/articles/4402611273485-BlueStacks-5-offline-installer"
     $Results = [Regex]::Matches((Invoke-Scraper "Html" "$Address"), "windows/nxt/([\d.]+)/(?<sha>[0-9a-f]+)/")
     $Version = $Results.Groups[1].Value
-    $Hashing = $results.Groups[2].Value
+    $Hashing = $Results.Groups[2].Value
     $Updated = [Version] "$Current" -Ge [Version] ($Version.SubString(0, 6))
 
     If (-Not $Updated) {
