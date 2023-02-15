@@ -400,9 +400,9 @@ Function Update-Antidote {
         # $Deposit = Invoke-Extract "$Fetched" -Secrets "123"
         $Deposit = "C:\Users\Admin\AppData\Local\Temp\ad5d8b05-1c49-4a88-af84-9b1eb48bcf9b"
         $RootDir = (Get-Item "$Deposit\Ant*\Ant*").FullName
-        $Program = (Get-Item "$RootDir\Ant*i.exe").FullName
-        echo $Program
-        # $Extract = Invoke-Extract "$Program"
+        $Program = (Get-Item "$RootDir\Anti*.exe").FullName
+        $Extract = Invoke-Extract "$Program"
+        echo $Extract
         # $Modules = "$Extract\msi\druide"
         # $Adjunct = "TRANSFORMS=`"$Modules\Antidote11-Interface-en.mst`""
         # Invoke-Gsudo { msiexec.exe /i "$Using:Modules\Antidote11.msi" $Using:Adjunct /qn }
