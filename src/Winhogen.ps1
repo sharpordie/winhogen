@@ -166,15 +166,15 @@ Function Invoke-Fetcher {
             $WebPage.GoToAsync("$Payload").GetAwaiter().GetResult() | Out-Null
             $WebPage.WaitForSelectorAsync("#sh_pdf_download-2 > form > a").GetAwaiter().GetResult() | Out-Null
             $WebPage.WaitForTimeoutAsync(2000).GetAwaiter().GetResult() | Out-Null
-            $WebPage.EvaluateHandleAsync("() = > document.querySelector('#sh_pdf_download-2 > form > a').click();").GetAwaiter().GetResult() | Out-Null
+            $DD = $WebPage.EvaluateAsync("() => document.querySelector('#sh_pdf_download-2 > form > a').click()").GetAwaiter().GetResult()
             $WebPage.WaitForSelectorAsync("a.sh_download-btn.done").GetAwaiter().GetResult() | Out-Null
             $WebPage.WaitForTimeoutAsync(6000).GetAwaiter().GetResult() | Out-Null
 
             $Waiting = $WebPage.WaitForDownloadAsync()
 
-            $WebPage.EvaluateHandleAsync("() => document.querySelector('a.sh_download-btn.done').click();").GetAwaiter().GetResult() | Out-Null
+            $DD = $WebPage.EvaluateAsync("() => document.querySelector('a.sh_download-btn.done').click();").GetAwaiter().GetResult()
             $WebPage.WaitForTimeoutAsync(2000).GetAwaiter().GetResult() | Out-Null
-            $WebPage.Mouse.ClickAsync(10,10, @{ "ClickCount" = 2 }).GetAwaiter().GetResult() | Out-Null
+            $WebPage.Mouse.ClickAsync(10, 10, @{ "ClickCount" = 2 }).GetAwaiter().GetResult() | Out-Null
 
             $Attempt = $Waiting.GetAwaiter().GetResult()
             $Attempt.PathAsync().GetAwaiter().GetResult() | Out-Null
