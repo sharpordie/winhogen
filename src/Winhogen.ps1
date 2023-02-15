@@ -405,7 +405,7 @@ Function Update-Antidote {
         $Extract = "C:\Users\Admin\AppData\Local\Temp\dd4e2e4a-dea1-48c2-b4e8-b67f2159e8c0"
         $Modules = (Get-Item "$Extract\*\msi\druide").FullName
         $Adjunct = "TRANSFORMS=`"$Modules\Antidote11-Interface-en.mst`""
-        invoke-gsudo { write-output msiexec.exe /i "$Using:Modules\Antidote11.msi" $Using:Adjunct /qn }
+        Invoke-Gsudo { write-output msiexec.exe /i "$Using:Modules\Antidote11.msi" $Using:Adjunct /qn }
         # Invoke-Gsudo { & msiexec.exe /i "$Using:Modules\Antidote11.msi" $Using:Adjunct /qn }
         # $Adjunct = "TRANSFORMS=`"$Modules\Antidote11-Module-francais-Interface-en.mst`""
         # Invoke-Gsudo { & msiexec.exe /i "$Using:Modules\Antidote11-Module-francais.msi" $Using:Adjunct /qn }
