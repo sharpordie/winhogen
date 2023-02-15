@@ -134,6 +134,23 @@ Function Invoke-Browser {
 
 }
 
+Function Invoke-Extract {
+
+    Param (
+        [String] $Archive,
+        [String] $Deposit,
+        [String] $Secrets
+    )
+
+    $Starter = "$Env:LocalAppData\Microsoft\WindowsApps\7z.exe"
+    If (-Not (Test-Path "$Starter")) { Update-Nanazip }
+    If (-Not $Deposit) { $Deposit = [IO.Directory]::CreateDirectory("$Env:Temp\$([Guid]::NewGuid().Guid)").FullName }
+    If (-Not (Test-Path "$Deposit")) { New-Item "$Deposit" -ItemType Directory -EA SI }
+    Start-Process "$Starter" "x `"$Archive`" -o`"$Deposit`" -p`"$Secrets`" -y -bso0 -bsp0" -WindowStyle Hidden -Wait
+    Return "$Deposit"
+
+}
+
 Function Invoke-Fetcher {
 
     Param(
@@ -207,12 +224,12 @@ Function Invoke-Scraper {
     )
 
     If ($PSVersionTable.PSVersion -Lt [Version] "7.0.0.0") {
-        If ($Scraper -Eq "Html") { Return (Invoke-WebRequest "$Address").Content }
+        If ($Scraper -Eq "Html") { Return Invoke-WebRequest "$Address" }
         If ($Scraper -Eq "Json") { Return Invoke-WebRequest "$Address" | ConvertFrom-Json }
     }
     Else {
         Try {
-            If ($Scraper -Eq "Html") { Return (Invoke-WebRequest "$Address").Content }
+            If ($Scraper -Eq "Html") { Return Invoke-WebRequest "$Address" }
             If ($Scraper -Eq "Json") { Return Invoke-WebRequest "$Address" | ConvertFrom-Json }
         }
         Catch {
@@ -378,8 +395,10 @@ Function Update-Antidote {
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
 
     If (-Not $Updated) {
-        $Fetched = Invoke-Fetcher "Filecr" "$Address"
-        Write-Output "$Fetched"
+        # $Fetched = Invoke-Fetcher "Filecr" "$Address"
+        $Fetched = "C:\Users\Admin\AppData\Local\Temp\Antidote 11 v3.2 [FileCR].zip"
+        $Extract = Invoke-Extract "$Fetched" -Secrets "123"
+        Write-Output "$Extract"
     }
 
 }
