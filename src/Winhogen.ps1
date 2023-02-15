@@ -399,8 +399,8 @@ Function Update-Antidote {
         $Fetched = "C:\Users\Admin\AppData\Local\Temp\Antidote 11 v3.2 [FileCR].zip"
         # $Deposit = Invoke-Extract "$Fetched" -Secrets "123"
         $Deposit = "C:\Users\Admin\AppData\Local\Temp\ad5d8b05-1c49-4a88-af84-9b1eb48bcf9b"
-        $RootDir = Get-Item "$Deposit\Ant*\Ant*"
-        $Program = Get-Item "$RootDir\Ant*i.exe"
+        $RootDir = (Get-Item "$Deposit\Ant*\Ant*").FullName
+        $Program = (Get-Item "$RootDir\Ant*i.exe").FullName
         echo $Program
         # $Extract = Invoke-Extract "$Program"
         # $Modules = "$Extract\msi\druide"
