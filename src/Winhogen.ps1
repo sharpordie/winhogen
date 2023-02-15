@@ -162,14 +162,14 @@ Function Invoke-Fetcher {
             $Handler = Invoke-Browser
             $Browser = $Handler.Chromium.LaunchAsync(@{ "Headless" = $False }).GetAwaiter().GetResult()
             $WebPage = $Browser.NewPageAsync().GetAwaiter().GetResult()
-            $WebPage.SetViewportSizeAsync(1500, 1900).GetAwaiter().GetResult()
+            $WebPage.SetViewportSizeAsync(1400, 1700).GetAwaiter().GetResult()
             $WebPage.GoToAsync("$Payload").GetAwaiter().GetResult() | Out-Null
             $WebPage.WaitForSelectorAsync("#sh_pdf_download-2 > form > a").GetAwaiter().GetResult() | Out-Null
             $WebPage.WaitForTimeoutAsync(2000).GetAwaiter().GetResult() | Out-Null
 
-            # $WebPage.EvaluateAsync("document.querySelector('#sh_pdf_download-2 > form > a').click()")
-            $Element = $WebPage.EvaluateAsync("document.querySelector('#sh_pdf_download-2 > form > a')").GetAwaiter().GetResult()
-            $WebPage.EvaluateAsync("element => element.click()", $Element).GetAwaiter().GetResult()
+            $WebPage.EvaluateAsync("document.querySelector('#sh_pdf_download-2 > form > a').click()","").GetAwaiter().GetResult()
+            # $Element = $WebPage.EvaluateAsync("document.querySelector('#sh_pdf_download-2 > form > a')").GetAwaiter().GetResult()
+            # $WebPage.EvaluateAsync("element => element.click()", $Element).GetAwaiter().GetResult()
 
             $WebPage.WaitForSelectorAsync("a.sh_download-btn.done").GetAwaiter().GetResult() | Out-Null
             $WebPage.WaitForTimeoutAsync(6000).GetAwaiter().GetResult() | Out-Null
