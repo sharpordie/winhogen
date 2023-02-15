@@ -399,21 +399,22 @@ Function Update-Antidote {
         $Fetched = "C:\Users\Admin\AppData\Local\Temp\Antidote 11 v3.2 [FileCR].zip"
         $Deposit = Invoke-Extract "$Fetched" -Secrets "123"
         $RootDir = Get-Item "$Deposit\Ant*\Ant*"
-        $Program = Get-Item "$RootDir\Ant*i.exe"
-        $Extract = Invoke-Extract "$Program"
-        $Modules = "$Extract\msi\druide"
-        $Adjunct = "TRANSFORMS=`"$Modules\Antidote11-Interface-en.mst`""
-        Invoke-Gsudo { msiexec.exe /i "$Using:Modules\Antidote11.msi" $Using:Adjunct /qn }
-        $Adjunct = "TRANSFORMS=`"$Modules\Antidote11-Module-francais-Interface-en.mst`""
-        Invoke-Gsudo { msiexec.exe /i "$Using:Modules\Antidote11-Module-francais.msi" $Using:Adjunct /qn }
-        $Adjunct = "TRANSFORMS=`"$Modules\Antidote11-English-module-Interface-en.mst`""
-        Invoke-Gsudo { msiexec.exe /i "$Using:Modules\Antidote11-English-module.msi" $Using:Adjunct /qn }
-        $Adjunct = "TRANSFORMS=`"$Modules\Antidote-Connectix11-Interface-en.mst`""
-        Invoke-Gsudo { msiexec.exe /i "$Using:Modules\Antidote-Connectix11.msi" $Using:Adjunct /qn }
-        Foreach ($MspFile In $(Get-Item "$RootDir\Updates\*.msp" -Recurse)) { Invoke-Gsudo { msiexec.exe /p "$Using:MspFile" /qn } }
-        $Altered = "$RootDir\Crack\Antidote.exe"
-        $Starter = (Get-Item "$Env:ProgramFiles\Drui*\Anti*\Appl*\Bin6*\Anti*.exe" -EA SI).FullName
-        Copy-Item "$Altered" "$Starter" -Recurse -Force
+        echo $RootDir
+        # $Program = Get-Item "$RootDir\Ant*i.exe"
+        # $Extract = Invoke-Extract "$Program"
+        # $Modules = "$Extract\msi\druide"
+        # $Adjunct = "TRANSFORMS=`"$Modules\Antidote11-Interface-en.mst`""
+        # Invoke-Gsudo { msiexec.exe /i "$Using:Modules\Antidote11.msi" $Using:Adjunct /qn }
+        # $Adjunct = "TRANSFORMS=`"$Modules\Antidote11-Module-francais-Interface-en.mst`""
+        # Invoke-Gsudo { msiexec.exe /i "$Using:Modules\Antidote11-Module-francais.msi" $Using:Adjunct /qn }
+        # $Adjunct = "TRANSFORMS=`"$Modules\Antidote11-English-module-Interface-en.mst`""
+        # Invoke-Gsudo { msiexec.exe /i "$Using:Modules\Antidote11-English-module.msi" $Using:Adjunct /qn }
+        # $Adjunct = "TRANSFORMS=`"$Modules\Antidote-Connectix11-Interface-en.mst`""
+        # Invoke-Gsudo { msiexec.exe /i "$Using:Modules\Antidote-Connectix11.msi" $Using:Adjunct /qn }
+        # Foreach ($MspFile In $(Get-Item "$RootDir\Updates\*.msp" -Recurse)) { Invoke-Gsudo { msiexec.exe /p "$Using:MspFile" /qn } }
+        # $Altered = "$RootDir\Crack\Antidote.exe"
+        # $Starter = (Get-Item "$Env:ProgramFiles\Drui*\Anti*\Appl*\Bin6*\Anti*.exe" -EA SI).FullName
+        # Copy-Item "$Altered" "$Starter" -Recurse -Force
         # TODO: Finish installation
     }
 
