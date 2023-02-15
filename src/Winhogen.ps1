@@ -513,6 +513,26 @@ Function Update-Ldplayer {
 
 }
 
+Function Update-Nanazip {
+
+    $Starter = "$Env:LocalAppData\Microsoft\WindowsApps\7z.exe"
+    $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
+    # $Present = $Current -Ne "0.0.0.0"
+
+    $Address = "https://api.github.com/repos/m2team/nanazip/releases/latest"
+    $Version = [Regex]::Match((Invoke-WebRequest "$Address" | ConvertFrom-Json).tag_name, "[\d.]+").Value
+    $Updated = [Version] "$Current" -Ge [Version] "$Version"
+
+    If (-Not $Updated) {
+        $Results = (Invoke-WebRequest "$Address" | ConvertFrom-Json).assets
+        $Address = $Results.Where( { $_.browser_download_url -Like "*.msixbundle" } ).browser_download_url
+        $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
+		(New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
+        Add-AppxPackage -Path "$Fetched" -DeferRegistrationWhenPackagesAreInUse -ForceUpdateFromAnyVersion 
+    }
+
+}
+
 Function Update-Noxplayer {
 
     $Starter = "${Env:ProgramFiles(x86)}\Nox\bin\Nox.exe"
