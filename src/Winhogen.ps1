@@ -207,12 +207,12 @@ Function Invoke-Scraper {
     )
 
     If ($PSVersionTable.PSVersion -Lt [Version] "7.0.0.0") {
-        If ($Scraper -Eq "Html") { Return Invoke-WebRequest "$Address" }
+        If ($Scraper -Eq "Html") { Return (Invoke-WebRequest "$Address").Content }
         If ($Scraper -Eq "Json") { Return Invoke-WebRequest "$Address" | ConvertFrom-Json }
     }
     Else {
         Try {
-            If ($Scraper -Eq "Html") { Return Invoke-WebRequest "$Address" }
+            If ($Scraper -Eq "Html") { Return (Invoke-WebRequest "$Address").Content  }
             If ($Scraper -Eq "Json") { Return Invoke-WebRequest "$Address" | ConvertFrom-Json }
         }
         Catch {
