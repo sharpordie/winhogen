@@ -181,6 +181,10 @@ Function Invoke-Fetcher {
             $Suggest = $Attempt.SuggestedFilename
             $Fetched = Join-Path "$Env:Temp" "$Suggest"
             $Attempt.SaveAsAsync("$Fetched").GetAwaiter().GetResult() | Out-Null
+
+            $WebPage.CloseAsync().GetAwaiter().GetResult() | Out-Null
+            $Browser.CloseAsync().GetAwaiter().GetResult() | Out-Null
+            Return $Fetched
         }
     }
 
@@ -368,7 +372,8 @@ Function Update-SysPath {
 
 Function Update-Antidote {
 
-    Invoke-Fetcher "Filecr" "https://filecr.com/windows/antidote"
+    $Fetched = Invoke-Fetcher "Filecr" "https://filecr.com/windows/antidote"
+    Write-Output "$Fetched"
 
 }
 
