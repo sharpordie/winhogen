@@ -137,23 +137,52 @@ Function Invoke-Browser {
 Function Invoke-Fetcher {
 
     Param(
-        [String] $Address
+        [ValidateSet("Browser", "Filecr", "Webclient")][String] $Fetcher,
+        [String] $Payload
     )
 
-    $Handler = Invoke-Browser
-    $Browser = $Handler.Chromium.LaunchAsync(@{ "Headless" = $False }).GetAwaiter().GetResult()
-    $WebPage = $Browser.NewPageAsync().GetAwaiter().GetResult()
-    $WebPage.GoToAsync("about:blank").GetAwaiter().GetResult() | Out-Null
-    $Waiting = $WebPage.WaitForDownloadAsync()
-    $WebPage.GoToAsync("$Address") | Out-Null
-    $Attempt = $Waiting.GetAwaiter().GetResult()
-    $Attempt.PathAsync().GetAwaiter().GetResult() | Out-Null
-    $Suggest = $Attempt.SuggestedFilename
-    $Fetched = Join-Path "$Env:Temp" "$Suggest"
-    $Attempt.SaveAsAsync("$Fetched").GetAwaiter().GetResult() | Out-Null
-    $WebPage.CloseAsync().GetAwaiter().GetResult() | Out-Null
-    $Browser.CloseAsync().GetAwaiter().GetResult() | Out-Null
-    Return $Fetched
+    Switch ($Fetcher) {
+        "Browser" {
+            $Handler = Invoke-Browser
+            $Browser = $Handler.Chromium.LaunchAsync(@{ "Headless" = $False }).GetAwaiter().GetResult()
+            $WebPage = $Browser.NewPageAsync().GetAwaiter().GetResult()
+            $WebPage.GoToAsync("about:blank").GetAwaiter().GetResult() | Out-Null
+            $Waiting = $WebPage.WaitForDownloadAsync()
+            $WebPage.GoToAsync("$Payload") | Out-Null
+            $Attempt = $Waiting.GetAwaiter().GetResult()
+            $Attempt.PathAsync().GetAwaiter().GetResult() | Out-Null
+            $Suggest = $Attempt.SuggestedFilename
+            $Fetched = Join-Path "$Env:Temp" "$Suggest"
+            $Attempt.SaveAsAsync("$Fetched").GetAwaiter().GetResult() | Out-Null
+            $WebPage.CloseAsync().GetAwaiter().GetResult() | Out-Null
+            $Browser.CloseAsync().GetAwaiter().GetResult() | Out-Null
+            Return $Fetched
+        }
+        "Filecr" {
+            $Handler = Invoke-Browser
+            $Browser = $Handler.Chromium.LaunchAsync(@{ "Headless" = $False }).GetAwaiter().GetResult()
+            # TODO: Change viewport
+            $WebPage = $Browser.NewPageAsync().GetAwaiter().GetResult()
+            $WebPage.GoToAsync("$Payload").GetAwaiter().GetResult() | Out-Null
+            $WebPage.WaitForSelectorAsync("#sh_pdf_download-2 > form > a").GetAwaiter().GetResult() | Out-Null
+            $WebPage.WaitForTimeoutAsync(2000).GetAwaiter().GetResult() | Out-Null
+            $WebPage.EvaluateAsync('document.querySelector("#sh_pdf_download-2 > form > a").click()').GetAwaiter().GetResult() | Out-Null
+            $WebPage.WaitForSelectorAsync("a.sh_download-btn.done").GetAwaiter().GetResult() | Out-Null
+            $WebPage.WaitForTimeoutAsync(6000).GetAwaiter().GetResult() | Out-Null
+
+            $Waiting = $WebPage.WaitForDownloadAsync()
+
+            $WebPage.EvaluateAsync('document.querySelector("a.sh_download-btn.done").click()').GetAwaiter().GetResult() | Out-Null
+            $WebPage.WaitForTimeoutAsync(2000).GetAwaiter().GetResult() | Out-Null
+            $WebPage.Mouse.ClickAsync(10,10, @{ "ClickCount" = 2 }).GetAwaiter().GetResult() | Out-Null
+
+            $Attempt = $Waiting.GetAwaiter().GetResult()
+            $Attempt.PathAsync().GetAwaiter().GetResult() | Out-Null
+            $Suggest = $Attempt.SuggestedFilename
+            $Fetched = Join-Path "$Env:Temp" "$Suggest"
+            $Attempt.SaveAsAsync("$Fetched").GetAwaiter().GetResult() | Out-Null
+        }
+    }
 
 }
 
@@ -337,6 +366,12 @@ Function Update-SysPath {
 
 #EndRegion
 
+Function Update-Antidote {
+
+    Invoke-Fetcher "Filecr" "https://filecr.com/windows/antidote"
+
+}
+
 Function Update-Bluestacks {
 
     Param(
@@ -459,7 +494,7 @@ Function Update-Noxplayer {
 
     If (-Not $Updated) {
         $Address = "https://www.bignox.com/en/download/fullPackage/win_64_9?formal"
-        $Fetched = Invoke-Fetcher "$Address"
+        $Fetched = Invoke-Fetcher "Browser" "$Address"
         $Current = $Script:MyInvocation.MyCommand.Path
         Invoke-Gsudo {
             . $Using:Current ; Start-Sleep 4
@@ -544,6 +579,8 @@ If ($MyInvocation.InvocationName -Ne ".") {
     Remove-Feature "Uac" ; Update-Element "Plan" "Ultimate"
     $Correct = (Update-Gsudo) -And ! (gsudo cache on -d -1 2>&1).ToString().Contains("Error")
     If (-Not $Correct) { Write-Host "$Failure`n" -FO Red ; Exit } ; Update-Powershell
+
+    Update-Antidote ; Exit
 
     # Handle elements
     $Members = Export-Members -Variant "Gaming" -Machine "WINHOGEN"
