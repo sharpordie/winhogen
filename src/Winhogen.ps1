@@ -414,8 +414,8 @@ Function Update-Antidote {
         Invoke-Gsudo { Start-Process "msiexec.exe" "/i `"$Using:Modules\Antidote-Connectix11.msi`" $Using:Adjunct /qn" -Wait }
         Foreach ($MspFile In $(Get-Item "$RootDir\Updates\*.msp")) { Invoke-Gsudo { Start-Process "msiexec.exe" "/p `"$Using:MspFile.FullName`" /qn" -Wait } }
         $Altered = "$RootDir\Crack\Antidote.exe"
-        $Starter = (Get-Item "$Env:ProgramFiles\Drui*\Anti*\Appl*\Bin6*\Antidote.exe" -EA SI).FullName
-        Invoke-Gsudo { Copy-Item "$Using:Altered" "$Using:Starter" -Recurse -Force }
+        $Current = (Get-Item "$Env:ProgramFiles\Drui*\Anti*\Appl*\Bin6*\Antidote.exe" -EA SI).FullName
+        Invoke-Gsudo { [IO.File]::Copy("$Using:Altered", "$Using:Current", $True) }
         # TODO: Finish installation
     }
 
