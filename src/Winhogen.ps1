@@ -428,7 +428,7 @@ Function Update-Antidote {
         Import-Library "System.Drawing.Common"
         Import-Library "System.Security.Permissions"
         $Handler = [FlaUI.UIA3.UIA3Automation]::New()
-        $Starter = (Get-Item "$Env:ProgramFiles\Drui*\Anti*\Appl*\Bin6*\Anti*.exe" -EA SI).FullName
+        $Starter = (Get-Item "$Env:ProgramFiles\Drui*\Anti*\Appl*\Bin6*\Antidote.exe" -EA SI).FullName
         $Started = [FlaUI.Core.Application]::Launch("$Starter")
 
         $Window1 = $Started.GetMainWindow($Handler)
