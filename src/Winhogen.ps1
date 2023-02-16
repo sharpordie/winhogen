@@ -419,7 +419,6 @@ Function Update-Antidote {
     }
 
     If (-Not $Present -Or $True) {
-        # https://notabug.org/foozoor/autotidote/src/master/src/Autotidote/Packages/Antidote.cs
         Stop-Process -Name "Antidote" -EA SI
         Stop-Process -Name "Connectix" -EA SI
         Import-Library "Interop.UIAutomationClient"
@@ -440,15 +439,15 @@ Function Update-Antidote {
         $Button2 = $Window2.FindFirstDescendant($Handler.ConditionFactory.ByName("Manual activation…"))
         $Button2.Click() ; Start-Sleep 4
         
-        # $Window3 = $Started.GetMainWindow($Handler)
-        # $Window3.Focus() ; Start-Sleep 1
-        # [FlaUI.Core.Input.Keyboard]::Type("John") ; Start-Sleep 1
-        # [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB) ; Start-Sleep 1
-        # [FlaUI.Core.Input.Keyboard]::Type("Doe") ; Start-Sleep 1
-        # [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB) ; Start-Sleep 1
-        # [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB) ; Start-Sleep 1
-        # [FlaUI.Core.Input.Keyboard]::Type("123-456-789-012-A11") ; Start-Sleep 1
-        # [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE) ; Start-Sleep 4
+        $Window3 = $Started.GetMainWindow($Handler)
+        $Window3.Focus() ; Start-Sleep 1
+        [FlaUI.Core.Input.Keyboard]::Type("John") ; Start-Sleep 1
+        [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB) ; Start-Sleep 1
+        [FlaUI.Core.Input.Keyboard]::Type("Doe") ; Start-Sleep 1
+        [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB) ; Start-Sleep 1
+        [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB) ; Start-Sleep 1
+        [FlaUI.Core.Input.Keyboard]::Type("123-456-789-012-A11") ; Start-Sleep 1
+        [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE) ; Start-Sleep 4
 
         $Window4 = $Started.GetMainWindow($Handler)
         $Window4.Focus() ; Start-Sleep 1
@@ -457,9 +456,37 @@ Function Update-Antidote {
         [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB) ; Start-Sleep 1
         [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE) ; Start-Sleep 4
 
+        $Window5 = $Started.GetMainWindow($Handler)
+        $Window5.Focus() ; Start-Sleep 1
+        [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB) ; Start-Sleep 1
+        [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB) ; Start-Sleep 1
+        [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE) ; Start-Sleep 1
+        [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB) ; Start-Sleep 1
+        [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE) ; Start-Sleep 4
 
-        # Start Antidote
-        # Press ENTER
+        $Window6 = $Started.GetMainWindow($Handler)
+        $Window6.Focus() ; Start-Sleep 1
+        [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB) ; Start-Sleep 1
+        [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE) ; Start-Sleep 1
+        [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::DOWN) ; Start-Sleep 1
+        [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::DOWN) ; Start-Sleep 1
+        [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::ENTER) ; Start-Sleep 1
+        [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB) ; Start-Sleep 1
+        [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE) ; Start-Sleep 1
+        [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB) ; Start-Sleep 1
+        [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE) ; Start-Sleep 1
+        [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB) ; Start-Sleep 1
+        [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE) ; Start-Sleep 4
+
+        $Window7 = $Started.GetMainWindow($Handler)
+        $Window7.Focus() ; Start-Sleep 1
+        [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::ENTER) ; Start-Sleep 6
+        # TODO: Close Connectix* window
+        # TODO: Close *Antidote window
+
+        Stop-Process -Name "AgentConnectix" -EA SI
+        Stop-Process -Name "Antidote" -EA SI
+        Stop-Process -Name "Connectix" -EA SI
     }
 
 }
