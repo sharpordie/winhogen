@@ -432,12 +432,27 @@ Function Update-Antidote {
         $Started = [FlaUI.Core.Application]::Launch("$Starter")
 
         $Window1 = $Started.GetMainWindow($Handler)
-        $Window1.Focus() ; Start-Sleep 2
+        $Window1.Focus() ; Start-Sleep 1
         [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::ENTER) ; Start-Sleep 4
 
         $Window2 = $Started.GetMainWindow($Handler)
+        $Window2.Focus() ; Start-Sleep 1
         $Button2 = $Window2.FindFirstDescendant($Handler.ConditionFactory.ByName("Manual activation…"))
-        $Button2.Click() ; Start-Sleep 4
+        $Button2.Click() ; Start-Sleep 2
+        
+        $Window3 = $Started.GetMainWindow($Handler)
+        $Window3.Focus() ; Start-Sleep 1
+        [FlaUI.Core.Input.Keyboard]::Type("John") ; Start-Sleep 1
+        [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB) ; Start-Sleep 1
+        [FlaUI.Core.Input.Keyboard]::Type("Doe") ; Start-Sleep 1
+        [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB) ; Start-Sleep 1
+        [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB) ; Start-Sleep 1
+        [FlaUI.Core.Input.Keyboard]::Type("123-456-789-012-A11") ; Start-Sleep 1
+        [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE) ; Start-Sleep 2
+
+        # $Window4 = $Started.GetMainWindow($Handler)
+        # $Window4.Focus() ; Start-Sleep 1
+
 
         # Start Antidote
         # Press ENTER
