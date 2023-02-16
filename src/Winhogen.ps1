@@ -47,6 +47,13 @@ Function Enable-Feature {
                 Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
             }
         }
+        "Sleeping" {
+            $Content = @()
+            $Content += '[DllImport("kernel32.dll", CharSet = CharSet.Auto,SetLastError = true)]'
+            $Content += 'public static extern void SetThreadExecutionState(uint esFlags);'
+            $Handler = Add-Type -MemberDefinition "$($Content | Out-String)" -Name System -Namespace Win32 -PassThru
+            $Handler::SetThreadExecutionState([uint32]"0x80000000") # ES_CONTINUOUS
+        }
         "Uac" {
             $Content = @(
                 '$KeyPath = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System"'
@@ -144,12 +151,12 @@ Function Invoke-Extract {
         [String] $Secrets
     )
 
-    $Starter = "$Env:LocalAppData\Microsoft\WindowsApps\7z.exe"
-    If (-Not (Test-Path "$Starter")) { Update-Nanazip }
+    # If (-Not (Test-Path "$Env:LocalAppData\Microsoft\WindowsApps\7z.exe")) { Update-Nanazip }
     If (-Not $Deposit) { $Deposit = [IO.Directory]::CreateDirectory("$Env:Temp\$([Guid]::NewGuid().Guid)").FullName }
     If (-Not (Test-Path "$Deposit")) { New-Item "$Deposit" -ItemType Directory -EA SI }
-    Start-Process "$Starter" "x `"$Archive`" -o`"$Deposit`" -p`"$Secrets`" -y -bso0 -bsp0" -WindowStyle Hidden -Wait
-    Return "$Deposit"
+    # Start-Process "$Env:LocalAppData\Microsoft\WindowsApps\7z.exe" "x `"$Archive`" -o`"$Deposit`" -p`"$Secrets`" -y -bso0 -bsp0" -WindowStyle Hidden -Wait
+    Start-Process "7z.exe" "x `"$Archive`" -o`"$Deposit`" -p`"$Secrets`" -y -bso0 -bsp0" -WindowStyle Hidden -Wait
+    Start-Sleep 4 ; Return "$Deposit"
 
 }
 
@@ -278,6 +285,13 @@ Function Remove-Feature {
                 Invoke-Gsudo { Start-Process "$Using:Fetched" ; Start-Sleep 10 ; Stop-Process -Name "HD-DisableHyperV" }
                 If (Assert-Pending -Eq $True) { Invoke-Restart }
             }
+        }
+        "Sleeping" {
+            $Content = @()
+            $Content += '[DllImport("kernel32.dll", CharSet = CharSet.Auto,SetLastError = true)]'
+            $Content += 'public static extern void SetThreadExecutionState(uint esFlags);'
+            $Handler = Add-Type -MemberDefinition "$($Content | Out-String)" -Name System -Namespace Win32 -PassThru
+            $Handler::SetThreadExecutionState([uint32]"0x80000000" -Bor [uint32]"0x00000001") # ES_SYSTEM_REQUIRED
         }
         "Uac" {
             $Content = @(
@@ -725,9 +739,11 @@ If ($MyInvocation.InvocationName -Ne ".") {
     $Loading = "`nTHE UPDATING DEPENDENCIES PROCESS HAS LAUNCHED"
     $Failure = "`rTHE UPDATING DEPENDENCIES PROCESS WAS CANCELED"
     Write-Host "$Loading" -FO DarkYellow -NoNewline
-    Remove-Feature "Uac" ; Update-Element "Plan" "Ultimate"
+    # Remove-Feature "Uac" ; Update-Element "Plan" "Ultimate"
+    Remove-Feature "Uac" ; Remove-Feature "Sleeping"
     $Correct = (Update-Gsudo) -And ! (gsudo cache on -d -1 2>&1).ToString().Contains("Error")
     If (-Not $Correct) { Write-Host "$Failure`n" -FO Red ; Exit } ; Update-Powershell
+
     Update-Nanazip ; Update-Antidote ; Update-Noxplayer ; Exit
 
     # Handle elements
@@ -760,7 +776,7 @@ If ($MyInvocation.InvocationName -Ne ".") {
     }
 
     # Revert security
-    Enable-Feature "Uac" ; gsudo -k *> $Null
+    Enable-Feature "Uac" ; Enable-Feature "Sleeping" ; gsudo -k *> $Null
 
     # Output new line
     Write-Host "`n"
