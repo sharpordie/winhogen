@@ -433,7 +433,7 @@ Function Update-Antidote {
 
         $Window1 = $Started.GetMainWindow($Handler)
         $Window1.Focus()
-        $Button1 = $Window1.FindFirstDescendant($Handler.ConditionFactory.ByControlType([FlaUI.Core.Definitions.ControlType]::Button)).AsButton()
+        $Button1 = $Window1.FindFirstDescendant($Handler.ConditionFactory.ByControlType([FlaUI.Core.Definitions.ControlType]::Button))
         $Button1.Click() ; Start-Sleep 4
 
         $Window2 = $Started.GetMainWindow($Handler)
