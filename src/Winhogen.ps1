@@ -155,7 +155,6 @@ Function Invoke-Extract {
     If (-Not $DestDir) { $DestDir = [IO.Directory]::CreateDirectory("$Env:Temp\$([Guid]::NewGuid().Guid)").FullName }
     If (-Not (Test-Path "$DestDir")) { New-Item "$DestDir" -ItemType Directory -EA SI }
     Start-Process "$Env:LocalAppData\Microsoft\WindowsApps\7z.exe" "x `"$Archive`" -o`"$DestDir`" -p`"$Secrets`" -y -bso0 -bsp0" -WindowStyle Hidden -Wait
-    # Start-Process "7z.exe" "x `"$Archive`" -o`"$DestDir`" -p`"$Secrets`" -y -bso0 -bsp0" -WindowStyle Hidden -Wait
     Return "$DestDir"
 
 }
@@ -642,6 +641,8 @@ Function Update-Nanazip {
 		(New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
         Add-AppxPackage -Path "$Fetched" -DeferRegistrationWhenPackagesAreInUse -ForceUpdateFromAnyVersion 
     }
+
+    Update-SysPath "$Env:LocalAppData\Microsoft\WindowsApps" "Process"
 
 }
 
