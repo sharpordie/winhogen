@@ -385,6 +385,10 @@ Function Update-SysPath {
 
 Function Update-Antidote {
 
+    Param(
+        [Switch] $Autorun
+    )
+
     $Starter = (Get-Item "$Env:ProgramFiles\Drui*\Anti*\Appl*\Bin6*\Antidote.exe" -EA SI).FullName
     $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
     $Present = $Current -Ne "0.0.0.0"
@@ -487,6 +491,10 @@ Function Update-Antidote {
         Stop-Process -Name "AgentConnectix" -EA SI
         Stop-Process -Name "Antidote" -EA SI
         Stop-Process -Name "Connectix" -EA SI
+    }
+
+    If (-Not $Autorun) {
+        Invoke-Gsudo { Remove-ItemProperty -Path "HKLM:\Software\Microsoft\Windows\CurrentVersion\Run" -Name "AgentConnectix64" -EA SI }
     }
 
 }
@@ -608,11 +616,13 @@ Function Update-Nanazip {
     # $Present = $Current -Ne "0.0.0.0"
 
     $Address = "https://api.github.com/repos/m2team/nanazip/releases/latest"
-    $Version = [Regex]::Match((Invoke-WebRequest "$Address" | ConvertFrom-Json).tag_name, "[\d.]+").Value
+    # $Version = [Regex]::Match((Invoke-WebRequest "$Address" | ConvertFrom-Json).tag_name, "[\d.]+").Value
+    $Version = [Regex]::Match((Invoke-Scraper "Json" "$Address").tag_name , "[\d.]+").Value
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
 
     If (-Not $Updated) {
-        $Results = (Invoke-WebRequest "$Address" | ConvertFrom-Json).assets
+        # $Results = (Invoke-WebRequest "$Address" | ConvertFrom-Json).assets
+        $Results = (Invoke-Scraper "Json" "$Address").assets
         $Address = $Results.Where( { $_.browser_download_url -Like "*.msixbundle" } ).browser_download_url
         $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
 		(New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
@@ -719,7 +729,7 @@ If ($MyInvocation.InvocationName -Ne ".") {
     $Correct = (Update-Gsudo) -And ! (gsudo cache on -d -1 2>&1).ToString().Contains("Error")
     If (-Not $Correct) { Write-Host "$Failure`n" -FO Red ; Exit } ; Update-Powershell
 
-    Update-Antidote ; Exit
+    Update-Nanazip ; Update-Noxplayer ; Update-Bluestacks ;Exit
 
     # Handle elements
     $Members = Export-Members -Variant "Gaming" -Machine "WINHOGEN"
