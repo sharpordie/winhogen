@@ -452,7 +452,7 @@ Function Update-Antidote {
 
         $Window4 = $Started.GetMainWindow($Handler)
         $Window4.Focus() ; Start-Sleep 1
-        [FlaUI.Core.Input.Keyboard]::Type("A11-BV-12345-67890-12345-67890-12345") ; Start-Sleep 1
+        [FlaUI.Core.Input.Keyboard]::Type("BV-12345-67890-12345-67890-12345") ; Start-Sleep 1
         [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB) ; Start-Sleep 1
         [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB) ; Start-Sleep 1
         [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE) ; Start-Sleep 4
