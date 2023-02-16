@@ -291,7 +291,7 @@ Function Remove-Feature {
             $Content += '[DllImport("kernel32.dll", CharSet = CharSet.Auto,SetLastError = true)]'
             $Content += 'public static extern void SetThreadExecutionState(uint esFlags);'
             $Handler = Add-Type -MemberDefinition "$($Content | Out-String)" -Name System -Namespace Win32 -PassThru
-            $Handler::SetThreadExecutionState([uint32]"0x80000000" -Bor [uint32]"0x00000001") # ES_SYSTEM_REQUIRED
+            $Handler::SetThreadExecutionState([uint32]"0x80000000" -Bor [uint32]"0x00000002") # ES_DISPLAY_REQUIRED
         }
         "Uac" {
             $Content = @(
