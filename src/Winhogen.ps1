@@ -385,9 +385,9 @@ Function Update-SysPath {
 
 Function Update-Antidote {
 
-    $Starter = (Get-Item "$Env:ProgramFiles\Drui*\Anti*\Appl*\Bin6*\Anti*.exe" -EA SI).FullName
+    $Starter = (Get-Item "$Env:ProgramFiles\Drui*\Anti*\Appl*\Bin6*\Antidote.exe" -EA SI).FullName
     $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
-    # $Present = $Current -Ne "0.0.0.0"
+    $Present = $Current -Ne "0.0.0.0"
 
     $Address = "https://filecr.com/windows/antidote"
     $Results = [Regex]::Matches((Invoke-Scraper "Html" "$Address"), "<title>Antidote ([\d]+) v([\d.]+) .*</title>")
@@ -416,7 +416,32 @@ Function Update-Antidote {
         $Altered = "$RootDir\Crack\Antidote.exe"
         $Current = (Get-Item "$Env:ProgramFiles\Drui*\Anti*\Appl*\Bin6*\Antidote.exe" -EA SI).FullName
         Invoke-Gsudo { [IO.File]::Copy("$Using:Altered", "$Using:Current", $True) }
-        # TODO: Finish installation
+    }
+
+    If (-Not $Present -Or $True) {
+        # https://notabug.org/foozoor/autotidote/src/master/src/Autotidote/Packages/Antidote.cs
+        Stop-Process -Name "Antidote" -EA SI
+        Stop-Process -Name "Connectix" -EA SI
+        Import-Library "Interop.UIAutomationClient"
+        Import-Library "FlaUI.Core"
+        Import-Library "FlaUI.UIA3"
+        Import-Library "System.Drawing.Common"
+        Import-Library "System.Security.Permissions"
+        $Handler = [FlaUI.UIA3.UIA3Automation]::New()
+        $Starter = (Get-Item "$Env:ProgramFiles\Drui*\Anti*\Appl*\Bin6*\Anti*.exe" -EA SI).FullName
+        $Started = [FlaUI.Core.Application]::Launch("$Starter")
+
+        $Window1 = $Started.GetMainWindow($Handler)
+        $Window1.Focus()
+        $Button1 = $Window1.FindFirstDescendant($Handler.ConditionFactory.ByControlType([FlaUI.Core.Definitions.ControlType]::Button)).AsButton()
+        $Button1.Click() ; Start-Sleep 4
+
+        $Window2 = $Started.GetMainWindow($Handler)
+        $Button2 = $Window2.FindFirstDescendant($Handler.ConditionFactory.ByName("Enter a serial number…")).AsButton()
+        $Button2.Click() ; Start-Sleep 4
+
+        # Start Antidote
+        # Press ENTER
     }
 
 }
