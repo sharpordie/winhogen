@@ -85,7 +85,8 @@ Function Export-Members {
         "Development" {
             Return @(
                 "Update-Windows '$Country' '$Machine'"
-                # "Update-Noxplayer"
+                "Update-Antidote"
+                "Update-Noxplayer"
             )
         }
         "GameStreaming" {
@@ -616,12 +617,10 @@ Function Update-Nanazip {
     # $Present = $Current -Ne "0.0.0.0"
 
     $Address = "https://api.github.com/repos/m2team/nanazip/releases/latest"
-    # $Version = [Regex]::Match((Invoke-WebRequest "$Address" | ConvertFrom-Json).tag_name, "[\d.]+").Value
     $Version = [Regex]::Match((Invoke-Scraper "Json" "$Address").tag_name , "[\d.]+").Value
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
 
     If (-Not $Updated) {
-        # $Results = (Invoke-WebRequest "$Address" | ConvertFrom-Json).assets
         $Results = (Invoke-Scraper "Json" "$Address").assets
         $Address = $Results.Where( { $_.browser_download_url -Like "*.msixbundle" } ).browser_download_url
         $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
@@ -729,10 +728,8 @@ If ($MyInvocation.InvocationName -Ne ".") {
     $Correct = (Update-Gsudo) -And ! (gsudo cache on -d -1 2>&1).ToString().Contains("Error")
     If (-Not $Correct) { Write-Host "$Failure`n" -FO Red ; Exit } ; Update-Powershell
 
-    Update-Nanazip ; Update-Noxplayer ; Update-Bluestacks ;Exit
-
     # Handle elements
-    $Members = Export-Members -Variant "Gaming" -Machine "WINHOGEN"
+    $Members = Export-Members -Variant "Development" -Machine "WINHOGEN"
 
     # Output progress
     $Maximum = (65 - 20) * -1
