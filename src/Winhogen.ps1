@@ -432,15 +432,12 @@ Function Update-Antidote {
         $Started = [FlaUI.Core.Application]::Launch("$Starter")
 
         $Window1 = $Started.GetMainWindow($Handler)
-        $Window1.Focus()
-        $Buttons = $Window1.FindAllChildren($Handler.ConditionFactory.ByControlType([FlaUI.Core.Definitions.ControlType]::Button))
-        $Buttons
-        # $Button1 = $Window1.FindFirstDescendant($Handler.ConditionFactory.ByControlType([FlaUI.Core.Definitions.ControlType]::Button))
-        # $Button1.Click() ; Start-Sleep 4
+        $Window1.Focus() ; Start-Sleep 2
+        [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::ENTER) ; Start-Sleep 4
 
-        # $Window2 = $Started.GetMainWindow($Handler)
-        # $Button2 = $Window2.FindFirstDescendant($Handler.ConditionFactory.ByName("Enter a serial number…")).AsButton()
-        # $Button2.Click() ; Start-Sleep 4
+        $Window2 = $Started.GetMainWindow($Handler)
+        $Button2 = $Window2.FindFirstDescendant($Handler.ConditionFactory.ByName("Enter a serial number…")).AsButton()
+        $Button2.Click() ; Start-Sleep 4
 
         # Start Antidote
         # Press ENTER
