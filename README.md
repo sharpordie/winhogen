@@ -12,6 +12,9 @@ powershell -ep bypass $env:temp\winhogen-main\src\winhogen.ps1
 iwr https://github.com/sharpordie/winhogen/archive/refs/heads/main.zip -o $env:temp\main.zip
 expand-archive $env:temp\main.zip -destinationpath $env:temp -force
 pwsh -ep bypass $env:temp\winhogen-main\src\winhogen.ps1
+
+iwr https://raw.githubusercontent.com/sharpordie/winhogen/main/src/Winhogen.ps1 -o $env:temp\winhogen.ps1
+powershell -ep bypass $env:temp\winhogen.ps1
 ```
 
 <!-- 
