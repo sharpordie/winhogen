@@ -395,8 +395,8 @@ Function Update-Antidote {
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
 
     If (-Not $Updated) {
-        # $Fetched = Invoke-Fetcher "Filecr" "$Address"
-        $Fetched = "C:\Users\Admin\AppData\Local\Temp\Antidote 11 v3 [FileCR].zip"
+        $Fetched = Invoke-Fetcher "Filecr" "$Address"
+        # $Fetched = "C:\Users\Admin\AppData\Local\Temp\Antidote 11 v3 [FileCR].zip"
         $Deposit = Invoke-Extract "$Fetched" -Secrets "123"
         # $Deposit = "C:\Users\Admin\AppData\Local\Temp\ad5d8b05-1c49-4a88-af84-9b1eb48bcf9b"
         $RootDir = (Get-Item "$Deposit\Ant*\Ant*").FullName
@@ -418,7 +418,7 @@ Function Update-Antidote {
         Invoke-Gsudo { [IO.File]::Copy("$Using:Altered", "$Using:Current", $True) }
     }
 
-    If (-Not $Present -Or $True) {
+    If (-Not $Present) {
         Stop-Process -Name "AgentConnectix" -EA SI
         Stop-Process -Name "Antidote" -EA SI
         Stop-Process -Name "Connectix" -EA SI
@@ -458,8 +458,8 @@ Function Update-Antidote {
         [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB) ; Start-Sleep 1
         [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE) ; Start-Sleep 4
 
-        $Window5 = $Started.GetMainWindow($Handler)
-        $Window5.Focus() ; Start-Sleep 1
+        # $Window5 = $Started.GetMainWindow($Handler)
+        # $Window5.Focus() ; Start-Sleep 1
         # [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB) ; Start-Sleep 1
         # [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB) ; Start-Sleep 1
         # [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE) ; Start-Sleep 1
@@ -483,12 +483,10 @@ Function Update-Antidote {
         # $Window7 = $Started.GetMainWindow($Handler)
         # $Window7.Focus() ; Start-Sleep 1
         # [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::ENTER) ; Start-Sleep 6
-        # # TODO: Close Connectix* window
-        # # TODO: Close *Antidote window
 
-        # Stop-Process -Name "AgentConnectix" -EA SI
-        # Stop-Process -Name "Antidote" -EA SI
-        # Stop-Process -Name "Connectix" -EA SI
+        Stop-Process -Name "AgentConnectix" -EA SI
+        Stop-Process -Name "Antidote" -EA SI
+        Stop-Process -Name "Connectix" -EA SI
     }
 
 }
