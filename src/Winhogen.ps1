@@ -147,16 +147,16 @@ Function Invoke-Extract {
 
     Param (
         [String] $Archive,
-        [String] $Deposit,
+        [String] $DestDir,
         [String] $Secrets
     )
 
     # If (-Not (Test-Path "$Env:LocalAppData\Microsoft\WindowsApps\7z.exe")) { Update-Nanazip }
-    If (-Not $Deposit) { $Deposit = [IO.Directory]::CreateDirectory("$Env:Temp\$([Guid]::NewGuid().Guid)").FullName }
-    If (-Not (Test-Path "$Deposit")) { New-Item "$Deposit" -ItemType Directory -EA SI }
-    # Start-Process "$Env:LocalAppData\Microsoft\WindowsApps\7z.exe" "x `"$Archive`" -o`"$Deposit`" -p`"$Secrets`" -y -bso0 -bsp0" -WindowStyle Hidden -Wait
-    Start-Process "7z.exe" "x `"$Archive`" -o`"$Deposit`" -p`"$Secrets`" -y -bso0 -bsp0" -WindowStyle Hidden -Wait
-    Start-Sleep 4 ; Return "$Deposit"
+    If (-Not $DestDir) { $DestDir = [IO.Directory]::CreateDirectory("$Env:Temp\$([Guid]::NewGuid().Guid)").FullName }
+    If (-Not (Test-Path "$DestDir")) { New-Item "$DestDir" -ItemType Directory -EA SI }
+    # Start-Process "$Env:LocalAppData\Microsoft\WindowsApps\7z.exe" "x `"$Archive`" -o`"$DestDir`" -p`"$Secrets`" -y -bso0 -bsp0" -WindowStyle Hidden -Wait
+    Start-Process "7z.exe" "x `"$Archive`" -o`"$DestDir`" -p`"$Secrets`" -y -bso0 -bsp0" -WindowStyle Hidden -Wait
+    Return "$DestDir"
 
 }
 
