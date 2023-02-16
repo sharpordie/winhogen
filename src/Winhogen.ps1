@@ -436,7 +436,7 @@ Function Update-Antidote {
         [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::ENTER) ; Start-Sleep 4
 
         $Window2 = $Started.GetMainWindow($Handler)
-        $Button2 = $Window2.FindFirstDescendant($Handler.ConditionFactory.ByName("Manual activation…")).AsButton()
+        $Button2 = $Window2.FindFirstDescendant($Handler.ConditionFactory.ByName("Manual activation…"))
         $Button2.Click() ; Start-Sleep 4
 
         # Start Antidote
