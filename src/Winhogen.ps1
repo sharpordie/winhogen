@@ -419,8 +419,10 @@ Function Update-Antidote {
     }
 
     If (-Not $Present -Or $True) {
+        Stop-Process -Name "AgentConnectix" -EA SI
         Stop-Process -Name "Antidote" -EA SI
         Stop-Process -Name "Connectix" -EA SI
+
         Import-Library "Interop.UIAutomationClient"
         Import-Library "FlaUI.Core"
         Import-Library "FlaUI.UIA3"
@@ -437,7 +439,7 @@ Function Update-Antidote {
         $Window2 = $Started.GetMainWindow($Handler)
         $Window2.Focus() ; Start-Sleep 1
         $Button2 = $Window2.FindFirstDescendant($Handler.ConditionFactory.ByName("Manual activation…"))
-        $Button2.Click() ; Start-Sleep 4
+        $Button2.Click() ; Start-Sleep 6
         
         $Window3 = $Started.GetMainWindow($Handler)
         $Window3.Focus() ; Start-Sleep 1
