@@ -131,7 +131,7 @@ Function Invoke-Browser {
     Import-Library "Microsoft.Bcl.AsyncInterfaces"
     Import-Library "Microsoft.CodeAnalysis"
     Import-Library "Microsoft.Playwright"
-    [Microsoft.Playwright.Program]::Main(@("install", "chromium")) | Out-Null
+    [Microsoft.Playwright.Program]::Main(@("install", "chromium")) *> $Null
     [Microsoft.Playwright.Playwright]::CreateAsync().GetAwaiter().GetResult()
 
 }
@@ -728,6 +728,7 @@ If ($MyInvocation.InvocationName -Ne ".") {
     Remove-Feature "Uac" ; Update-Element "Plan" "Ultimate"
     $Correct = (Update-Gsudo) -And ! (gsudo cache on -d -1 2>&1).ToString().Contains("Error")
     If (-Not $Correct) { Write-Host "$Failure`n" -FO Red ; Exit } ; Update-Powershell
+    Update-Nanazip ; Update-Antidote ; Update-Noxplayer ; Exit
 
     # Handle elements
     $Members = Export-Members -Variant "Development" -Machine "WINHOGEN"
