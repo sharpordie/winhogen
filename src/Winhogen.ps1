@@ -143,6 +143,28 @@ Function Invoke-Browser {
 
 }
 
+Function Update-Nanazip {
+
+    $Starter = "$Env:LocalAppData\Microsoft\WindowsApps\7z.exe"
+    $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
+    # $Present = $Current -Ne "0.0.0.0"
+
+    $Address = "https://api.github.com/repos/m2team/nanazip/releases/latest"
+    $Version = [Regex]::Match((Invoke-Scraper "Json" "$Address").tag_name , "[\d.]+").Value
+    $Updated = [Version] "$Current" -Ge [Version] "$Version"
+
+    If (-Not $Updated) {
+        $Results = (Invoke-Scraper "Json" "$Address").assets
+        $Address = $Results.Where( { $_.browser_download_url -Like "*.msixbundle" } ).browser_download_url
+        $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
+		(New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
+        Add-AppxPackage -Path "$Fetched" -DeferRegistrationWhenPackagesAreInUse -ForceUpdateFromAnyVersion 
+    }
+
+    Update-SysPath "$Env:LocalAppData\Microsoft\WindowsApps" "Process"
+
+}
+
 Function Invoke-Extract {
 
     Param (
@@ -415,8 +437,8 @@ Function Update-Antidote {
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
 
     If (-Not $Updated) {
-        # $Fetched = Invoke-Fetcher "Filecr" "$Address"
-        $Fetched = "C:\Users\Admin\AppData\Local\Temp\Antidote 11 v3.2 [FileCR].zip"
+        $Fetched = Invoke-Fetcher "Filecr" "$Address"
+        # $Fetched = "C:\Users\Admin\AppData\Local\Temp\Antidote 11 v3.2 [FileCR].zip"
         $Deposit = Invoke-Extract -Archive "$Fetched" -Secrets "123"
         # $Deposit = "C:\Users\Admin\AppData\Local\Temp\ad5d8b05-1c49-4a88-af84-9b1eb48bcf9b"
         $RootDir = (Get-Item "$Deposit\Ant*\Ant*").FullName
@@ -622,28 +644,6 @@ Function Update-Ldplayer {
         }
         Remove-Desktop "LDM*.lnk" ; Remove-Desktop "LDP*.lnk"
     }
-
-}
-
-Function Update-Nanazip {
-
-    $Starter = "$Env:LocalAppData\Microsoft\WindowsApps\7z.exe"
-    $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
-    # $Present = $Current -Ne "0.0.0.0"
-
-    $Address = "https://api.github.com/repos/m2team/nanazip/releases/latest"
-    $Version = [Regex]::Match((Invoke-Scraper "Json" "$Address").tag_name , "[\d.]+").Value
-    $Updated = [Version] "$Current" -Ge [Version] "$Version"
-
-    If (-Not $Updated) {
-        $Results = (Invoke-Scraper "Json" "$Address").assets
-        $Address = $Results.Where( { $_.browser_download_url -Like "*.msixbundle" } ).browser_download_url
-        $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
-		(New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
-        Add-AppxPackage -Path "$Fetched" -DeferRegistrationWhenPackagesAreInUse -ForceUpdateFromAnyVersion 
-    }
-
-    Update-SysPath "$Env:LocalAppData\Microsoft\WindowsApps" "Process"
 
 }
 
