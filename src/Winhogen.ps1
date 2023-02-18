@@ -138,7 +138,7 @@ Function Invoke-Browser {
     Import-Library "Microsoft.Bcl.AsyncInterfaces"
     Import-Library "Microsoft.CodeAnalysis"
     Import-Library "Microsoft.Playwright"
-    [Microsoft.Playwright.Program]::Main(@("install", "chromium")) *> $Null
+    [Microsoft.Playwright.Program]::Main(@("install", "chromium")) *> $Null 2>&1
     [Microsoft.Playwright.Playwright]::CreateAsync().GetAwaiter().GetResult()
 
 }
