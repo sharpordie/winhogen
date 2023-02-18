@@ -158,7 +158,8 @@ Function Update-Nanazip {
         $Address = $Results.Where( { $_.browser_download_url -Like "*.msixbundle" } ).browser_download_url
         $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
 		(New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
-        Add-AppxPackage -Path "$Fetched" -DeferRegistrationWhenPackagesAreInUse -ForceUpdateFromAnyVersion 
+        # Add-AppxPackage -Path "$Fetched" -DeferRegistrationWhenPackagesAreInUse -ForceUpdateFromAnyVersion
+        Add-AppxPackage -Path "$Fetched"
     }
 
     Update-SysPath "$Env:LocalAppData\Microsoft\WindowsApps" "Process"
@@ -228,6 +229,7 @@ Function Invoke-Fetcher {
             $Attempt.SaveAsAsync("$Fetched").GetAwaiter().GetResult() | Out-Null
             $WebPage.CloseAsync().GetAwaiter().GetResult() | Out-Null
             $Browser.CloseAsync().GetAwaiter().GetResult() | Out-Null
+            Start-Sleep 4 ; Stop-Process -Name "chrome" -EA SI ; Stop-Process -Name "node" -EA SI ; Start-Sleep 4
             Return $Fetched
         }
     }
