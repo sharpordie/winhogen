@@ -138,9 +138,9 @@ Function Invoke-Browser {
     Import-Library "Microsoft.Bcl.AsyncInterfaces"
     Import-Library "Microsoft.CodeAnalysis"
     Import-Library "Microsoft.Playwright"
-    [Console]::SetOut([IO.TextWriter]::Null);
-    [Console]::SetError([IO.TextWriter]::Null);
-    Invoke-Expression "[Microsoft.Playwright.Program]::Main(@(`"install`", `"chromium`")) >$Null 2>&1 | Out-Null" >$Null 2>&1
+    [Console]::SetOut([IO.TextWriter]::Null)
+    [Console]::SetError([IO.TextWriter]::Null)
+    Invoke-Command { [Microsoft.Playwright.Program]::Main(@("install", "chromium")) }
     Return [Microsoft.Playwright.Playwright]::CreateAsync().GetAwaiter().GetResult()
 
 }
