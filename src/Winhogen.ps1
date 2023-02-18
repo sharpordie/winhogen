@@ -138,8 +138,8 @@ Function Invoke-Browser {
     Import-Library "Microsoft.Bcl.AsyncInterfaces"
     Import-Library "Microsoft.CodeAnalysis"
     Import-Library "Microsoft.Playwright"
-    $Null = [Microsoft.Playwright.Program]::Main(@("install", "chromium")) 2>&1 | Out-Null
-    [Microsoft.Playwright.Playwright]::CreateAsync().GetAwaiter().GetResult()
+    [Microsoft.Playwright.Program]::Main(@("install", "chromium"))
+    Return [Microsoft.Playwright.Playwright]::CreateAsync().GetAwaiter().GetResult()
 
 }
 
@@ -229,7 +229,7 @@ Function Invoke-Fetcher {
             $Attempt.SaveAsAsync("$Fetched").GetAwaiter().GetResult() | Out-Null
             $WebPage.CloseAsync().GetAwaiter().GetResult() | Out-Null
             $Browser.CloseAsync().GetAwaiter().GetResult() | Out-Null
-            Return $Fetched
+            Return "$Fetched"
         }
     }
 
