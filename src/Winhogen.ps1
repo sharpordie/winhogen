@@ -197,7 +197,7 @@ Function Invoke-Extract {
     $Deposit = [IO.Directory]::CreateDirectory("$Env:Temp\$([Guid]::NewGuid().Guid)").FullName
     Start-Process "7z.exe" "x `"$Archive`" -o`"$Deposit`" -p`"$Secrets`" -y -bso0 -bsp0" -WindowStyle Hidden -Wait
     # & "$Env:LocalAppData\Microsoft\WindowsApps\7z.exe" x "$Archive" -o"$Deposit" -p"$Secrets" -y -bso0 -bsp0
-    Return "$Deposit"
+    $Deposit
 
 }
 
@@ -247,7 +247,7 @@ Function Invoke-Fetcher {
             $Attempt.SaveAsAsync("$Fetched").GetAwaiter().GetResult() | Out-Null
             $WebPage.CloseAsync().GetAwaiter().GetResult() | Out-Null
             $Browser.CloseAsync().GetAwaiter().GetResult() | Out-Null
-            Return "$Fetched"
+            $Fetched
         }
     }
 
@@ -457,13 +457,13 @@ Function Update-Antidote {
 
     If (-Not $Updated) {
         $Fetched = Invoke-Fetcher "Filecr" "$Address"
-        Write-Output "$Fetched"
+        Write-Output "'$Fetched'"
         # $Fetched = "C:\Users\Admin\AppData\Local\Temp\Antidote 11 v3.2 [FileCR].zip"
         # $Deposit = Invoke-Extract -Archive "$Fetched" -Secrets "123"
+        Update-Nanazip
         $Extract = [IO.Directory]::CreateDirectory("$Env:Temp\$([Guid]::NewGuid().Guid)").FullName
-        & "$Env:LocalAppData\Microsoft\WindowsApps\7z.exe" x "$Fetched" -o"$Extract" -p"123" -y
-        Exit
-        # Start-Process "7z.exe" "x `"$Fetched`" -o`"$Extract`" -p`"123`" -y -bso0 -bsp0" -WindowStyle Hidden -Wait
+        # & "$Env:LocalAppData\Microsoft\WindowsApps\7z.exe" x "$Fetched" -o"$Extract" -p"123" -y
+        Start-Process "7z.exe" "x `"$Fetched`" -o`"$Extract`" -p`"123`" -y -bso0 -bsp0" -WindowStyle Hidden -Wait
         # $Deposit = "C:\Users\Admin\AppData\Local\Temp\ad5d8b05-1c49-4a88-af84-9b1eb48bcf9b"
         $RootDir = (Get-Item "$Extract\Ant*\Ant*").FullName
         $Archive = (Get-Item "$RootDir\Anti*.exe").FullName
