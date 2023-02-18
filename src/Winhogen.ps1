@@ -140,7 +140,7 @@ Function Invoke-Browser {
     Import-Library "Microsoft.Playwright"
     [Console]::SetOut([IO.TextWriter]::Null)
     [Console]::SetError([IO.TextWriter]::Null)
-    Invoke-Command { [Microsoft.Playwright.Program]::Main(@("install", "chromium")) } | Out-Null
+    $Null = Invoke-Command { $Null = [Microsoft.Playwright.Program]::Main(@("install", "chromium")) }
     Return [Microsoft.Playwright.Playwright]::CreateAsync().GetAwaiter().GetResult()
 
 }
