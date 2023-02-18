@@ -132,15 +132,22 @@ Function Import-Library {
 
 }
 
+Function Deploy-Browser {
+
+    Import-Library "System.Text.Json"
+    Import-Library "Microsoft.Bcl.AsyncInterfaces"
+    Import-Library "Microsoft.CodeAnalysis"
+    Import-Library "Microsoft.Playwright"
+    [Microsoft.Playwright.Program]::Main(@("install", "chromium"))
+
+}
+
 Function Invoke-Browser {
 
     Import-Library "System.Text.Json"
     Import-Library "Microsoft.Bcl.AsyncInterfaces"
     Import-Library "Microsoft.CodeAnalysis"
     Import-Library "Microsoft.Playwright"
-    [Console]::SetOut([IO.TextWriter]::Null)
-    [Console]::SetError([IO.TextWriter]::Null)
-    $Null = Invoke-Command { $Null = [Microsoft.Playwright.Program]::Main(@("install", "chromium")) }
     Return [Microsoft.Playwright.Playwright]::CreateAsync().GetAwaiter().GetResult()
 
 }
@@ -755,7 +762,7 @@ If ($MyInvocation.InvocationName -Ne ".") {
     # Remove-Feature "Uac" ; Update-Element "Plan" "Ultimate"
     Remove-Feature "Uac" ; Remove-Feature "Sleeping"
     $Correct = (Update-Gsudo) -And ! (gsudo cache on -d -1 2>&1).ToString().Contains("Error")
-    If (-Not $Correct) { Write-Host "$Failure`n" -FO Red ; Exit } ; Update-Powershell
+    If (-Not $Correct) { Write-Host "$Failure`n" -FO Red ; Exit } ; Deploy-Browser ; Update-Powershell
 
     Update-Nanazip ; Update-Antidote ; Exit
 
