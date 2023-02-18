@@ -439,11 +439,15 @@ Function Update-Antidote {
     If (-Not $Updated) {
         $Fetched = Invoke-Fetcher "Filecr" "$Address"
         # $Fetched = "C:\Users\Admin\AppData\Local\Temp\Antidote 11 v3.2 [FileCR].zip"
-        $Deposit = Invoke-Extract -Archive "$Fetched" -Secrets "123"
+        # $Deposit = Invoke-Extract -Archive "$Fetched" -Secrets "123"
+        $Extract = [IO.Directory]::CreateDirectory("$Env:Temp\$([Guid]::NewGuid().Guid)").FullName
+        Start-Process "7z.exe" "x `"$Fetched`" -o`"$Extract`" -p`"123`" -y -bso0 -bsp0" -WindowStyle Hidden -Wait
         # $Deposit = "C:\Users\Admin\AppData\Local\Temp\ad5d8b05-1c49-4a88-af84-9b1eb48bcf9b"
-        $RootDir = (Get-Item "$Deposit\Ant*\Ant*").FullName
+        $RootDir = (Get-Item "$Extract\Ant*\Ant*").FullName
         $Archive = (Get-Item "$RootDir\Anti*.exe").FullName
-        $Extract = Invoke-Extract -Archive "$Archive"
+        # $Extract = Invoke-Extract -Archive "$Archive"
+        $Extract = [IO.Directory]::CreateDirectory("$Env:Temp\$([Guid]::NewGuid().Guid)").FullName
+        Start-Process "7z.exe" "x `"$Archive`" -o`"$Extract`" -y -bso0 -bsp0" -WindowStyle Hidden -Wait
         # $Extract = "C:\Users\Admin\AppData\Local\Temp\dd4e2e4a-dea1-48c2-b4e8-b67f2159e8c0"
         $Modules = (Get-Item "$Extract\*\msi\druide").FullName
         $Adjunct = "TRANSFORMS=`"$Modules\Antidote11-Interface-en.mst`""
@@ -744,10 +748,9 @@ If ($MyInvocation.InvocationName -Ne ".") {
     # Remove-Feature "Uac" ; Update-Element "Plan" "Ultimate"
     Remove-Feature "Uac" ; Remove-Feature "Sleeping"
     $Correct = (Update-Gsudo) -And ! (gsudo cache on -d -1 2>&1).ToString().Contains("Error")
-    If (-Not $Correct) { Write-Host "$Failure`n" -FO Red ; Exit }
-    Update-Nanazip ; Update-Powershell
+    If (-Not $Correct) { Write-Host "$Failure`n" -FO Red ; Exit } ; Update-Powershell
 
-    Update-Antidote ; Exit
+    Update-Nanazip ; Update-Antidote ; Exit
 
     # Handle elements
     $Members = Export-Members -Variant "Development" -Machine "WINHOGEN"
