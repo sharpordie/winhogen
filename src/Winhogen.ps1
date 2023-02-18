@@ -211,7 +211,7 @@ Function Invoke-Fetcher {
             $Handler = Invoke-Browser
             $Browser = $Handler.Chromium.LaunchAsync(@{ "Headless" = $False }).GetAwaiter().GetResult()
             $WebPage = $Browser.NewPageAsync().GetAwaiter().GetResult()
-            $WebPage.SetViewportSizeAsync(1400, 900).GetAwaiter().GetResult()
+            $WebPage.SetViewportSizeAsync(1400, 400).GetAwaiter().GetResult()
             $WebPage.GoToAsync("$Payload").GetAwaiter().GetResult() | Out-Null
             $WebPage.WaitForSelectorAsync("#sh_pdf_download-2 > form > a").GetAwaiter().GetResult() | Out-Null
             $WebPage.WaitForTimeoutAsync(2000).GetAwaiter().GetResult() | Out-Null
