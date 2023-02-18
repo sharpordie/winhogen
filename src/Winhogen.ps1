@@ -148,7 +148,15 @@ Function Invoke-Browser {
     Import-Library "Microsoft.Bcl.AsyncInterfaces"
     Import-Library "Microsoft.CodeAnalysis"
     Import-Library "Microsoft.Playwright"
-    $Null = Invoke-Gsudo { [Microsoft.Playwright.Program]::Main(@("install", "chromium")) }
+    $Current = $Script:MyInvocation.MyCommand.Path
+    $Null = Invoke-Gsudo {
+        . $Using:Current ; Start-Sleep 4
+        Import-Library "System.Text.Json"
+        Import-Library "Microsoft.Bcl.AsyncInterfaces"
+        Import-Library "Microsoft.CodeAnalysis"
+        Import-Library "Microsoft.Playwright"
+        [Microsoft.Playwright.Program]::Main(@("install", "chromium"))
+    }
     Return [Microsoft.Playwright.Playwright]::CreateAsync().GetAwaiter().GetResult()
 
 }
