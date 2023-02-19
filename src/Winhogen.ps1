@@ -247,7 +247,7 @@ Function Invoke-Fetcher {
             $Attempt.SaveAsAsync("$Fetched").GetAwaiter().GetResult() | Out-Null
             $WebPage.CloseAsync().GetAwaiter().GetResult() | Out-Null
             $Browser.CloseAsync().GetAwaiter().GetResult() | Out-Null
-            $Fetched.Split([IO.Path]::GetInvalidFileNameChars()) -Join '_'
+            Return $Fetched.Replace(" ", "")
         }
     }
 
@@ -457,6 +457,7 @@ Function Update-Antidote {
 
     If (-Not $Updated) {
         $Fetched = Invoke-Fetcher "Filecr" "$Address"
+        $Fetched = $Fetched.Replace(" ", "")
         Write-Output "'$Fetched'"
         # $Fetched = "C:\Users\Admin\AppData\Local\Temp\Antidote 11 v3.2 [FileCR].zip"
         # $Deposit = Invoke-Extract -Archive "$Fetched" -Secrets "123"
