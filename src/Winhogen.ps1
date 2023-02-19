@@ -247,7 +247,7 @@ Function Invoke-Fetcher {
             $Attempt.SaveAsAsync("$Aaaaaaa").GetAwaiter().GetResult() | Out-Null
             $WebPage.CloseAsync().GetAwaiter().GetResult() | Out-Null
             $Browser.CloseAsync().GetAwaiter().GetResult() | Out-Null
-            Return $Aaaaaaa
+            Write-Output "$Aaaaaaa"
         }
     }
 
@@ -450,14 +450,20 @@ Function Update-Antidote {
     $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
     $Present = $Current -Ne "0.0.0.0"
 
-    $Address = "https://filecr.com/windows/antidote"
-    $Results = [Regex]::Matches((Invoke-Scraper "Html" "$Address"), "<title>Antidote ([\d]+) v([\d.]+) .*</title>")
-    $Version = "$($Results.Groups[1].Value).$($Results.Groups[2].Value)"
+    # $Address = "https://filecr.com/windows/antidote"
+    # $Results = [Regex]::Matches((Invoke-Scraper "Html" "$Address"), "<title>Antidote ([\d]+) v([\d.]+) .*</title>")
+    # $Version = "$($Results.Groups[1].Value).$($Results.Groups[2].Value)"
+    # $Updated = [Version] "$Current" -Ge [Version] "$Version"
+
+    Address = "https://filecr.com/windows/lamnisoft-fontexplorerl-m/"
+    $Results = [Regex]::Matches((Invoke-Scraper "Html" "$Address"), "<title>Lanmisoft FontExplorerL.M ([\d.]+) .*</title>")
+    $Version = $Results.Groups[1].Value
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
 
     If (-Not $Updated) {
-        $Fetched = (Invoke-Fetcher "Filecr" "$Address").Trim()
+        $Fetched = Invoke-Fetcher "Filecr" "$Address"
         Write-Output "'$Fetched'"
+        Write-Output "'$($Fetched.Trim())'"
         # $Fetched = "C:\Users\Admin\AppData\Local\Temp\Antidote 11 v3.2 [FileCR].zip"
         # $Deposit = Invoke-Extract -Archive "$Fetched" -Secrets "123"
         Update-Nanazip
@@ -470,6 +476,7 @@ Function Update-Antidote {
         # $Extract = Invoke-Extract -Archive "$Archive"
         $Extract = [IO.Directory]::CreateDirectory("$Env:Temp\$([Guid]::NewGuid().Guid)").FullName
         & "$Env:LocalAppData\Microsoft\WindowsApps\7z.exe" x "$Archive" -o"$Extract" -y -bso0 -bsp0
+        Exit
         # Start-Process "7z.exe" "x `"$Archive`" -o`"$Extract`" -y -bso0 -bsp0" -WindowStyle Hidden -Wait
         # $Extract = "C:\Users\Admin\AppData\Local\Temp\dd4e2e4a-dea1-48c2-b4e8-b67f2159e8c0"
         $Modules = (Get-Item "$Extract\*\msi\druide").FullName
