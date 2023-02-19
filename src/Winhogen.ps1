@@ -456,7 +456,7 @@ Function Update-Antidote {
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
 
     If (-Not $Updated) {
-        $Fetched = $(Invoke-Fetcher "Filecr" "$Address").ToString()
+        $Fetched = $(Invoke-Fetcher "Filecr" "$Address").ToString().Trim()
         Write-Output "'$Fetched'"
         # $Fetched = "C:\Users\Admin\AppData\Local\Temp\Antidote 11 v3.2 [FileCR].zip"
         # $Deposit = Invoke-Extract -Archive "$Fetched" -Secrets "123"
