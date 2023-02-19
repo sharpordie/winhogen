@@ -157,8 +157,7 @@ Function Invoke-Browser {
         Import-Library "Microsoft.Playwright"
         [Microsoft.Playwright.Program]::Main(@("install", "chromium"))
     }
-    [Microsoft.Playwright.Playwright]::CreateAsync().GetAwaiter().GetResult() | Out-Null
-
+    [Microsoft.Playwright.Playwright]::CreateAsync().GetAwaiter().GetResult()
 }
 
 Function Update-Nanazip {
@@ -247,7 +246,7 @@ Function Invoke-Fetcher {
             $Null = $Attempt.SaveAsAsync("$Aaaaaaa").GetAwaiter().GetResult() | Out-Null
             $Null = $WebPage.CloseAsync().GetAwaiter().GetResult() | Out-Null
             $Null = $Browser.CloseAsync().GetAwaiter().GetResult() | Out-Null
-            "$Aaaaaaa"
+            "$Aaaaaaa" | Out-String
         }
     }
 
