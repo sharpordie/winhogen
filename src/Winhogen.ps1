@@ -449,15 +449,15 @@ Function Update-Antidote {
     $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
     $Present = $Current -Ne "0.0.0.0"
 
-    # $Address = "https://filecr.com/windows/antidote"
-    # $Results = [Regex]::Matches((Invoke-Scraper "Html" "$Address"), "<title>Antidote ([\d]+) v([\d.]+) .*</title>")
-    # $Version = "$($Results.Groups[1].Value).$($Results.Groups[2].Value)"
-    # $Updated = [Version] "$Current" -Ge [Version] "$Version"
-
-    $Address = "https://filecr.com/windows/lamnisoft-fontexplorerl-m"
-    $Results = [Regex]::Matches((Invoke-Scraper "Html" "$Address"), "<title>Lanmisoft FontExplorerL.M ([\d.]+) .*</title>")
-    $Version = $Results.Groups[1].Value
+    $Address = "https://filecr.com/windows/antidote"
+    $Results = [Regex]::Matches((Invoke-Scraper "Html" "$Address"), "<title>Antidote ([\d]+) v([\d.]+) .*</title>")
+    $Version = "$($Results.Groups[1].Value).$($Results.Groups[2].Value)"
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
+
+    # $Address = "https://filecr.com/windows/lamnisoft-fontexplorerl-m"
+    # $Results = [Regex]::Matches((Invoke-Scraper "Html" "$Address"), "<title>Lanmisoft FontExplorerL.M ([\d.]+) .*</title>")
+    # $Version = $Results.Groups[1].Value
+    # $Updated = [Version] "$Current" -Ge [Version] "$Version"
 
     If (-Not $Updated) {
         $Fetched = Invoke-Fetcher "Filecr" "$Address"
