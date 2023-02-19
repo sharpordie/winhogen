@@ -35,7 +35,7 @@ Function Enable-Feature {
             If ($Content.Value -Ne "Enabled") {
                 $Address = "https://cdn3.bluestacks.com/support_files/HD-EnableHyperV.exe"
                 $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
-		        (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
+                (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
                 Invoke-Gsudo { Start-Process "$Using:Fetched" ; Start-Sleep 10 ; Stop-Process -Name "HD-EnableHyperV" }
                 Invoke-Restart
             }
@@ -174,7 +174,7 @@ Function Update-Nanazip {
         $Results = (Invoke-Scraper "Json" "$Address").assets
         $Address = $Results.Where( { $_.browser_download_url -Like "*.msixbundle" } ).browser_download_url
         $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
-		(New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
+        (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
         # Add-AppxPackage -Path "$Fetched" -DeferRegistrationWhenPackagesAreInUse -ForceUpdateFromAnyVersion
         Add-AppxPackage -Path "$Fetched"
     }
@@ -247,7 +247,7 @@ Function Invoke-Fetcher {
             $WebPage.CloseAsync().GetAwaiter().GetResult() | Out-Null
             $Browser.CloseAsync().GetAwaiter().GetResult() | Out-Null
             # "$Fetched"
-            $Fetched.TrimEnd('\')
+            $Fetched.TrimEnd('\').Trim()
         }
     }
 
@@ -322,7 +322,7 @@ Function Remove-Feature {
             If ($Content.Value -Eq "Enabled") {
                 $Address = "https://cdn3.bluestacks.com/support_files/HD-DisableHyperV_native_v2.exe"
                 $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
-		        (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
+                (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
                 Invoke-Gsudo { Start-Process "$Using:Fetched" ; Start-Sleep 10 ; Stop-Process -Name "HD-DisableHyperV" }
                 If (Assert-Pending -Eq $True) { Invoke-Restart }
             }
@@ -592,7 +592,7 @@ Function Update-Bluestacks {
     If (-Not $Updated) {
         $Address = "https://cdn3.bluestacks.com/downloads/windows/nxt/$Version/$Hashing/FullInstaller/x64/BlueStacksFullInstaller_${Version}_amd64_native.exe"
         $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
-		(New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
+        (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
         $ArgList = "-s --defaultImageName Rvc64 --imageToLaunch Rvc64"
         If ($Android -Eq "9") { $ArgList = "-s --defaultImageName Pie64 --imageToLaunch Pie64" }
         If ($Android -Eq "7") { $ArgList = "-s --defaultImageName Nougat64 --imageToLaunch Nougat64" }
@@ -627,7 +627,7 @@ Function Update-Gsudo {
             $Results = (Invoke-Scraper "Json" "$Address").assets
             $Address = $Results.Where( { $_.browser_download_url -Like "*.msi" } ).browser_download_url
             $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
-    	    (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
+            (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
             If (-Not $Present) { Start-Process "msiexec" "/i `"$Fetched`" /qn" -Verb RunAs -Wait }
             Else { Invoke-Gsudo { msiexec /i "$Using:Fetched" /qn } }
             Start-Sleep 4
