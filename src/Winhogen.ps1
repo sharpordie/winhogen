@@ -230,24 +230,24 @@ Function Invoke-Fetcher {
             $Browser = $Handler.Chromium.LaunchAsync(@{ "Headless" = $False }).GetAwaiter().GetResult()
             $WebPage = $Browser.NewPageAsync().GetAwaiter().GetResult()
             $WebPage.SetViewportSizeAsync(1400, 400).GetAwaiter().GetResult()
-            $WebPage.GoToAsync("$Payload").GetAwaiter().GetResult() | Out-Null
-            $WebPage.WaitForSelectorAsync("#sh_pdf_download-2 > form > a").GetAwaiter().GetResult() | Out-Null
-            $WebPage.WaitForTimeoutAsync(2000).GetAwaiter().GetResult() | Out-Null
-            $WebPage.EvaluateAsync("document.querySelector('#sh_pdf_download-2 > form > a').click()", "").GetAwaiter().GetResult() | Out-Null
-            $WebPage.WaitForSelectorAsync("a.sh_download-btn.done").GetAwaiter().GetResult() | Out-Null
-            $WebPage.WaitForTimeoutAsync(6000).GetAwaiter().GetResult() | Out-Null
+            $Null = $WebPage.GoToAsync("$Payload").GetAwaiter().GetResult() | Out-Null
+            $Null = $WebPage.WaitForSelectorAsync("#sh_pdf_download-2 > form > a").GetAwaiter().GetResult() | Out-Null
+            $Null = $WebPage.WaitForTimeoutAsync(2000).GetAwaiter().GetResult() | Out-Null
+            $Null = $WebPage.EvaluateAsync("document.querySelector('#sh_pdf_download-2 > form > a').click()", "").GetAwaiter().GetResult() | Out-Null
+            $Null = $WebPage.WaitForSelectorAsync("a.sh_download-btn.done").GetAwaiter().GetResult() | Out-Null
+            $Null = $WebPage.WaitForTimeoutAsync(6000).GetAwaiter().GetResult() | Out-Null
             $Waiting = $WebPage.WaitForDownloadAsync()
-            $WebPage.EvaluateAsync("document.querySelector('a.sh_download-btn.done').click()", "").GetAwaiter().GetResult() | Out-Null
-            $WebPage.WaitForTimeoutAsync(2000).GetAwaiter().GetResult() | Out-Null
-            $WebPage.Mouse.ClickAsync(10, 10, @{ "ClickCount" = 2 }).GetAwaiter().GetResult() | Out-Null
+            $Null = $WebPage.EvaluateAsync("document.querySelector('a.sh_download-btn.done').click()", "").GetAwaiter().GetResult() | Out-Null
+            $Null = $WebPage.WaitForTimeoutAsync(2000).GetAwaiter().GetResult() | Out-Null
+            $Null = $WebPage.Mouse.ClickAsync(10, 10, @{ "ClickCount" = 2 }).GetAwaiter().GetResult() | Out-Null
             $Attempt = $Waiting.GetAwaiter().GetResult()
-            $Attempt.PathAsync().GetAwaiter().GetResult() | Out-Null
+            $Null = $Attempt.PathAsync().GetAwaiter().GetResult() | Out-Null
             $Suggest = $Attempt.SuggestedFilename
             $Aaaaaaa = "$Env:Temp\$Suggest".Replace(" ", "")
-            $Attempt.SaveAsAsync("$Aaaaaaa").GetAwaiter().GetResult() | Out-Null
-            $WebPage.CloseAsync().GetAwaiter().GetResult() | Out-Null
-            $Browser.CloseAsync().GetAwaiter().GetResult() | Out-Null
-            Write-Output "$Aaaaaaa"
+            $Null = $Attempt.SaveAsAsync("$Aaaaaaa").GetAwaiter().GetResult() | Out-Null
+            $Null = $WebPage.CloseAsync().GetAwaiter().GetResult() | Out-Null
+            $Null = $Browser.CloseAsync().GetAwaiter().GetResult() | Out-Null
+            Return "$Aaaaaaa"
         }
     }
 
