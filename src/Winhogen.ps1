@@ -246,7 +246,8 @@ Function Invoke-Fetcher {
             $Attempt.SaveAsAsync("$Fetched").GetAwaiter().GetResult() | Out-Null
             $WebPage.CloseAsync().GetAwaiter().GetResult() | Out-Null
             $Browser.CloseAsync().GetAwaiter().GetResult() | Out-Null
-            "$Fetched"
+            # "$Fetched"
+            "$Fetched".Replace("`n", '').Trim()
         }
     }
 
@@ -461,7 +462,7 @@ Function Update-Antidote {
 
     If (-Not $Updated) {
         $Fetched = "$(Invoke-Fetcher "Filecr" "$Address")"
-        $Fetched = "$Fetched".Replace("`n", '').Trim()
+        # $Fetched = "$Fetched".Replace("`n", '').Trim()
         Write-Output "BLALALALALALALAL`n"
         Write-Output "'$Fetched'"
         Write-Output "'$($Fetched.Trim())'"
