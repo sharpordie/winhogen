@@ -243,11 +243,11 @@ Function Invoke-Fetcher {
             $Attempt = $Waiting.GetAwaiter().GetResult()
             $Attempt.PathAsync().GetAwaiter().GetResult() | Out-Null
             $Suggest = $Attempt.SuggestedFilename
-            $Fetched = "$Env:Temp\$Suggest"
-            $Attempt.SaveAsAsync("$Fetched").GetAwaiter().GetResult() | Out-Null
+            $Aaaaaaa = "$Env:Temp\$Suggest".Replace(" ", "")
+            $Attempt.SaveAsAsync("$Aaaaaaa").GetAwaiter().GetResult() | Out-Null
             $WebPage.CloseAsync().GetAwaiter().GetResult() | Out-Null
             $Browser.CloseAsync().GetAwaiter().GetResult() | Out-Null
-            Return $Fetched.Replace(" ", "")
+            Return $Aaaaaaa.ToString()
         }
     }
 
