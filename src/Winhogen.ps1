@@ -241,8 +241,8 @@ Function Invoke-Fetcher {
             $Null = $WebPage.Mouse.ClickAsync(10, 10, @{ "ClickCount" = 2 }).GetAwaiter().GetResult() | Out-Null
             $Attempt = $Waiting.GetAwaiter().GetResult()
             $Null = $Attempt.PathAsync().GetAwaiter().GetResult() | Out-Null
-            $Suggest = $Attempt.SuggestedFilename
-            $Aaaaaaa = "$Env:Temp\$Suggest".Replace(" ", "")
+            $Suggest = $Attempt.SuggestedFilename.Trim()
+            $Aaaaaaa = "$Env:Temp\$Suggest".Trim()
             $Null = $Attempt.SaveAsAsync("$Aaaaaaa").GetAwaiter().GetResult() | Out-Null
             $Null = $WebPage.CloseAsync().GetAwaiter().GetResult() | Out-Null
             $Null = $Browser.CloseAsync().GetAwaiter().GetResult() | Out-Null
