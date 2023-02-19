@@ -247,7 +247,7 @@ Function Invoke-Fetcher {
             $WebPage.CloseAsync().GetAwaiter().GetResult() | Out-Null
             $Browser.CloseAsync().GetAwaiter().GetResult() | Out-Null
             # "$Fetched"
-            Return "$($Fetched.Trim())"
+            [String] "$($Fetched.Trim())"
         }
     }
 
@@ -461,9 +461,9 @@ Function Update-Antidote {
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
 
     If (-Not $Updated) {
-        $Fetched = "$(Invoke-Fetcher "Filecr" "$Address")"
+        $Fetched = Invoke-Fetcher "Filecr" "$Address"
         # $Fetched = "$Fetched".Trim()
-        Write-Output "1111BLALALALALALALAL`n"
+        Write-Output "222BLALALALALALALAL`n"
         Write-Output "'$Fetched'"
         Write-Output "'$($Fetched.Trim())'"
         # $Fetched = "C:\Users\Admin\AppData\Local\Temp\Antidote 11 v3.2 [FileCR].zip"
