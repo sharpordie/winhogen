@@ -455,7 +455,7 @@ Function Update-Antidote {
     # $Version = "$($Results.Groups[1].Value).$($Results.Groups[2].Value)"
     # $Updated = [Version] "$Current" -Ge [Version] "$Version"
 
-    $Address = "https://filecr.com/windows/lamnisoft-fontexplorerl-m/"
+    $Address = "https://filecr.com/windows/lamnisoft-fontexplorerl-m"
     $Results = [Regex]::Matches((Invoke-Scraper "Html" "$Address"), "<title>Lanmisoft FontExplorerL.M ([\d.]+) .*</title>")
     $Version = $Results.Groups[1].Value
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
