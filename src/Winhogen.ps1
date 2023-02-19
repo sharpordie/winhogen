@@ -243,11 +243,11 @@ Function Invoke-Fetcher {
             $Attempt = $Waiting.GetAwaiter().GetResult()
             $Attempt.PathAsync().GetAwaiter().GetResult() | Out-Null
             $Suggest = $Attempt.SuggestedFilename
-            $Fetched = Join-Path "$Env:Temp" "$Suggest"
+            $Fetched = "$Env:Temp\$Suggest"
             $Attempt.SaveAsAsync("$Fetched").GetAwaiter().GetResult() | Out-Null
             $WebPage.CloseAsync().GetAwaiter().GetResult() | Out-Null
             $Browser.CloseAsync().GetAwaiter().GetResult() | Out-Null
-            $Fetched
+            $Fetched.Split([IO.Path]::GetInvalidFileNameChars()) -Join '_'
         }
     }
 
