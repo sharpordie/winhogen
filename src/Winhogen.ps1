@@ -229,23 +229,23 @@ Function Invoke-Fetcher {
             $Browser = $Handler.Chromium.LaunchAsync(@{ "Headless" = $False }).GetAwaiter().GetResult()
             $WebPage = $Browser.NewPageAsync().GetAwaiter().GetResult()
             $WebPage.SetViewportSizeAsync(1400, 400).GetAwaiter().GetResult()
-            $Null = $WebPage.GoToAsync("$Payload").GetAwaiter().GetResult() | Out-Null
-            $Null = $WebPage.WaitForSelectorAsync("#sh_pdf_download-2 > form > a").GetAwaiter().GetResult() | Out-Null
-            $Null = $WebPage.WaitForTimeoutAsync(2000).GetAwaiter().GetResult() | Out-Null
-            $Null = $WebPage.EvaluateAsync("document.querySelector('#sh_pdf_download-2 > form > a').click()", "").GetAwaiter().GetResult() | Out-Null
-            $Null = $WebPage.WaitForSelectorAsync("a.sh_download-btn.done").GetAwaiter().GetResult() | Out-Null
-            $Null = $WebPage.WaitForTimeoutAsync(6000).GetAwaiter().GetResult() | Out-Null
+            $WebPage.GoToAsync("$Payload").GetAwaiter().GetResult() | Out-Null
+            $WebPage.WaitForSelectorAsync("#sh_pdf_download-2 > form > a").GetAwaiter().GetResult() | Out-Null
+            $WebPage.WaitForTimeoutAsync(2000).GetAwaiter().GetResult() | Out-Null
+            $WebPage.EvaluateAsync("document.querySelector('#sh_pdf_download-2 > form > a').click()", "").GetAwaiter().GetResult() | Out-Null
+            $WebPage.WaitForSelectorAsync("a.sh_download-btn.done").GetAwaiter().GetResult() | Out-Null
+            $WebPage.WaitForTimeoutAsync(6000).GetAwaiter().GetResult() | Out-Null
             $Waiting = $WebPage.WaitForDownloadAsync()
-            $Null = $WebPage.EvaluateAsync("document.querySelector('a.sh_download-btn.done').click()", "").GetAwaiter().GetResult() | Out-Null
-            $Null = $WebPage.WaitForTimeoutAsync(2000).GetAwaiter().GetResult() | Out-Null
-            $Null = $WebPage.Mouse.ClickAsync(10, 10, @{ "ClickCount" = 2 }).GetAwaiter().GetResult() | Out-Null
+            $WebPage.EvaluateAsync("document.querySelector('a.sh_download-btn.done').click()", "").GetAwaiter().GetResult() | Out-Null
+            $WebPage.WaitForTimeoutAsync(2000).GetAwaiter().GetResult() | Out-Null
+            $WebPage.Mouse.ClickAsync(10, 10, @{ "ClickCount" = 2 }).GetAwaiter().GetResult() | Out-Null
             $Attempt = $Waiting.GetAwaiter().GetResult()
-            $Null = $Attempt.PathAsync().GetAwaiter().GetResult() | Out-Null
+            $Attempt.PathAsync().GetAwaiter().GetResult() | Out-Null
             $Suggest = $Attempt.SuggestedFilename
             $Fetched = "$Env:Temp\$Suggest"
-            $Null = $Attempt.SaveAsAsync("$Fetched").GetAwaiter().GetResult() | Out-Null
-            $Null = $WebPage.CloseAsync().GetAwaiter().GetResult() | Out-Null
-            $Null = $Browser.CloseAsync().GetAwaiter().GetResult() | Out-Null
+            $Attempt.SaveAsAsync("$Fetched").GetAwaiter().GetResult() | Out-Null
+            $WebPage.CloseAsync().GetAwaiter().GetResult() | Out-Null
+            $Browser.CloseAsync().GetAwaiter().GetResult() | Out-Null
             "$Fetched"
         }
     }
@@ -449,18 +449,18 @@ Function Update-Antidote {
     $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
     $Present = $Current -Ne "0.0.0.0"
 
-    $Address = "https://filecr.com/windows/antidote"
-    $Results = [Regex]::Matches((Invoke-Scraper "Html" "$Address"), "<title>Antidote ([\d]+) v([\d.]+) .*</title>")
-    $Version = "$($Results.Groups[1].Value).$($Results.Groups[2].Value)"
-    $Updated = [Version] "$Current" -Ge [Version] "$Version"
-
-    # $Address = "https://filecr.com/windows/lamnisoft-fontexplorerl-m"
-    # $Results = [Regex]::Matches((Invoke-Scraper "Html" "$Address"), "<title>Lanmisoft FontExplorerL.M ([\d.]+) .*</title>")
-    # $Version = $Results.Groups[1].Value
+    # $Address = "https://filecr.com/windows/antidote"
+    # $Results = [Regex]::Matches((Invoke-Scraper "Html" "$Address"), "<title>Antidote ([\d]+) v([\d.]+) .*</title>")
+    # $Version = "$($Results.Groups[1].Value).$($Results.Groups[2].Value)"
     # $Updated = [Version] "$Current" -Ge [Version] "$Version"
 
+    $Address = "https://filecr.com/windows/lamnisoft-fontexplorerl-m"
+    $Results = [Regex]::Matches((Invoke-Scraper "Html" "$Address"), "<title>Lanmisoft FontExplorerL.M ([\d.]+) .*</title>")
+    $Version = $Results.Groups[1].Value
+    $Updated = [Version] "$Current" -Ge [Version] "$Version"
+
     If (-Not $Updated) {
-        $Fetched = Invoke-Fetcher "Filecr" "$Address"
+        $Fetched = "$(Invoke-Fetcher "Filecr" "$Address")"
         $Fetched = "$Fetched".Replace(' ', '').Replace("`n", '').Trim()
         Write-Output "BLALALALALALALAL`n"
         Write-Output "'$Fetched'"
@@ -470,6 +470,7 @@ Function Update-Antidote {
         # Update-Nanazip
         $Extract = [IO.Directory]::CreateDirectory("$Env:Temp\$([Guid]::NewGuid().Guid)").FullName
         & "$Env:LocalAppData\Microsoft\WindowsApps\7z.exe" x "$Fetched" -o"$Extract" -p"123" -y
+        Exit
         # Start-Process "7z.exe" "x `"$Fetched`" -o`"$Extract`" -p`"123`" -y -bso0 -bsp0" -WindowStyle Hidden -Wait
         # $Deposit = "C:\Users\Admin\AppData\Local\Temp\ad5d8b05-1c49-4a88-af84-9b1eb48bcf9b"
         $RootDir = (Get-Item "$Extract\Ant*\Ant*").FullName
