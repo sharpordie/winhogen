@@ -241,8 +241,8 @@ Function Invoke-Fetcher {
             $Null = $WebPage.Mouse.ClickAsync(10, 10, @{ "ClickCount" = 2 }).GetAwaiter().GetResult() | Out-Null
             $Attempt = $Waiting.GetAwaiter().GetResult()
             $Null = $Attempt.PathAsync().GetAwaiter().GetResult() | Out-Null
-            $Suggest = $Attempt.SuggestedFilename.Trim()
-            $Aaaaaaa = "$Env:Temp\$Suggest".Trim()
+            $Suggest = $Attempt.SuggestedFilename
+            $Aaaaaaa = "$Env:Temp\$Suggest"
             $Null = $Attempt.SaveAsAsync("$Aaaaaaa").GetAwaiter().GetResult() | Out-Null
             $Null = $WebPage.CloseAsync().GetAwaiter().GetResult() | Out-Null
             $Null = $Browser.CloseAsync().GetAwaiter().GetResult() | Out-Null
@@ -461,9 +461,9 @@ Function Update-Antidote {
 
     If (-Not $Updated) {
         $Fetched = Invoke-Fetcher "Filecr" "$Address"
-        $Bbbbbbb = "$Fetched".Replace(' ', '').Replace("`n", '')
-        Write-Output "'$Bbbbbbb'"
-        Write-Output "'$($Bbbbbbb.Trim())'"
+        $Fetched = "$Fetched".Replace(' ', '').Replace("`n", '').Trim()
+        Write-Output "'$Fetched'"
+        Write-Output "'$($Fetched.Trim())'"
         # $Fetched = "C:\Users\Admin\AppData\Local\Temp\Antidote 11 v3.2 [FileCR].zip"
         # $Deposit = Invoke-Extract -Archive "$Fetched" -Secrets "123"
         # Update-Nanazip
