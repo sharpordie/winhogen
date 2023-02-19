@@ -461,8 +461,9 @@ Function Update-Antidote {
 
     If (-Not $Updated) {
         $Fetched = Invoke-Fetcher "Filecr" "$Address"
-        Write-Output "'$Fetched'"
-        Write-Output "'$($Fetched.Trim())'"
+        $Bbbbbbb = "$Fetched".Replace(' ', '').Replace("`n", '')
+        Write-Output "'$Bbbbbbb'"
+        Write-Output "'$($Bbbbbbb.Trim())'"
         # $Fetched = "C:\Users\Admin\AppData\Local\Temp\Antidote 11 v3.2 [FileCR].zip"
         # $Deposit = Invoke-Extract -Archive "$Fetched" -Secrets "123"
         # Update-Nanazip
