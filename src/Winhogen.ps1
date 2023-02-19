@@ -462,7 +462,7 @@ Function Update-Antidote {
 
     If (-Not $Updated) {
         $Fetched = "$(Invoke-Fetcher "Filecr" "$Address")"
-        # $Fetched = "$Fetched".Replace("`n", '').Trim()
+        $Fetched = "$Fetched".Trim()
         Write-Output "BLALALALALALALAL`n"
         Write-Output "'$Fetched'"
         Write-Output "'$($Fetched.Trim())'"
