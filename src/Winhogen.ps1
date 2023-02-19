@@ -462,21 +462,20 @@ Function Update-Antidote {
     If (-Not $Updated) {
         $Fetched = Invoke-Fetcher "Filecr" "$Address"
         $Fetched = "$Fetched".Replace(' ', '').Replace("`n", '').Trim()
-        Write-Output "'$Fetched'"
-        Write-Output "'$($Fetched.Trim())'"
+        # Write-Output "'$Fetched'"
+        # Write-Output "'$($Fetched.Trim())'"
         # $Fetched = "C:\Users\Admin\AppData\Local\Temp\Antidote 11 v3.2 [FileCR].zip"
         # $Deposit = Invoke-Extract -Archive "$Fetched" -Secrets "123"
         # Update-Nanazip
         $Extract = [IO.Directory]::CreateDirectory("$Env:Temp\$([Guid]::NewGuid().Guid)").FullName
-        # & "$Env:LocalAppData\Microsoft\WindowsApps\7z.exe" x "$Fetched" -o"$Extract" -p"123" -y
-        Start-Process "7z.exe" "x `"$Fetched`" -o`"$Extract`" -p`"123`" -y -bso0 -bsp0" -WindowStyle Hidden -Wait
+        & "$Env:LocalAppData\Microsoft\WindowsApps\7z.exe" x "$Fetched" -o"$Extract" -p"123" -y
+        # Start-Process "7z.exe" "x `"$Fetched`" -o`"$Extract`" -p`"123`" -y -bso0 -bsp0" -WindowStyle Hidden -Wait
         # $Deposit = "C:\Users\Admin\AppData\Local\Temp\ad5d8b05-1c49-4a88-af84-9b1eb48bcf9b"
         $RootDir = (Get-Item "$Extract\Ant*\Ant*").FullName
         $Archive = (Get-Item "$RootDir\Anti*.exe").FullName
         # $Extract = Invoke-Extract -Archive "$Archive"
         $Extract = [IO.Directory]::CreateDirectory("$Env:Temp\$([Guid]::NewGuid().Guid)").FullName
         & "$Env:LocalAppData\Microsoft\WindowsApps\7z.exe" x "$Archive" -o"$Extract" -y -bso0 -bsp0
-        Exit
         # Start-Process "7z.exe" "x `"$Archive`" -o`"$Extract`" -y -bso0 -bsp0" -WindowStyle Hidden -Wait
         # $Extract = "C:\Users\Admin\AppData\Local\Temp\dd4e2e4a-dea1-48c2-b4e8-b67f2159e8c0"
         $Modules = (Get-Item "$Extract\*\msi\druide").FullName
@@ -725,18 +724,19 @@ Function Update-Powershell {
     $Starter = (Get-Item "$Env:ProgramFiles\PowerShell\*\pwsh.exe" -EA SI).FullName
     $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
 
-    # $Address = "https://api.github.com/repos/powershell/powershell/releases/latest"
-    $Address = "https://api.github.com/repos/powershell/powershell/releases"
-    $Results = (Invoke-Scraper "Json" "$Address").Where( { $_.prerelease -Eq $True } )[0]
-    $Version = [Regex]::Match($Results.tag_name, "[\d.]+").Value
+    $Address = "https://api.github.com/repos/powershell/powershell/releases/latest"
+    $Version = [Regex]::Match((Invoke-Scraper "Json" "$Address").tag_name , "[\d.]+").Value
+    # $Address = "https://api.github.com/repos/powershell/powershell/releases"
+    # $Results = (Invoke-Scraper "Json" "$Address").Where( { $_.prerelease -Eq $True } )[0]
+    # $Version = [Regex]::Match($Results.tag_name, "[\d.]+").Value
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
 
     If (-Not $Updated) {
-        $Address = $Results.assets.Where( { $_.browser_download_url -Like "*win-x64.msi" } ).browser_download_url
-        $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
-        (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
-        Invoke-Gsudo { msiexec /i "$Using:Fetched" /qn }
-        # Invoke-Gsudo { Invoke-Expression "& { $(Invoke-RestMethod https://aka.ms/install-powershell.ps1) } -UseMSI -Quiet" *> $Null }
+        # $Address = $Results.assets.Where( { $_.browser_download_url -Like "*win-x64.msi" } ).browser_download_url
+        # $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
+        # (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
+        # Invoke-Gsudo { msiexec /i "$Using:Fetched" /qn }
+        Invoke-Gsudo { Invoke-Expression "& { $(Invoke-RestMethod https://aka.ms/install-powershell.ps1) } -UseMSI -Quiet" *> $Null }
     }
 
     If ($PSVersionTable.PSVersion -Lt [Version] "7.0.0.0") { Invoke-Restart }
