@@ -247,7 +247,7 @@ Function Invoke-Fetcher {
             $WebPage.CloseAsync().GetAwaiter().GetResult() | Out-Null
             $Browser.CloseAsync().GetAwaiter().GetResult() | Out-Null
             # "$Fetched"
-            Return $Fetched.TrimEnd("\")
+            $Fetched.TrimEnd('\')
         }
     }
 
