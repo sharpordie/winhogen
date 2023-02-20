@@ -92,7 +92,6 @@ Function Export-Members {
         "Development" {
             Return @(
                 "Update-Windows '$Country' '$Machine'"
-                "Update-Nanazip"
                 "Update-Antidote"
                 "Update-Noxplayer"
             )
@@ -107,8 +106,6 @@ Function Export-Members {
             Return @(
                 "Update-Windows '$Country' '$Machine'"
                 "Update-Bluestacks"
-                "Update-Ldplayer"
-                "Update-Noxplayer"
             )
         }
     }
@@ -293,43 +290,12 @@ Function Invoke-Scraper {
             $Address = $WebPage.EvaluateAsync("document.querySelectorAll('#checker\\.results a')[0].href", "").GetAwaiter().GetResult()
             $WebPage.GoToAsync("$Address").GetAwaiter().GetResult() | Out-Null
             $WebPage.WaitForTimeoutAsync(2000).GetAwaiter().GetResult() | Out-Null
-            # $Element = $WebPage.GetByText( [Regex]("$Payload", [Regex]::RegexOptions.IgnoreCase) )
             $WebPage.Locator(":has-text('$Payload') ~ p").ClickAsync().GetAwaiter().GetResult() | Out-Null
-            # $WebPage.EvaluateAsync("document.querySelector('body > header > p > a:nth-child(1)').click()", "").GetAwaiter().GetResult() | Out-Null
-            # $Attempt = $Waiting.GetAwaiter().GetResult()
-            # $Attempt.PathAsync().GetAwaiter().GetResult() | Out-Null
-            # $Suggest = $Attempt.SuggestedFilename
-            # $Fetched = "$Env:Temp\$Suggest"
-            # $Attempt.SaveAsAsync("$Fetched").GetAwaiter().GetResult() | Out-Null
             $WebPage.CloseAsync().GetAwaiter().GetResult() | Out-Null
             $Browser.CloseAsync().GetAwaiter().GetResult() | Out-Null
             Return Get-Clipboard
         }
     }
-
-    # If ($PSVersionTable.PSVersion -Lt [Version] "7.0.0.0") {
-    #     If ($Scraper -Eq "Html") { Return Invoke-WebRequest "$Address" }
-    #     If ($Scraper -Eq "Json") { Return Invoke-WebRequest "$Address" | ConvertFrom-Json }
-    # }
-    # Else {
-    #     Try {
-    #         If ($Scraper -Eq "Html") { Return Invoke-WebRequest "$Address" }
-    #         If ($Scraper -Eq "Json") { Return Invoke-WebRequest "$Address" | ConvertFrom-Json }
-    #     }
-    #     Catch {
-    #         $Handler = Deploy-Browser
-    #         $Browser = $Handler.Chromium.LaunchAsync(@{ "Headless" = $False }).GetAwaiter().GetResult()
-    #         $WebPage = $Browser.NewPageAsync().GetAwaiter().GetResult()
-    #         $WebPage.GoToAsync("$Address").GetAwaiter().GetResult() | Out-Null
-    #         If ($Scraper -Eq "Html") { $Scraped = $WebPage.QuerySelectorAsync("body").GetAwaiter().GetResult() }
-    #         If ($Scraper -Eq "Json") { $Scraped = $WebPage.QuerySelectorAsync("body > :first-child").GetAwaiter().GetResult() }
-    #         $Scraped = $Scraped.InnerHtmlAsync().GetAwaiter().GetResult()
-    #         $WebPage.CloseAsync().GetAwaiter().GetResult()
-    #         $Browser.CloseAsync().GetAwaiter().GetResult()
-    #         If ($Scraper -Eq "Html") { Return $Scraped.ToString() }
-    #         If ($Scraper -Eq "Json") { Return $Scraped.ToString() | ConvertFrom-Json }
-    #     }
-    # }
 
 }
 
@@ -726,7 +692,7 @@ Function Update-Noxplayer {
     # $Present = $Current -Ne "0.0.0.0"
 
     $Address = "https://support.bignox.com/en/win-release"
-    $Version = [Regex]::Matches((Invoke-Scraper "Html" "$Address"), ".*V([\d.]+) Release Note").Groups[1].Value
+    $Version = [Regex]::Matches((Invoke-Scraper "BrowserHtml" "$Address"), ".*V([\d.]+) Release Note").Groups[1].Value
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
 
     If (-Not $Updated) {
@@ -815,9 +781,6 @@ If ($MyInvocation.InvocationName -Ne ".") {
     Write-Host "$Loading" -FO DarkYellow -NoNewline ; Remove-Feature "Uac" ; Remove-Feature "Sleeping"
     $Correct = (Update-Gsudo) -And ! (gsudo cache on -d -1 2>&1).ToString().Contains("Error")
     If (-Not $Correct) { Write-Host "$Failure`n" -FO Red ; Exit } ; Update-Powershell
-
-    $DD = Invoke-Scraper "Jetbra" "AppCode"
-    Write-Output "$DD" ; Exit
 
     # Handle elements
     $Members = Export-Members -Variant "Development" -Machine "WINHOGEN"
