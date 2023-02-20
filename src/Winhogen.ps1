@@ -29,6 +29,10 @@ Function Deploy-Browser {
         [ValidateSet("Chromium", "Firefox")] [String] $Browser = "Chromium"
     )
 
+    Import-Library "System.Text.Json"
+    Import-Library "Microsoft.Bcl.AsyncInterfaces"
+    Import-Library "Microsoft.CodeAnalysis"
+    Import-Library "Microsoft.Playwright"
     $Current = $Script:MyInvocation.MyCommand.Path
     Invoke-Gsudo {
         . $Using:Current ; Start-Sleep 4
@@ -38,10 +42,6 @@ Function Deploy-Browser {
         Import-Library "Microsoft.Playwright"
         [Microsoft.Playwright.Program]::Main(@("install", "$Using:Browser".ToLower()))
     }
-    Import-Library "System.Text.Json"
-    Import-Library "Microsoft.Bcl.AsyncInterfaces"
-    Import-Library "Microsoft.CodeAnalysis"
-    Import-Library "Microsoft.Playwright"
     Return [Microsoft.Playwright.Playwright]::CreateAsync().GetAwaiter().GetResult()
 
 }
