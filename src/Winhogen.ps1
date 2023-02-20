@@ -223,7 +223,8 @@ Function Invoke-Fetcher {
             $WebPage.GoToAsync("https://jetbra.in/s").GetAwaiter().GetResult() | Out-Null
             $Waiting = $WebPage.WaitForDownloadAsync()
             $WebPage.WaitForTimeoutAsync(10000).GetAwaiter().GetResult() | Out-Null
-            $WebPage.EvaluateAsync("document.querySelectorAll('#checker\\.results a')[0].click()", "").GetAwaiter().GetResult() | Out-Null
+            $Address = $WebPage.EvaluateAsync("document.querySelectorAll('#checker\\.results a')[0].href", "").GetAwaiter().GetResult()
+            $WebPage.GoToAsync("$Address").GetAwaiter().GetResult() | Out-Null
             $WebPage.WaitForTimeoutAsync(2000).GetAwaiter().GetResult() | Out-Null
             $WebPage.EvaluateAsync("document.querySelector('body > header > p > a:nth-child(1)').click()", "").GetAwaiter().GetResult() | Out-Null
             $Attempt = $Waiting.GetAwaiter().GetResult()
