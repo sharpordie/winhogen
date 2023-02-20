@@ -444,11 +444,14 @@ Function Update-Antidote {
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
 
     If (-Not $Updated) {
-        $Fetched = "$(Invoke-Fetcher "Filecr" "$Address")".Trim()
-        $Deposit = "$(Invoke-Extract -Archive "$Fetched" -Secrets "123")".Trim()
+        # $Fetched = "$(Invoke-Fetcher "Filecr" "$Address")".Trim()
+        # $Deposit = "$(Invoke-Extract -Archive "$Fetched" -Secrets "123")".Trim()
+        $Fetched = Invoke-Fetcher "Filecr" "$Address"
+        $Deposit = Invoke-Extract -Archive "$Fetched" -Secrets "123"
         $RootDir = (Get-Item "$Deposit\Ant*\Ant*").FullName
         $Archive = (Get-Item "$RootDir\Anti*.exe").FullName
-        $Extract = "$(Invoke-Extract -Archive "$Archive")".Trim()
+        # $Extract = "$(Invoke-Extract -Archive "$Archive")".Trim()
+        $Extract = Invoke-Extract -Archive "$Archive"
         $Modules = (Get-Item "$Extract\*\msi\druide").FullName
         $Adjunct = "TRANSFORMS=`"$Modules\Antidote11-Interface-en.mst`""
         Invoke-Gsudo { Start-Process "msiexec.exe" "/i `"$Using:Modules\Antidote11.msi`" $Using:Adjunct /qn" -Wait }
@@ -771,6 +774,7 @@ If ($MyInvocation.InvocationName -Ne ".") {
     $Correct = (Update-Gsudo) -And ! (gsudo cache on -d -1 2>&1).ToString().Contains("Error")
     If (-Not $Correct) { Write-Host "$Failure`n" -FO Red ; Exit } ; Update-Powershell
 
+    Update-Antidote
     $Fetched = Invoke-Fetcher "Jetbra"
     Write-Output "'$Fetched'"
     $Fetched = Invoke-Fetcher "Filecr" "https://filecr.com/ms-windows/gilisoft-video-converter/"
