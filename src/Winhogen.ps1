@@ -222,8 +222,8 @@ Function Invoke-Fetcher {
             $WebPage = $Browser.NewPageAsync().GetAwaiter().GetResult()
             $WebPage.GoToAsync("https://jetbra.in/s").GetAwaiter().GetResult() | Out-Null
             $Waiting = $WebPage.WaitForDownloadAsync()
-            $WebPage.WaitForTimeoutAsync(6000).GetAwaiter().GetResult() | Out-Null
-            $Element = $WebPage.EvaluateAsync("#checker\\.results a", "").GetAwaiter().GetResult()
+            $WebPage.WaitForTimeoutAsync(10000).GetAwaiter().GetResult() | Out-Null
+            $Element = $WebPage.Locator("#checker\\.results a").GetAwaiter().GetResult()
             $Factors = $Element.EvaluateAllAsync("all => all.map((one) => one.href)").GetAwaiter().GetResult()
             echo $Factors
             $WebPage.EvaluateAsync("#checker\\.results a", "").GetAwaiter().GetResult() | Out-Null
