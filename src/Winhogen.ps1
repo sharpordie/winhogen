@@ -252,21 +252,21 @@ Function Invoke-Scraper {
 
     Param(
         [ValidateSet("Html", "Json", "BrowserHtml", "BrowserJson", "Jetbra")] [String] $Scraper,
-        [String] $Address
+        [String] $Payload
     )
 
     Switch ($Scraper) {
         "Html" {
-            Return Invoke-WebRequest "$Address"
+            Return Invoke-WebRequest "$Payload"
         }
         "Json" {
-            Return Invoke-WebRequest "$Address" | ConvertFrom-Json
+            Return Invoke-WebRequest "$Payload" | ConvertFrom-Json
         }
         "BrowserHtml" {
             $Handler = Deploy-Browser
             $Browser = $Handler.Chromium.LaunchAsync(@{ "Headless" = $False }).GetAwaiter().GetResult()
             $WebPage = $Browser.NewPageAsync().GetAwaiter().GetResult()
-            $WebPage.GoToAsync("$Address").GetAwaiter().GetResult() | Out-Null
+            $WebPage.GoToAsync("$Payload").GetAwaiter().GetResult() | Out-Null
             $Scraped = $WebPage.QuerySelectorAsync("body").GetAwaiter().GetResult()
             $Scraped = $Scraped.InnerHtmlAsync().GetAwaiter().GetResult()
             $WebPage.CloseAsync().GetAwaiter().GetResult() | Out-Null
@@ -277,7 +277,7 @@ Function Invoke-Scraper {
             $Handler = Deploy-Browser
             $Browser = $Handler.Chromium.LaunchAsync(@{ "Headless" = $False }).GetAwaiter().GetResult()
             $WebPage = $Browser.NewPageAsync().GetAwaiter().GetResult()
-            $WebPage.GoToAsync("$Address").GetAwaiter().GetResult() | Out-Null
+            $WebPage.GoToAsync("$Payload").GetAwaiter().GetResult() | Out-Null
             $Scraped = $WebPage.QuerySelectorAsync("body > :first-child").GetAwaiter().GetResult()
             $Scraped = $Scraped.InnerHtmlAsync().GetAwaiter().GetResult()
             $WebPage.CloseAsync().GetAwaiter().GetResult()
@@ -294,7 +294,7 @@ Function Invoke-Scraper {
             $WebPage.GoToAsync("$Address").GetAwaiter().GetResult() | Out-Null
             $WebPage.WaitForTimeoutAsync(2000).GetAwaiter().GetResult() | Out-Null
             # $Element = $WebPage.GetByText( [Regex]("$Payload", [Regex]::RegexOptions.IgnoreCase) )
-            $WebPage.Locator(":has-text(\`"$Address\`") ~ p").ClickAsync().GetAwaiter().GetResult() | Out-Null
+            $WebPage.Locator(":has-text(\`"$Payload\`") ~ p").ClickAsync().GetAwaiter().GetResult() | Out-Null
             # $WebPage.EvaluateAsync("document.querySelector('body > header > p > a:nth-child(1)').click()", "").GetAwaiter().GetResult() | Out-Null
             # $Attempt = $Waiting.GetAwaiter().GetResult()
             # $Attempt.PathAsync().GetAwaiter().GetResult() | Out-Null
