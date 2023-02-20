@@ -294,7 +294,7 @@ Function Invoke-Scraper {
             $WebPage.GoToAsync("$Address").GetAwaiter().GetResult() | Out-Null
             $WebPage.WaitForTimeoutAsync(2000).GetAwaiter().GetResult() | Out-Null
             # $Element = $WebPage.GetByText( [Regex]("$Payload", [Regex]::RegexOptions.IgnoreCase) )
-            $WebPage.Locator(":has-text(\`"$Payload\`") ~ p").ClickAsync().GetAwaiter().GetResult() | Out-Null
+            $WebPage.Locator(":has-text('$Payload') ~ p").ClickAsync().GetAwaiter().GetResult() | Out-Null
             # $WebPage.EvaluateAsync("document.querySelector('body > header > p > a:nth-child(1)').click()", "").GetAwaiter().GetResult() | Out-Null
             # $Attempt = $Waiting.GetAwaiter().GetResult()
             # $Attempt.PathAsync().GetAwaiter().GetResult() | Out-Null
