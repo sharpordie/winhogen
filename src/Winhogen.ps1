@@ -223,19 +223,7 @@ Function Invoke-Fetcher {
             $WebPage.GoToAsync("https://jetbra.in/s").GetAwaiter().GetResult() | Out-Null
             $Waiting = $WebPage.WaitForDownloadAsync()
             $WebPage.WaitForTimeoutAsync(10000).GetAwaiter().GetResult() | Out-Null
-            $Factors = $WebPage.QuerySelectorAllAsync("#checker\\.results a").GetAwaiter().GetResult()
-            foreach ($dd In $Factors) {
-                echo "$dd"
-            }
-            # foreach ($Address In $WebPage.Locator("#checker\\.results a").AllAsync().GetAwaiter().GetResult()) {
-            #     $Address.ClickAsync().GetAwaiter().GetResult()
-            # }
-            Exit
-            $Factors = $WebPage.Locator("#checker\\.results a").AllAsync().GetAwaiter().GetResult()
-            # $Factors = $Element.EvaluateAllAsync("all => all.map((one) => one.href)").GetAwaiter().GetResult()
-            echo $Factors
-            $WebPage.EvaluateAsync("#checker\\.results a", "").GetAwaiter().GetResult() | Out-Null
-            $WebPage.EvaluateAsync("document.querySelector('#checker\\.results > div.Link:nth-child(1) > a').click()", "").GetAwaiter().GetResult() | Out-Null
+            $WebPage.EvaluateAsync("document.querySelectorAll('#checker\\.results a')[0].click()", "").GetAwaiter().GetResult() | Out-Null
             $WebPage.WaitForTimeoutAsync(2000).GetAwaiter().GetResult() | Out-Null
             $WebPage.EvaluateAsync("document.querySelector('body > header > p > a:nth-child(1)').click()", "").GetAwaiter().GetResult() | Out-Null
             $Attempt = $Waiting.GetAwaiter().GetResult()
