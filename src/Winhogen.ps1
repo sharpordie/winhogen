@@ -38,7 +38,6 @@ Function Deploy-Browser {
         Import-Library "Microsoft.Playwright"
         [Microsoft.Playwright.Program]::Main(@("install", "$Using:Browser".ToLower()))
     }
-    
     Import-Library "System.Text.Json"
     Import-Library "Microsoft.Bcl.AsyncInterfaces"
     Import-Library "Microsoft.CodeAnalysis"
