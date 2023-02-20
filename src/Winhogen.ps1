@@ -134,22 +134,17 @@ Function Import-Library {
 
 Function Deploy-Browser {
 
-    Import-Library "System.Text.Json"
-    Import-Library "Microsoft.Bcl.AsyncInterfaces"
-    Import-Library "Microsoft.CodeAnalysis"
-    Import-Library "Microsoft.Playwright"
-    [Microsoft.Playwright.Program]::Main(@("install", "chromium"))
-
-}
-
-Function Invoke-Browser {
+    Param(
+        [ValidateSet("Chromium", "Firefox")] [String] $Browser = "Chromium"
+    )
 
     Import-Library "System.Text.Json"
     Import-Library "Microsoft.Bcl.AsyncInterfaces"
     Import-Library "Microsoft.CodeAnalysis"
     Import-Library "Microsoft.Playwright"
-    [Microsoft.Playwright.Program]::Main(@("install", "chromium"))
-    [Microsoft.Playwright.Playwright]::CreateAsync().GetAwaiter().GetResult()
+    [Microsoft.Playwright.Program]::Main(@("install", "$Browser".ToLower())) | Out-Null
+    Return [Microsoft.Playwright.Playwright]::CreateAsync().GetAwaiter().GetResult()
+
 }
 
 Function Invoke-Extract {
@@ -164,20 +159,20 @@ Function Invoke-Extract {
     If (-Not $Deposit) { $Deposit = [IO.Directory]::CreateDirectory("$Env:Temp\$([Guid]::NewGuid().Guid)").FullName }
     If (-Not (Test-Path "$Deposit")) { New-Item "$Deposit" -ItemType Directory -EA SI }
     & "$Env:LocalAppData\Microsoft\WindowsApps\7z.exe" x "$Archive" -o"$Deposit" -p"$Secrets" -y -bso0 -bsp0
-    "$Deposit"
+    Return "$Deposit"
 
 }
 
 Function Invoke-Fetcher {
 
     Param(
-        [ValidateSet("Browser", "Filecr", "Jetbra", "Webclient")][String] $Fetcher,
+        [ValidateSet("Browser", "Filecr", "Jetbra", "Webclient")] [String] $Fetcher,
         [String] $Payload
     )
 
     Switch ($Fetcher) {
         "Browser" {
-            $Handler = Invoke-Browser
+            $Handler = Deploy-Browser
             $Browser = $Handler.Chromium.LaunchAsync(@{ "Headless" = $False }).GetAwaiter().GetResult()
             $WebPage = $Browser.NewPageAsync().GetAwaiter().GetResult()
             $WebPage.GoToAsync("about:blank").GetAwaiter().GetResult() | Out-Null
@@ -190,10 +185,10 @@ Function Invoke-Fetcher {
             $Attempt.SaveAsAsync("$Fetched").GetAwaiter().GetResult() | Out-Null
             $WebPage.CloseAsync().GetAwaiter().GetResult() | Out-Null
             $Browser.CloseAsync().GetAwaiter().GetResult() | Out-Null
-            Return $Fetched
+            Return "$Fetched"
         }
         "Filecr" {
-            $Handler = Invoke-Browser
+            $Handler = Deploy-Browser
             $Browser = $Handler.Chromium.LaunchAsync(@{ "Headless" = $False }).GetAwaiter().GetResult()
             $WebPage = $Browser.NewPageAsync().GetAwaiter().GetResult()
             $Waiting = $WebPage.WaitForDownloadAsync()
@@ -204,7 +199,6 @@ Function Invoke-Fetcher {
             $WebPage.EvaluateAsync("document.querySelector('#sh_pdf_download-2 > form > a').click()", "").GetAwaiter().GetResult() | Out-Null
             $WebPage.WaitForSelectorAsync("a.sh_download-btn.done").GetAwaiter().GetResult() | Out-Null
             $WebPage.WaitForTimeoutAsync(6000).GetAwaiter().GetResult() | Out-Null
-            # $Waiting = $WebPage.WaitForDownloadAsync()
             $WebPage.EvaluateAsync("document.querySelector('a.sh_download-btn.done').click()", "").GetAwaiter().GetResult() | Out-Null
             $WebPage.WaitForTimeoutAsync(2000).GetAwaiter().GetResult() | Out-Null
             $WebPage.Mouse.ClickAsync(10, 10, @{ "ClickCount" = 2 }).GetAwaiter().GetResult() | Out-Null
@@ -215,14 +209,14 @@ Function Invoke-Fetcher {
             $Attempt.SaveAsAsync("$Fetched").GetAwaiter().GetResult() | Out-Null
             $WebPage.CloseAsync().GetAwaiter().GetResult() | Out-Null
             $Browser.CloseAsync().GetAwaiter().GetResult() | Out-Null
-            "$Fetched"
+            Return "$Fetched"
         }
         "Jetbra" {
-            $Handler = Invoke-Browser
+            $Handler = Deploy-Browser
             $Browser = $Handler.Chromium.LaunchAsync(@{ "Headless" = $False }).GetAwaiter().GetResult()
             $WebPage = $Browser.NewPageAsync().GetAwaiter().GetResult()
-            $WebPage.GoToAsync("https://jetbra.in/s").GetAwaiter().GetResult() | Out-Null
             $Waiting = $WebPage.WaitForDownloadAsync()
+            $WebPage.GoToAsync("https://jetbra.in/s").GetAwaiter().GetResult() | Out-Null
             $WebPage.WaitForTimeoutAsync(10000).GetAwaiter().GetResult() | Out-Null
             $Address = $WebPage.EvaluateAsync("document.querySelectorAll('#checker\\.results a')[0].href", "").GetAwaiter().GetResult()
             $WebPage.GoToAsync("$Address").GetAwaiter().GetResult() | Out-Null
@@ -235,7 +229,7 @@ Function Invoke-Fetcher {
             $Attempt.SaveAsAsync("$Fetched").GetAwaiter().GetResult() | Out-Null
             $WebPage.CloseAsync().GetAwaiter().GetResult() | Out-Null
             $Browser.CloseAsync().GetAwaiter().GetResult() | Out-Null
-            "$Fetched"
+            Return "$Fetched"
         }
     }
 
@@ -257,33 +251,85 @@ Function Invoke-Restart {
 Function Invoke-Scraper {
 
     Param(
-        [String] $Scraper,
+        [ValidateSet("Html", "Json", "BrowserHtml", "BrowserJson", "Jetbra")] [String] $Scraper,
         [String] $Address
     )
 
-    If ($PSVersionTable.PSVersion -Lt [Version] "7.0.0.0") {
-        If ($Scraper -Eq "Html") { Return Invoke-WebRequest "$Address" }
-        If ($Scraper -Eq "Json") { Return Invoke-WebRequest "$Address" | ConvertFrom-Json }
-    }
-    Else {
-        Try {
-            If ($Scraper -Eq "Html") { Return Invoke-WebRequest "$Address" }
-            If ($Scraper -Eq "Json") { Return Invoke-WebRequest "$Address" | ConvertFrom-Json }
+    Switch ($Scraper) {
+        "Html" {
+            Return Invoke-WebRequest "$Address"
         }
-        Catch {
-            $Handler = Invoke-Browser
+        "Json" {
+            Return Invoke-WebRequest "$Address" | ConvertFrom-Json
+        }
+        "BrowserHtml" {
+            $Handler = Deploy-Browser
             $Browser = $Handler.Chromium.LaunchAsync(@{ "Headless" = $False }).GetAwaiter().GetResult()
             $WebPage = $Browser.NewPageAsync().GetAwaiter().GetResult()
             $WebPage.GoToAsync("$Address").GetAwaiter().GetResult() | Out-Null
-            If ($Scraper -Eq "Html") { $Scraped = $WebPage.QuerySelectorAsync("body").GetAwaiter().GetResult() }
-            If ($Scraper -Eq "Json") { $Scraped = $WebPage.QuerySelectorAsync("body > :first-child").GetAwaiter().GetResult() }
+            $Scraped = $WebPage.QuerySelectorAsync("body").GetAwaiter().GetResult()
+            $Scraped = $Scraped.InnerHtmlAsync().GetAwaiter().GetResult()
+            $WebPage.CloseAsync().GetAwaiter().GetResult() | Out-Null
+            $Browser.CloseAsync().GetAwaiter().GetResult() | Out-Null
+            Return $Scraped.ToString()
+        }
+        "BrowserJson" {
+            $Handler = Deploy-Browser
+            $Browser = $Handler.Chromium.LaunchAsync(@{ "Headless" = $False }).GetAwaiter().GetResult()
+            $WebPage = $Browser.NewPageAsync().GetAwaiter().GetResult()
+            $WebPage.GoToAsync("$Address").GetAwaiter().GetResult() | Out-Null
+            $Scraped = $WebPage.QuerySelectorAsync("body > :first-child").GetAwaiter().GetResult()
             $Scraped = $Scraped.InnerHtmlAsync().GetAwaiter().GetResult()
             $WebPage.CloseAsync().GetAwaiter().GetResult()
             $Browser.CloseAsync().GetAwaiter().GetResult()
-            If ($Scraper -Eq "Html") { Return $Scraped.ToString() }
-            If ($Scraper -Eq "Json") { Return $Scraped.ToString() | ConvertFrom-Json }
+            Return $Scraped.ToString() | ConvertFrom-Json
+        }
+        "Jetbra" {
+            $Handler = Deploy-Browser
+            $Browser = $Handler.Chromium.LaunchAsync(@{ "Headless" = $False }).GetAwaiter().GetResult()
+            $WebPage = $Browser.NewPageAsync().GetAwaiter().GetResult()
+            $WebPage.GoToAsync("https://jetbra.in/s").GetAwaiter().GetResult() | Out-Null
+            $WebPage.WaitForTimeoutAsync(10000).GetAwaiter().GetResult() | Out-Null
+            $Address = $WebPage.EvaluateAsync("document.querySelectorAll('#checker\\.results a')[0].href", "").GetAwaiter().GetResult()
+            $WebPage.GoToAsync("$Address").GetAwaiter().GetResult() | Out-Null
+            $WebPage.WaitForTimeoutAsync(2000).GetAwaiter().GetResult() | Out-Null
+            # $Element = $WebPage.GetByText( [Regex]("$Payload", [Regex]::RegexOptions.IgnoreCase) )
+            $WebPage.Locator(":has-text(\`"$Address\`") ~ p").ClickAsync().GetAwaiter().GetResult() | Out-Null
+            # $WebPage.EvaluateAsync("document.querySelector('body > header > p > a:nth-child(1)').click()", "").GetAwaiter().GetResult() | Out-Null
+            # $Attempt = $Waiting.GetAwaiter().GetResult()
+            # $Attempt.PathAsync().GetAwaiter().GetResult() | Out-Null
+            # $Suggest = $Attempt.SuggestedFilename
+            # $Fetched = "$Env:Temp\$Suggest"
+            # $Attempt.SaveAsAsync("$Fetched").GetAwaiter().GetResult() | Out-Null
+            $WebPage.CloseAsync().GetAwaiter().GetResult() | Out-Null
+            $Browser.CloseAsync().GetAwaiter().GetResult() | Out-Null
+            Return Get-Clipboard
         }
     }
+
+    # If ($PSVersionTable.PSVersion -Lt [Version] "7.0.0.0") {
+    #     If ($Scraper -Eq "Html") { Return Invoke-WebRequest "$Address" }
+    #     If ($Scraper -Eq "Json") { Return Invoke-WebRequest "$Address" | ConvertFrom-Json }
+    # }
+    # Else {
+    #     Try {
+    #         If ($Scraper -Eq "Html") { Return Invoke-WebRequest "$Address" }
+    #         If ($Scraper -Eq "Json") { Return Invoke-WebRequest "$Address" | ConvertFrom-Json }
+    #     }
+    #     Catch {
+    #         $Handler = Deploy-Browser
+    #         $Browser = $Handler.Chromium.LaunchAsync(@{ "Headless" = $False }).GetAwaiter().GetResult()
+    #         $WebPage = $Browser.NewPageAsync().GetAwaiter().GetResult()
+    #         $WebPage.GoToAsync("$Address").GetAwaiter().GetResult() | Out-Null
+    #         If ($Scraper -Eq "Html") { $Scraped = $WebPage.QuerySelectorAsync("body").GetAwaiter().GetResult() }
+    #         If ($Scraper -Eq "Json") { $Scraped = $WebPage.QuerySelectorAsync("body > :first-child").GetAwaiter().GetResult() }
+    #         $Scraped = $Scraped.InnerHtmlAsync().GetAwaiter().GetResult()
+    #         $WebPage.CloseAsync().GetAwaiter().GetResult()
+    #         $Browser.CloseAsync().GetAwaiter().GetResult()
+    #         If ($Scraper -Eq "Html") { Return $Scraped.ToString() }
+    #         If ($Scraper -Eq "Json") { Return $Scraped.ToString() | ConvertFrom-Json }
+    #     }
+    # }
 
 }
 
@@ -441,16 +487,13 @@ Function Update-Antidote {
     $Address = "https://filecr.com/windows/antidote"
     $Results = [Regex]::Matches((Invoke-Scraper "Html" "$Address"), "<title>Antidote ([\d]+) v([\d.]+) .*</title>")
     $Version = "$($Results.Groups[1].Value).$($Results.Groups[2].Value)"
-    $Updated = [Version] "$Current" -Ge [Version] "$Version"
+    # $Updated = [Version] "$Current" -Ge [Version] "$Version"
 
-    If (-Not $Updated) {
-        # $Fetched = "$(Invoke-Fetcher "Filecr" "$Address")".Trim()
-        # $Deposit = "$(Invoke-Extract -Archive "$Fetched" -Secrets "123")".Trim()
+    If (-Not $Present) {
         $Fetched = Invoke-Fetcher "Filecr" "$Address"
         $Deposit = Invoke-Extract -Archive "$Fetched" -Secrets "123"
         $RootDir = (Get-Item "$Deposit\Ant*\Ant*").FullName
         $Archive = (Get-Item "$RootDir\Anti*.exe").FullName
-        # $Extract = "$(Invoke-Extract -Archive "$Archive")".Trim()
         $Extract = Invoke-Extract -Archive "$Archive"
         $Modules = (Get-Item "$Extract\*\msi\druide").FullName
         $Adjunct = "TRANSFORMS=`"$Modules\Antidote11-Interface-en.mst`""
@@ -770,15 +813,11 @@ If ($MyInvocation.InvocationName -Ne ".") {
     $Loading = "`nTHE UPDATING DEPENDENCIES PROCESS HAS LAUNCHED"
     $Failure = "`rTHE UPDATING DEPENDENCIES PROCESS WAS CANCELED"
     Write-Host "$Loading" -FO DarkYellow -NoNewline ; Remove-Feature "Uac" ; Remove-Feature "Sleeping"
-    # Remove-Feature "Uac" ; Update-Element "Plan" "Ultimate"
     $Correct = (Update-Gsudo) -And ! (gsudo cache on -d -1 2>&1).ToString().Contains("Error")
     If (-Not $Correct) { Write-Host "$Failure`n" -FO Red ; Exit } ; Update-Powershell
 
-    Update-Antidote
-    $Fetched = Invoke-Fetcher "Jetbra"
-    Write-Output "'$Fetched'"
-    $Fetched = Invoke-Fetcher "Filecr" "https://filecr.com/ms-windows/gilisoft-video-converter/"
-    Write-Output "'$Fetched'" ; Exit
+    $DD = Invoke-Scraper "Jetbra" "AppCode"
+    Write-Output "$DD" ; Exit
 
     # Handle elements
     $Members = Export-Members -Variant "Development" -Machine "WINHOGEN"
