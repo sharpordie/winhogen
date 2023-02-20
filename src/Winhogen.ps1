@@ -196,6 +196,7 @@ Function Invoke-Fetcher {
             $Handler = Invoke-Browser
             $Browser = $Handler.Chromium.LaunchAsync(@{ "Headless" = $False }).GetAwaiter().GetResult()
             $WebPage = $Browser.NewPageAsync().GetAwaiter().GetResult()
+            $Waiting = $WebPage.WaitForDownloadAsync()
             $WebPage.SetViewportSizeAsync(1400, 400).GetAwaiter().GetResult()
             $WebPage.GoToAsync("$Payload").GetAwaiter().GetResult() | Out-Null
             $WebPage.WaitForSelectorAsync("#sh_pdf_download-2 > form > a").GetAwaiter().GetResult() | Out-Null
@@ -203,7 +204,7 @@ Function Invoke-Fetcher {
             $WebPage.EvaluateAsync("document.querySelector('#sh_pdf_download-2 > form > a').click()", "").GetAwaiter().GetResult() | Out-Null
             $WebPage.WaitForSelectorAsync("a.sh_download-btn.done").GetAwaiter().GetResult() | Out-Null
             $WebPage.WaitForTimeoutAsync(6000).GetAwaiter().GetResult() | Out-Null
-            $Waiting = $WebPage.WaitForDownloadAsync()
+            # $Waiting = $WebPage.WaitForDownloadAsync()
             $WebPage.EvaluateAsync("document.querySelector('a.sh_download-btn.done').click()", "").GetAwaiter().GetResult() | Out-Null
             $WebPage.WaitForTimeoutAsync(2000).GetAwaiter().GetResult() | Out-Null
             $WebPage.Mouse.ClickAsync(10, 10, @{ "ClickCount" = 2 }).GetAwaiter().GetResult() | Out-Null
@@ -771,6 +772,8 @@ If ($MyInvocation.InvocationName -Ne ".") {
     If (-Not $Correct) { Write-Host "$Failure`n" -FO Red ; Exit } ; Update-Powershell
 
     $Fetched = Invoke-Fetcher "Jetbra"
+    Write-Output "'$Fetched'"
+    $Fetched = Invoke-Fetcher "Filecr" "https://filecr.com/ms-windows/gilisoft-video-converter/"
     Write-Output "'$Fetched'" ; Exit
 
     # Handle elements
