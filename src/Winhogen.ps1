@@ -171,7 +171,7 @@ Function Invoke-Extract {
 Function Invoke-Fetcher {
 
     Param(
-        [ValidateSet("Browser", "Filecr", "Webclient")][String] $Fetcher,
+        [ValidateSet("Browser", "Filecr", "Jetbra", "Webclient")][String] $Fetcher,
         [String] $Payload
     )
 
@@ -207,6 +207,24 @@ Function Invoke-Fetcher {
             $WebPage.EvaluateAsync("document.querySelector('a.sh_download-btn.done').click()", "").GetAwaiter().GetResult() | Out-Null
             $WebPage.WaitForTimeoutAsync(2000).GetAwaiter().GetResult() | Out-Null
             $WebPage.Mouse.ClickAsync(10, 10, @{ "ClickCount" = 2 }).GetAwaiter().GetResult() | Out-Null
+            $Attempt = $Waiting.GetAwaiter().GetResult()
+            $Attempt.PathAsync().GetAwaiter().GetResult() | Out-Null
+            $Suggest = $Attempt.SuggestedFilename
+            $Fetched = "$Env:Temp\$Suggest"
+            $Attempt.SaveAsAsync("$Fetched").GetAwaiter().GetResult() | Out-Null
+            $WebPage.CloseAsync().GetAwaiter().GetResult() | Out-Null
+            $Browser.CloseAsync().GetAwaiter().GetResult() | Out-Null
+            "$Fetched"
+        }
+        "Jetbra" {
+            $Handler = Invoke-Browser
+            $Browser = $Handler.Chromium.LaunchAsync(@{ "Headless" = $False }).GetAwaiter().GetResult()
+            $WebPage = $Browser.NewPageAsync().GetAwaiter().GetResult()
+            $WebPage.GoToAsync("https://jetbra.in/s").GetAwaiter().GetResult() | Out-Null
+            $Waiting = $WebPage.WaitForDownloadAsync()
+            $WebPage.WaitForSelectorAsync("body > header > p > a:nth-child(1)").GetAwaiter().GetResult() | Out-Null
+            $WebPage.WaitForTimeoutAsync(2000).GetAwaiter().GetResult() | Out-Null
+            $WebPage.EvaluateAsync("document.querySelector('body > header > p > a:nth-child(1)').click()", "").GetAwaiter().GetResult() | Out-Null
             $Attempt = $Waiting.GetAwaiter().GetResult()
             $Attempt.PathAsync().GetAwaiter().GetResult() | Out-Null
             $Suggest = $Attempt.SuggestedFilename
@@ -750,7 +768,8 @@ If ($MyInvocation.InvocationName -Ne ".") {
     $Correct = (Update-Gsudo) -And ! (gsudo cache on -d -1 2>&1).ToString().Contains("Error")
     If (-Not $Correct) { Write-Host "$Failure`n" -FO Red ; Exit } ; Update-Powershell
 
-    # Update-Nanazip ; Update-Antidote ; Exit
+    $Fetched = Invoke-Fetcher "Jetbra"
+    Write-Output "'$Fetched'" ; Exit
 
     # Handle elements
     $Members = Export-Members -Variant "Development" -Machine "WINHOGEN"
