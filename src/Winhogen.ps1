@@ -222,9 +222,10 @@ Function Invoke-Fetcher {
             $WebPage = $Browser.NewPageAsync().GetAwaiter().GetResult()
             $WebPage.GoToAsync("https://jetbra.in/s").GetAwaiter().GetResult() | Out-Null
             $Waiting = $WebPage.WaitForDownloadAsync()
-            # $WebPage.WaitForSelectorAsync("#checker\.results > div:nth-child(1) > div.Link > a").GetAwaiter().GetResult() | Out-Null
             $WebPage.WaitForTimeoutAsync(6000).GetAwaiter().GetResult() | Out-Null
-            $WebPage.EvaluateAsync("#checker\\.results a", "").GetAwaiter().GetResult()
+            $Factors = $WebPage.EvaluateAllAsync("#checker\\.results a", "all => all.map((one) => one.href)")
+            echo $Factors
+            $WebPage.EvaluateAsync("#checker\\.results a", "").GetAwaiter().GetResult() | Out-Null
             $WebPage.EvaluateAsync("document.querySelector('#checker\\.results > div.Link:nth-child(1) > a').click()", "").GetAwaiter().GetResult() | Out-Null
             $WebPage.WaitForTimeoutAsync(2000).GetAwaiter().GetResult() | Out-Null
             $WebPage.EvaluateAsync("document.querySelector('body > header > p > a:nth-child(1)').click()", "").GetAwaiter().GetResult() | Out-Null
