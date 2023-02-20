@@ -23,6 +23,21 @@ Function Assert-Pending {
 
 }
 
+Function Deploy-Browser {
+
+    Param(
+        [ValidateSet("Chromium", "Firefox")] [String] $Browser = "Chromium"
+    )
+
+    Import-Library "System.Text.Json"
+    Import-Library "Microsoft.Bcl.AsyncInterfaces"
+    Import-Library "Microsoft.CodeAnalysis"
+    Import-Library "Microsoft.Playwright"
+    [Microsoft.Playwright.Program]::Main(@("install", "$Browser".ToLower())) | Out-Null
+    Return [Microsoft.Playwright.Playwright]::CreateAsync().GetAwaiter().GetResult()
+
+}
+
 Function Enable-Feature {
 
     Param(
@@ -126,21 +141,6 @@ Function Import-Library {
         If ($Testing) { Try { Add-Type -Path "$Content" -EA SI } Catch { $_.Exception.LoaderExceptions } }
         Else { Try { Add-Type -Path "$Content" -EA SI } Catch {} }
     }
-
-}
-
-Function Deploy-Browser {
-
-    Param(
-        [ValidateSet("Chromium", "Firefox")] [String] $Browser = "Chromium"
-    )
-
-    Import-Library "System.Text.Json"
-    Import-Library "Microsoft.Bcl.AsyncInterfaces"
-    Import-Library "Microsoft.CodeAnalysis"
-    Import-Library "Microsoft.Playwright"
-    [Microsoft.Playwright.Program]::Main(@("install", "$Browser".ToLower())) | Out-Null
-    Return [Microsoft.Playwright.Playwright]::CreateAsync().GetAwaiter().GetResult()
 
 }
 
@@ -425,14 +425,12 @@ Function Update-SysPath {
     )
 
     If (-Not (Test-Path "$Payload")) { Return }
-
     If ($Section -Ne "Process" ) {
         $OldPath = [Environment]::GetEnvironmentVariable("PATH", "$Section")
         $OldPath = $OldPath -Split ";" | Where-Object { $_ -NotMatch "^$([Regex]::Escape($Payload))\\?" }
         $NewPath = ($OldPath + $Payload) -Join ";"
         Invoke-Gsudo { [Environment]::SetEnvironmentVariable("PATH", "$Using:NewPath", "$Using:Section") }
     }
-
     $OldPath = $Env:Path -Split ";" | Where-Object { $_ -NotMatch "^$([Regex]::Escape($Payload))\\?" }
     $NewPath = ($OldPath + $Payload) -Join ";" ; $Env:Path = $NewPath -Join ";"
 
@@ -681,7 +679,7 @@ Function Update-Nanazip {
         Add-AppxPackage -Path "$Fetched" -DeferRegistrationWhenPackagesAreInUse -ForceUpdateFromAnyVersion
     }
 
-    Update-SysPath "$Env:LocalAppData\Microsoft\WindowsApps" "Process"
+    # Update-SysPath "$Env:LocalAppData\Microsoft\WindowsApps" "Process"
 
 }
 
