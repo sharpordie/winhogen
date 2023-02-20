@@ -224,7 +224,8 @@ Function Invoke-Fetcher {
             $Waiting = $WebPage.WaitForDownloadAsync()
             # $WebPage.WaitForSelectorAsync("#checker\.results > div:nth-child(1) > div.Link > a").GetAwaiter().GetResult() | Out-Null
             $WebPage.WaitForTimeoutAsync(6000).GetAwaiter().GetResult() | Out-Null
-            $WebPage.EvaluateAsync("document.querySelector('#checker\.results > div:nth-child(1) > div.Link > a').click()", "").GetAwaiter().GetResult() | Out-Null
+            $WebPage.EvaluateAsync("#checker\\.results a", "").GetAwaiter().GetResult()
+            $WebPage.EvaluateAsync("document.querySelector('#checker\\.results > div.Link:nth-child(1) > a').click()", "").GetAwaiter().GetResult() | Out-Null
             $WebPage.WaitForTimeoutAsync(2000).GetAwaiter().GetResult() | Out-Null
             $WebPage.EvaluateAsync("document.querySelector('body > header > p > a:nth-child(1)').click()", "").GetAwaiter().GetResult() | Out-Null
             $Attempt = $Waiting.GetAwaiter().GetResult()
