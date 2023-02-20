@@ -224,7 +224,7 @@ Function Invoke-Fetcher {
             $Waiting = $WebPage.WaitForDownloadAsync()
             $WebPage.WaitForTimeoutAsync(10000).GetAwaiter().GetResult() | Out-Null
             foreach ($Address In $WebPage.Locator("#checker\\.results a").AllAsync().GetAwaiter().GetResult()) {
-                Write-Output $Address.ToString()
+                $Address.ClickAsync().GetAwaiter().GetResult()
             }
             Exit
             $Factors = $WebPage.Locator("#checker\\.results a").AllAsync().GetAwaiter().GetResult()
