@@ -223,6 +223,10 @@ Function Invoke-Fetcher {
             $WebPage.GoToAsync("https://jetbra.in/s").GetAwaiter().GetResult() | Out-Null
             $Waiting = $WebPage.WaitForDownloadAsync()
             $WebPage.WaitForTimeoutAsync(10000).GetAwaiter().GetResult() | Out-Null
+            foreach ($Address In $WebPage.Locator("#checker\\.results a").AllAsync().GetAwaiter().GetResult()) {
+                Write-Output $Address.ToString()
+            }
+            Exit
             $Factors = $WebPage.Locator("#checker\\.results a").AllAsync().GetAwaiter().GetResult()
             # $Factors = $Element.EvaluateAllAsync("all => all.map((one) => one.href)").GetAwaiter().GetResult()
             echo $Factors
