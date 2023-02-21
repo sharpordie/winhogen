@@ -640,10 +640,10 @@ Function Update-Jetbra {
         Rename-Item -Path "$Extract\jetbra" -NewName "$Deposit"
         $Scripts = "$Deposit\scripts"
         Add-Type -AssemblyName System.Windows.Forms
-        Start-Process "cscript" "$Scripts\uninstall-current-user.vbs" -WorkingDirectory "$Scripts" -NoNewWindow
+        Start-Process "cscript" "$Scripts\uninstall-current-user.vbs" -WorkingDirectory "$Scripts" -WindowStyle Hidden
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
         Start-Sleep 4 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
-        Start-Process "cscript" "$Scripts\install-current-user.vbs" -WorkingDirectory "$Scripts" -NoNewWindow
+        Start-Process "cscript" "$Scripts\install-current-user.vbs" -WorkingDirectory "$Scripts" -WindowStyle Hidden
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
         Start-Sleep 4 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
     }
