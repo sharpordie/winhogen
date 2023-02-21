@@ -116,7 +116,7 @@ Function Export-Members {
             Return @(
                 "Update-Windows '$Country' '$Machine'"
                 "Update-Antidote"
-                "Update-Jetbra"
+                "Update-Pycharm"
                 "Update-Noxplayer"
             )
         }
@@ -173,7 +173,8 @@ Function Invoke-Fetcher {
 
     Param(
         [ValidateSet("Browser", "Filecr", "Jetbra", "Webclient")] [String] $Fetcher,
-        [String] $Payload
+        [String] $Payload,
+        [String] $Fetched
     )
 
     Switch ($Fetcher) {
@@ -236,6 +237,10 @@ Function Invoke-Fetcher {
             $WebPage.CloseAsync().GetAwaiter().GetResult() | Out-Null
             $Browser.CloseAsync().GetAwaiter().GetResult() | Out-Null
             Return "$Fetched"
+        }
+        "Webclient" {
+            If (-Not $Fetched) { $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Payload" -Leaf)" }
+            (New-Object Net.WebClient).DownloadFile("$Payload", "$Fetched") ; Return "$Fetched"
         }
     }
 
@@ -771,6 +776,48 @@ Function Update-Powershell {
 
 }
 
+Function Update-Pycharm {
+
+    Param (
+        [String] $Deposit = "$Env:userProfile\Projects",
+        [String] $Margins = 140
+    )
+
+    $Starter = "$Env:ProgramFiles\JetBrains\PyCharm\bin\pycharm64.exe"
+    $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
+    $Present = $Current -Ne "0.0.0.0"
+
+    $Address = "https://data.services.jetbrains.com/products/releases?code=PCP&latest=true&type=release"
+    $Version = [Regex]::Match((Invoke-Scraper "Json" "$Address").PCP[0].version , "[\d.]+").Value
+    # $Version = ((New-Object Net.WebClient).DownloadString("$Address") | ConvertFrom-Json).PCP[0].version
+    $Updated = [Version] "$Current" -Ge [Version] "$Version"
+
+    If (-Not $Updated) {
+        If ($Present) {
+            Invoke-Gsudo { Start-Process "$Env:ProgramFiles\JetBrains\PyCharm\bin\Uninstall.exe" "/S" -Wait }
+            Remove-Item -Path "$Env:ProgramFiles\JetBrains\PyCharm" -Recurse -Force
+            Remove-Item -Path "HKCU:\SOFTWARE\JetBrains\PyCharm" -Recurse -Force
+        }
+        # $Address = ((New-Object Net.WebClient).DownloadString("$Address") | ConvertFrom-Json).PCP[0].downloads.windows.link
+        $Address = (Invoke-Scraper "Json" "$Address").PCP[0].downloads.windows.link
+        $Fetched = Invoke-Fetcher "Webclient" "$Address"
+        # $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
+        # (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
+        $ArgList = "/S /D=$Env:ProgramFiles\JetBrains\PyCharm"
+        Invoke-Gsudo { Start-Process "$Using:Fetched" "$Using:ArgList" -Wait }
+        $Created = "$([Environment]::GetFolderPath("CommonStartMenu"))\Programs\JetBrains\PyCharm.lnk"
+        Remove-Item "$Created" -EA SI
+        $Forward = Get-Item "$([Environment]::GetFolderPath("CommonStartMenu"))\Programs\JetBrains\*PyCharm*.lnk"
+        Invoke-Gsudo { Rename-Item -Path "$Using:Forward" -NewName "$Using:Created" }
+    }
+
+    If (-Not $Present) {
+        Update-Jetbra
+        $License = Invoke-Scraper "Jetbra" "PyCharm"
+    }
+
+}
+
 Function Update-Windows {
 
     Param (
@@ -811,6 +858,8 @@ If ($MyInvocation.InvocationName -Ne ".") {
     Write-Host "$Loading" -FO DarkYellow -NoNewline ; Remove-Feature "Uac" ; Remove-Feature "Sleeping"
     $Correct = (Update-Gsudo) -And ! (gsudo cache on -d -1 2>&1).ToString().Contains("Error")
     If (-Not $Correct) { Write-Host "$Failure`n" -FO Red ; Exit } ; Update-Powershell
+
+    Update-Pycharm ; Exit
 
     # Handle elements
     $Members = Export-Members -Variant "Development" -Machine "WINHOGEN"
