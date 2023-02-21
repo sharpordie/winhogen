@@ -811,9 +811,31 @@ Function Update-Pycharm {
         Invoke-Gsudo { Rename-Item -Path "$Using:Forward" -NewName "$Using:Created" }
     }
 
-    If (-Not $Present) {
+    If (-Not $Present -Or $True) { # TODO: Remove dummy
         Update-Jetbra
         $License = Invoke-Scraper "Jetbra" "PyCharm"
+        Import-Library "Interop.UIAutomationClient"
+        Import-Library "FlaUI.Core"
+        Import-Library "FlaUI.UIA3"
+        Import-Library "System.Drawing.Common"
+        Import-Library "System.Security.Permissions"
+        $Handler = [FlaUI.UIA3.UIA3Automation]::New()
+        $Started = [FlaUI.Core.Application]::Launch("$Starter")
+        $Window1 = $Started.GetMainWindow($Handler)
+        $Window1.Focus()
+        # TAB + SPACE + SPACE
+        Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB)
+        Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE)
+        Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE)
+        # TAB + SPACE + WAITING...
+        Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB)
+        Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE)
+        Start-Sleep 10
+        # Click activation code
+        # Type License
+        # TAB + SPACE + SPACE(Continue)
+        # WINDOWS SECURITY ALERT ALLOW ACCESS
+        # ALT+F4
     }
 
 }
