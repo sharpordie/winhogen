@@ -843,6 +843,10 @@ Function Update-Pycharm {
         Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE)
         # WINDOWS SECURITY ALERT ALLOW ACCESS
         # ALT+F4
+        $Factor1 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::ALT
+        $Factor2 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::F4
+        Start-Sleep 4 ; [FlaUI.Core.Input.Keyboard]::TypeSimultaneously($Factor1, $Factor2)
+        Start-Sleep 4 ; Stop-Process -Name "pycharm64"
     }
 
 }
