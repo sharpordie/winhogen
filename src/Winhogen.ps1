@@ -629,7 +629,7 @@ Function Update-Gsudo {
 
 Function Update-Jetbra {
 
-    $Deposit = "$Env:USerProfile\.jetbra"
+    $Deposit = "$Env:UserProfile\.jetbra"
     $Starter = "$Deposit\ja-netfilter.jar"
     $Updated = Test-Path "$Starter" -NewerThan (Get-Date).AddDays(-30)
 
