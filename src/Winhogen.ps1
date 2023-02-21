@@ -640,8 +640,8 @@ Function Update-Jetbra {
         $Extract = Invoke-Extract "$Fetched" "$(Split-Path "$Deposit")"
         Rename-Item -Path "$Extract\jetbra" -NewName "$Deposit"
         $Scripts = "$Deposit\scripts"
-        Start-Process "cscript" "$Scripts\uninstall-current-user.vbs" -WorkingDirectory "$Scripts"
-        Start-Process "cscript" "$Scripts\install-current-user.vbs" -WorkingDirectory "$Scripts"
+        Start-Process "cscript" "$Scripts\uninstall-current-user.vbs" -WorkingDirectory "$Scripts" -NoNewWindow
+        Start-Process "cscript" "$Scripts\install-current-user.vbs" -WorkingDirectory "$Scripts" -NoNewWindow
     }
 
 }
