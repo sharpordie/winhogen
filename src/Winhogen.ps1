@@ -631,7 +631,6 @@ Function Update-Jetbra {
 
     $Deposit = "$Env:USerProfile\.jetbra"
     $Starter = "$Deposit\ja-netfilter.jar"
-
     $Updated = Test-Path "$Starter" -NewerThan (Get-Date).AddDays(-30)
 
     If (-Not $Updated) {
