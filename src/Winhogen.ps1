@@ -830,10 +830,17 @@ Function Update-Pycharm {
         # TAB + SPACE + WAITING...
         Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB)
         Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE)
-        Start-Sleep 10
-        # Click activation code
+        Start-Sleep 12
+        # Click activation code (ALT+C)
+        $Factor1 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::ALT
+        $Factor2 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::C
+        Start-Sleep 4 ; [FlaUI.Core.Input.Keyboard]::TypeSimultaneously($Factor1, $Factor2)
         # Type License
+        Start-Sleep 4 ; [FlaUI.Core.Input.Keyboard]::Type($License)
         # TAB + SPACE + SPACE(Continue)
+        Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB)
+        Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE)
+        Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE)
         # WINDOWS SECURITY ALERT ALLOW ACCESS
         # ALT+F4
     }
