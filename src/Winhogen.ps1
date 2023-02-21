@@ -116,6 +116,7 @@ Function Export-Members {
             Return @(
                 "Update-Windows '$Country' '$Machine'"
                 "Update-Antidote"
+                "Update-Jetbra"
                 "Update-Noxplayer"
             )
         }
@@ -810,8 +811,6 @@ If ($MyInvocation.InvocationName -Ne ".") {
     Write-Host "$Loading" -FO DarkYellow -NoNewline ; Remove-Feature "Uac" ; Remove-Feature "Sleeping"
     $Correct = (Update-Gsudo) -And ! (gsudo cache on -d -1 2>&1).ToString().Contains("Error")
     If (-Not $Correct) { Write-Host "$Failure`n" -FO Red ; Exit } ; Update-Powershell
-
-    Update-Jetbra ; Exit
 
     # Handle elements
     $Members = Export-Members -Variant "Development" -Machine "WINHOGEN"
