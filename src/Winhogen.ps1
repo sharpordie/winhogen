@@ -832,9 +832,9 @@ Function Update-Pycharm {
         Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE)
         Start-Sleep 10
         # Click activation code (ALT+C)
-        # $Factor1 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::ALT
-        # $Factor2 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::C
-        Start-Sleep 4 ; [FlaUI.Core.Input.Keyboard]::TypeSimultaneously([FlaUI.Core.WindowsAPI.VirtualKeyShort]::ALT, "c")
+        $Factor1 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::ALT
+        $Factor2 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::KEY_C
+        Start-Sleep 4 ; [FlaUI.Core.Input.Keyboard]::TypeSimultaneously($Factor1, $Factor2)
         # Type License
         Start-Sleep 4 ; [FlaUI.Core.Input.Keyboard]::Type($License)
         # TAB + SPACE + SPACE(Continue)
