@@ -627,6 +627,24 @@ Function Update-Gsudo {
 
 }
 
+Function Update-Jetbra {
+
+    $Deposit = "$Env:USerProfile\.jetbra"
+    $Starter = "$Deposit\ja-netfilter.jar"
+
+    $Updated = Test-Path "$Starter" -NewerThan (Get-Date).AddDays(-30)
+
+    If (-Not $Updated) {
+        Remove-Item "$Deposit" -Recurse -Force -EA SI
+        $Fetched = Invoke-Fetcher "Jetbra"
+        $Extract = Invoke-Extract "$Fetched" "$(Split-Path "$Deposit")"
+        Rename-Item "$Extract" "$Deposit" ; $Scripts = "$Deposit\scripts"
+        & cscript "$Scripts\uninstall-current-user.vbs"
+        & cscript "$Scripts\install-current-user.vbs"
+    }
+
+}
+
 Function Update-Ldplayer {
 
     $Starter = (Get-Item "C:\LDPlayer\LDPlayer*\dnplayer.exe" -EA SI).FullName
@@ -787,6 +805,8 @@ If ($MyInvocation.InvocationName -Ne ".") {
     Write-Host "$Loading" -FO DarkYellow -NoNewline ; Remove-Feature "Uac" ; Remove-Feature "Sleeping"
     $Correct = (Update-Gsudo) -And ! (gsudo cache on -d -1 2>&1).ToString().Contains("Error")
     If (-Not $Correct) { Write-Host "$Failure`n" -FO Red ; Exit } ; Update-Powershell
+
+    Update-Jetbra ; Exit
 
     # Handle elements
     $Members = Export-Members -Variant "Development" -Machine "WINHOGEN"
