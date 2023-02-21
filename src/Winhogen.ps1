@@ -638,9 +638,10 @@ Function Update-Jetbra {
         Remove-Item "$Deposit" -Recurse -Force -EA SI
         $Fetched = Invoke-Fetcher "Jetbra"
         $Extract = Invoke-Extract "$Fetched" "$(Split-Path "$Deposit")"
-        Rename-Item -Path "$Extract" -NewName "$Deposit" ; $Scripts = "$Deposit\scripts"
-        & cscript "$Scripts\uninstall-current-user.vbs"
-        & cscript "$Scripts\install-current-user.vbs"
+        echo "'$Deposit'"
+        # Rename-Item -Path "$Extract" -NewName "$Deposit" ; $Scripts = "$Deposit\scripts"
+        # & cscript "$Scripts\uninstall-current-user.vbs"
+        # & cscript "$Scripts\install-current-user.vbs"
     }
 
 }
