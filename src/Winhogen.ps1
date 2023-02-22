@@ -844,7 +844,8 @@ Function Update-Pycharm {
         # WINDOWS SECURITY ALERT ALLOW ACCESS
         $Desktop = $Handler.GetDesktop()
         echo $Desktop
-        $Window1 = $Desktop.FindFirstChild($Handler.ConditionFactory.ByName("Windows Security Alert"))
+        $Window1 = $Desktop.FindFirstDescendant($Handler.ConditionFactory.ByName("Windows Security Alert"))
+        [FlaUI.Core.AutomationElements.AutomationElementExtensions]::AsWindow($Window1)
         echo $Windows1
         $Button1 = $Window1.FindFirstDescendant($Handler.ConditionFactory.ByName("Allow access"))
         $button1.Click()
