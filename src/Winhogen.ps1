@@ -836,7 +836,7 @@ Function Update-Pycharm {
         $Factor2 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::KEY_C
         Start-Sleep 1 ; [FlaUI.Core.Input.Keyboard]::TypeSimultaneously($Factor1, $Factor2)
         # Type License
-        Start-Sleep 4 ; [FlaUI.Core.Input.Keyboard]::Type("$(Get-Clipboard)")
+        Start-Sleep 4 ; [FlaUI.Core.Input.Keyboard]::Type("$(Get-Clipboard)") ; Exit
         # $Factor3 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::CONTROL
         # $Factor4 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::KEY_V
         # Start-Sleep 1 ; [FlaUI.Core.Input.Keyboard]::TypeSimultaneously($Factor3, $Factor4)
