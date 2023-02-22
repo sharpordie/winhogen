@@ -11,7 +11,7 @@ Opinionated post-installation script for Windows 11.
 Running this blindly is strongly discouraged.
 
 ```powershell
-$address = "https://raw.githubusercontent.com/sharpordie/winhogen/main/winhogen.ps1"
+$address = "https://raw.githubusercontent.com/sharpordie/winhogen/main/src/winhogen.ps1"
 $fetched = ni $env:temp\winhogen.ps1 -f ; iwr $address -o $fetched
 try { pwsh -ep bypass $env:temp\winhogen.ps1 } catch { powershell -ep bypass $env:temp\winhogen.ps1 }
 ```
