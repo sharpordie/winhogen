@@ -9,6 +9,5 @@ Opinionated post-installation script for Windows 11.
 ## One-command execution
 
 ```powershell
-iwr https://raw.githubusercontent.com/sharpordie/winhogen/main/src/winhogen.ps1 -o (ni $env:temp\winhogen.ps1 -f)
-try { pwsh -ep bypass $env:temp\winhogen.ps1 } catch { powershell -ep bypass $env:temp\winhogen.ps1 }
+iwr https://raw.githubusercontent.com/sharpordie/winhogen/main/src/winhogen.ps1 -o (ni $env:temp\winhogen.ps1 -f) ; try { pwsh -ep bypass $env:temp\winhogen.ps1 } catch { powershell -ep bypass $env:temp\winhogen.ps1 }
 ```
