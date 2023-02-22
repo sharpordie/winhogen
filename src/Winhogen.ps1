@@ -842,10 +842,13 @@ Function Update-Pycharm {
         Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE)
         Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE)
         # WINDOWS SECURITY ALERT ALLOW ACCESS
+        $Desktop = $Handler.GetDesktop()
+        $Window1 = $Desktop.FindFirstDescendant($Handler.ConditionFactory.ByName("Windows Security Alert"))
+        $Button1 = $Window1.FindFirstDescendant($Handler.ConditionFactory.ByName("Allow access"))
+        $button1.Click()
         # ALT+F4
         $Factor5 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::ALT
         $Factor6 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::F4
-        Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::TypeSimultaneously($Factor5, $Factor6)
         Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::TypeSimultaneously($Factor5, $Factor6)
         Start-Sleep 4 ; Stop-Process -Name "pycharm64" -EA SI
     }
