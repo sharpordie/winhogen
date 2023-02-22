@@ -115,9 +115,9 @@ Function Export-Members {
         "Development" {
             Return @(
                 "Update-Windows '$Country' '$Machine'"
-                "Update-Antidote"
+                # "Update-Antidote"
                 "Update-Pycharm"
-                "Update-Noxplayer"
+                # "Update-Noxplayer"
             )
         }
         "GameStreaming" {
@@ -626,6 +626,7 @@ Function Update-Jetbra {
         Start-Process "cscript" "$Scripts\install-current-user.vbs" -WorkingDirectory "$Scripts" -WindowStyle Hidden
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
         Start-Sleep 4 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+        Start-Sleep 4 ; Invoke-Restart
     }
 
 }
