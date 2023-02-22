@@ -57,7 +57,8 @@ Function Enable-Feature {
             $Content = (Write-Output ((cscript /nologo "C:\Windows\System32\slmgr.vbs" /xpr) -Join ""))
             If (-Not $Content.Contains("permanently activated")) {
                 $Fetched = Invoke-Fetcher "Webclient" "https://massgrave.dev/get.ps1"
-                Start-Process "powershell" "-f `"$Fetched`"" -WindowStyle Hidden -Wait
+                Write-Output "1" | powershell -f "$Fetched"
+                # Start-Process "powershell" "-f `"$Fetched`"" -WindowStyle Hidden -Wait
             }
         }
         "HyperV" {
