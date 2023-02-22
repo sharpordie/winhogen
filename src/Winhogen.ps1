@@ -830,25 +830,25 @@ Function Update-Pycharm {
         # TAB + SPACE + WAITING...
         Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB)
         Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE)
-        Start-Sleep 10
+        Start-Sleep 8
         # Click activation code (ALT+C)
         $Factor1 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::ALT
         $Factor2 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::KEY_C
-        Start-Sleep 4 ; [FlaUI.Core.Input.Keyboard]::TypeSimultaneously($Factor1, $Factor2)
+        Start-Sleep 1 ; [FlaUI.Core.Input.Keyboard]::TypeSimultaneously($Factor1, $Factor2)
         # Type License
         # Start-Sleep 4 ; [FlaUI.Core.Input.Keyboard]::Type($License)
-        $Factor1 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::CONTROL
-        $Factor2 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::KEY_V
-        Start-Sleep 4 ; [FlaUI.Core.Input.Keyboard]::TypeSimultaneously($Factor1, $Factor2)
+        $Factor3 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::CONTROL
+        $Factor4 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::KEY_V
+        Start-Sleep 1 ; [FlaUI.Core.Input.Keyboard]::TypeSimultaneously($Factor3, $Factor4)
         # TAB + SPACE + SPACE(Continue)
         Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB)
         Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE)
         Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE)
         # WINDOWS SECURITY ALERT ALLOW ACCESS
         # ALT+F4
-        $Factor1 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::ALT
-        $Factor2 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::F4
-        Start-Sleep 4 ; [FlaUI.Core.Input.Keyboard]::TypeSimultaneously($Factor1, $Factor2)
+        $Factor5 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::ALT
+        $Factor6 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::F4
+        Start-Sleep 4 ; [FlaUI.Core.Input.Keyboard]::TypeSimultaneously($Factor5, $Factor6)
         Start-Sleep 4 ; Stop-Process -Name "pycharm64"
     }
 
