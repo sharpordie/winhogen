@@ -6,6 +6,10 @@ Opinionated post-installation script for Windows 11.
 
 # <samp>GUIDANCE</samp>
 
+## Execution
+
+Running this blindly is strongly discouraged.
+
 ```powershell
 iwr https://raw.githubusercontent.com/sharpordie/winhogen/main/winhogen.ps1 -o (ni $env:temp\winhogen.ps1 -f)
 try { pwsh -ep bypass $env:temp\winhogen.ps1 } catch { powershell -ep bypass $env:temp\winhogen.ps1 }
