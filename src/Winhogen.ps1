@@ -842,8 +842,9 @@ Function Update-Pycharm {
         Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE)
         Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE)
         # WINDOWS SECURITY ALERT ALLOW ACCESS
+        Start-Sleep 8
         $Desktop = $Handler.GetDesktop()
-        echo $Desktop
+        echo $Desktop.GetAllTopLevelWindows($Handler)
         $Window1 = $Desktop.FindFirstDescendant($Handler.ConditionFactory.ByName("Windows Security Alert"))
         [FlaUI.Core.AutomationElements.AutomationElementExtensions]::AsWindow($Window1)
         echo $Windows1
