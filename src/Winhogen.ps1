@@ -783,6 +783,8 @@ Function Update-Pycharm {
     }
 
     If (-Not $Present) {
+        Update-Jetbra
+
         # Gather activation code
         $License = Invoke-Scraper "Jetbra" "PyCharm"
         $License = $License.Substring(0, 1) + "$License"
@@ -877,8 +879,6 @@ If ($MyInvocation.InvocationName -Ne ".") {
     Write-Host "$Loading" -FO DarkYellow -NoNewline ; Remove-Feature "Uac" ; Remove-Feature "Sleeping"
     $Correct = (Update-Gsudo) -And ! (gsudo cache on -d -1 2>&1).ToString().Contains("Error")
     If (-Not $Correct) { Write-Host "$Failure`n" -FO Red ; Exit } ; Update-Powershell
-
-    Update-Pycharm ; Exit
 
     # Handle elements
     $Members = Export-Members -Variant "Development" -Machine "WINHOGEN"
