@@ -1,86 +1,12 @@
 # <samp>OVERVIEW</samp>
 
-Opinionated post-installation scripts for Windows 11.
+Opinionated post-installation script for Windows 11.
+
+<img src="assets/img1.png" width="49.25%"/><img src="assets/img0.png" width="1.5%"/><img src="assets/img2.png" width="49.25%"/>
 
 # <samp>GUIDANCE</samp>
 
 ```powershell
-iwr https://github.com/sharpordie/winhogen/archive/refs/heads/main.zip -o $env:temp\main.zip
-expand-archive $env:temp\main.zip -destinationpath $env:temp -force
-powershell -ep bypass $env:temp\winhogen-main\src\winhogen.ps1
-
-iwr https://github.com/sharpordie/winhogen/archive/refs/heads/main.zip -o $env:temp\main.zip
-expand-archive $env:temp\main.zip -destinationpath $env:temp -force
-pwsh -ep bypass $env:temp\winhogen-main\src\winhogen.ps1
-
-# iwr https://raw.githubusercontent.com/sharpordie/winhogen/main/src/Winhogen.ps1 -o $env:temp\winhogen.ps1
-# powershell -ep bypass $env:temp\winhogen.ps1
-
-# iwr https://raw.githubusercontent.com/sharpordie/winhogen/main/src/Winhogen.ps1 -o $env:temp\winhogen.ps1
-# pwsh -ep bypass $env:temp\winhogen.ps1
+iwr https://raw.githubusercontent.com/sharpordie/winhogen/main/winhogen.ps1 -o (ni $env:temp\winhogen.ps1 -f)
+try { pwsh -ep bypass $env:temp\winhogen.ps1 } catch { powershell -ep bypass $env:temp\winhogen.ps1 }
 ```
-
-<!-- 
-## For coding purpose
-
-<img src="https://fakeimg.pl/852x480/43d6b5/43d6b5" width="49.25%"/><img src="assets/img0.png" width="1.5%"/><img src="https://fakeimg.pl/852x480/43d6b5/43d6b5" width="49.25%"/>
-
-### Features
-
-- Update and configure windows
-- Update and configure gpu driver
-- ...
-
-### Launcher
-
-```powershell
-iwr https://github.com/sharpordie/winhogen/archive/refs/heads/main.zip -o $env:temp\main.zip
-expand-archive $env:temp\main.zip -destinationpath $env:temp -force
-powershell -ep bypass $env:temp\winhogen-main\src\codhogen.ps1
-```
-
-## For gaming purpose
-
-<img src="https://fakeimg.pl/852x480/ffa154/ffa154" width="49.25%"/><img src="assets/img0.png" width="1.5%"/><img src="https://fakeimg.pl/852x480/ffa154/ffa154" width="49.25%"/>
-
-### Features
-
-- Update and configure windows
-- Update and configure gpu driver
-- ...
-
-### Launcher
-
-```powershell
-iwr https://github.com/sharpordie/winhogen/archive/refs/heads/main.zip -o $env:temp\main.zip
-expand-archive $env:temp\main.zip -destinationpath $env:temp -force
-powershell -ep bypass $env:temp\winhogen-main\src\gamhogen.ps1
-```
-
-## For stream purpose
-
-<img src="https://fakeimg.pl/852x480/9bdb4d/9bdb4d" width="49.25%"/><img src="assets/img0.png" width="1.5%"/><img src="https://fakeimg.pl/852x480/9bdb4d/9bdb4d" width="49.25%"/>
-
-### Features
-
-- Update and configure windows
-- Update and configure gpu driver
-- Update and configure sunshine
-- ...
-
-### Launcher
-
-```powershell
-iwr https://github.com/sharpordie/winhogen/archive/refs/heads/main.zip -o $env:temp\main.zip
-expand-archive $env:temp\main.zip -destinationpath $env:temp -force
-powershell -ep bypass $env:temp\winhogen-main\src\strhogen.ps1
-```
-
-## For custom purpose
-
-Copy the generic template and make it yours.
-
-```powershell
-git clone https://github.com/sharpordie/winhogen.git
-cp winhogen\src\template.ps1 winhogen\src\cushogen.ps1
-``` -->
