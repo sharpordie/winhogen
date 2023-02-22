@@ -307,7 +307,7 @@ Function Invoke-Scraper {
             $WebPage.Locator(":has-text('$Payload') ~ p").ClickAsync().GetAwaiter().GetResult() | Out-Null
             $WebPage.CloseAsync().GetAwaiter().GetResult() | Out-Null
             $Browser.CloseAsync().GetAwaiter().GetResult() | Out-Null
-            Return Get-Clipboard
+            Return "$(Get-Clipboard)".Trim()
         }
     }
 
@@ -836,12 +836,10 @@ Function Update-Pycharm {
         $Factor2 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::KEY_C
         Start-Sleep 1 ; [FlaUI.Core.Input.Keyboard]::TypeSimultaneously($Factor1, $Factor2)
         # Type License
-        # Start-Sleep 4 ; [FlaUI.Core.Input.Keyboard]::Type($License)
+        Start-Sleep 4 ; [FlaUI.Core.Input.Keyboard]::Type("$License")
         # $Factor3 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::CONTROL
         # $Factor4 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::KEY_V
         # Start-Sleep 1 ; [FlaUI.Core.Input.Keyboard]::TypeSimultaneously($Factor3, $Factor4)
-        Add-Type -AssemblyName System.Windows.Forms
-        Start-Sleep 1 ; [Windows.Forms.SendKeys]::SendWait("^v")
         # TAB + SPACE + SPACE(Continue)
         Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB)
         Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE)
