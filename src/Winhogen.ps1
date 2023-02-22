@@ -867,7 +867,7 @@ If ($MyInvocation.InvocationName -Ne ".") {
     Clear-Host ; $ProgressPreference = "SilentlyContinue"
     Write-Output "+---------------------------------------------------------------+"
     Write-Output "|                                                               |"
-    Write-Output "|  > WINHOGEN1                                                   |"
+    Write-Output "|  > WINHOGEN2                                                   |"
     Write-Output "|                                                               |"
     Write-Output "|  > CONFIGURATION SCRIPT FOR WINDOWS 11                        |"
     Write-Output "|                                                               |"
