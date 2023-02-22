@@ -814,6 +814,7 @@ Function Update-Pycharm {
     If (-Not $Present -Or $True) { # TODO: Remove dummy
         Update-Jetbra
         $License = Invoke-Scraper "Jetbra" "PyCharm"
+        Write-Output "$License" ; Exit
         Import-Library "Interop.UIAutomationClient"
         Import-Library "FlaUI.Core"
         Import-Library "FlaUI.UIA3"
