@@ -842,7 +842,7 @@ Function Update-Pycharm {
         # $Factor4 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::KEY_V
         # Start-Sleep 1 ; [FlaUI.Core.Input.Keyboard]::TypeSimultaneously($Factor3, $Factor4)
         # TAB + SPACE + SPACE(Continue)
-        Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB)
+        Start-Sleep 8 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB)
         Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE)
         Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE)
         # WINDOWS SECURITY ALERT ALLOW ACCESS
