@@ -637,7 +637,7 @@ Function Update-Jetbra {
 
     $Deposit = "$Env:UserProfile\.jetbra"
     $Starter = "$Deposit\ja-netfilter.jar"
-    $Updated = Test-Path "$Starter" -NewerThan (Get-Date).AddDays(-30)
+    $Updated = Test-Path "$Starter" -NewerThan (Get-Date).AddDays(-180)
 
     If (-Not $Updated) {
         Remove-Item "$Deposit" -Recurse -Force -EA SI
