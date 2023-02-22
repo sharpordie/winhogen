@@ -528,32 +528,6 @@ Function Update-Antidote {
         [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB) ; Start-Sleep 1
         [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE) ; Start-Sleep 4
 
-        # $Window5 = $Started.GetMainWindow($Handler)
-        # $Window5.Focus() ; Start-Sleep 1
-        # [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB) ; Start-Sleep 1
-        # [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB) ; Start-Sleep 1
-        # [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE) ; Start-Sleep 1
-        # [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB) ; Start-Sleep 1
-        # [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE) ; Start-Sleep 4
-
-        # $Window6 = $Started.GetMainWindow($Handler)
-        # $Window6.Focus() ; Start-Sleep 1
-        # [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB) ; Start-Sleep 1
-        # [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE) ; Start-Sleep 1
-        # [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::DOWN) ; Start-Sleep 1
-        # [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::DOWN) ; Start-Sleep 1
-        # [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::ENTER) ; Start-Sleep 1
-        # [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB) ; Start-Sleep 1
-        # [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE) ; Start-Sleep 1
-        # [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB) ; Start-Sleep 1
-        # [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE) ; Start-Sleep 1
-        # [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB) ; Start-Sleep 1
-        # [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE) ; Start-Sleep 4
-
-        # $Window7 = $Started.GetMainWindow($Handler)
-        # $Window7.Focus() ; Start-Sleep 1
-        # [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::ENTER) ; Start-Sleep 6
-
         Stop-Process -Name "AgentConnectix" -EA SI
         Stop-Process -Name "Antidote" -EA SI
         Stop-Process -Name "Connectix" -EA SI
@@ -789,7 +763,6 @@ Function Update-Pycharm {
 
     $Address = "https://data.services.jetbrains.com/products/releases?code=PCP&latest=true&type=release"
     $Version = [Regex]::Match((Invoke-Scraper "Json" "$Address").PCP[0].version , "[\d.]+").Value
-    # $Version = ((New-Object Net.WebClient).DownloadString("$Address") | ConvertFrom-Json).PCP[0].version
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
 
     If (-Not $Updated) {
@@ -798,11 +771,8 @@ Function Update-Pycharm {
             Remove-Item -Path "$Env:ProgramFiles\JetBrains\PyCharm" -Recurse -Force
             Remove-Item -Path "HKCU:\SOFTWARE\JetBrains\PyCharm" -Recurse -Force
         }
-        # $Address = ((New-Object Net.WebClient).DownloadString("$Address") | ConvertFrom-Json).PCP[0].downloads.windows.link
         $Address = (Invoke-Scraper "Json" "$Address").PCP[0].downloads.windows.link
         $Fetched = Invoke-Fetcher "Webclient" "$Address"
-        # $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
-        # (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
         $ArgList = "/S /D=$Env:ProgramFiles\JetBrains\PyCharm"
         Invoke-Gsudo { Start-Process "$Using:Fetched" "$Using:ArgList" -Wait }
         $Created = "$([Environment]::GetFolderPath("CommonStartMenu"))\Programs\JetBrains\PyCharm.lnk"
@@ -811,10 +781,12 @@ Function Update-Pycharm {
         Invoke-Gsudo { Rename-Item -Path "$Using:Forward" -NewName "$Using:Created" }
     }
 
-    If (-Not $Present -Or $True) {
-        # TODO: Remove dummy
-        Update-Jetbra
+    If (-Not $Present) {
+        # Gather activation code
         $License = Invoke-Scraper "Jetbra" "PyCharm"
+        $License = $License.Substring(0, 1) + "$License"
+
+        # Handle pycharm application
         Import-Library "Interop.UIAutomationClient"
         Import-Library "FlaUI.Core"
         Import-Library "FlaUI.UIA3"
@@ -824,37 +796,41 @@ Function Update-Pycharm {
         $Started = [FlaUI.Core.Application]::Launch("$Starter")
         $Window1 = $Started.GetMainWindow($Handler)
         $Window1.Focus()
-        # TAB + SPACE + SPACE
+
+        # Handle first dialog
         Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB)
         Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE)
         Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE)
-        # TAB + SPACE + WAITING...
+        
+        # Handle second dialog
         Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB)
         Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE)
-        Start-Sleep 8
-        # Click activation code (ALT+C)
-        $Factor1 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::ALT
-        $Factor2 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::KEY_C
-        Start-Sleep 1 ; [FlaUI.Core.Input.Keyboard]::TypeSimultaneously($Factor1, $Factor2)
-        # Type License
-        $License = $License.Substring(0, 1) + "$License" # HACK: Doubling the first letter of the code is required
+
+        # Select activation code
+        Start-Sleep 8 ; [FlaUI.Core.Input.Keyboard]::TypeSimultaneously(
+            [FlaUI.Core.WindowsAPI.VirtualKeyShort]::ALT,
+            [FlaUI.Core.WindowsAPI.VirtualKeyShort]::KEY_C
+        )
+
+        # Insert activation code
         Start-Sleep 8 ; [FlaUI.Core.Input.Keyboard]::Type("$License")
         Start-Sleep 4 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB)
         Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE)
         Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE)
-        # WINDOWS SECURITY ALERT ALLOW ACCESS
-        Try {
-            Start-Sleep 8 ; $Desktop = $Handler.GetDesktop()
-            $Window1 = $Desktop.FindFirstDescendant($Handler.ConditionFactory.ByName("Windows Security Alert"))
-            # [FlaUI.Core.AutomationElements.AutomationElementExtensions]::AsWindow($Window1)
-            $Button1 = $Window1.FindFirstDescendant($Handler.ConditionFactory.ByName("Allow access"))
-            $button1.Click()
-        }
-        Catch {}
-        # ALT+F4
-        $Factor5 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::ALT
-        $Factor6 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::F4
-        Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::TypeSimultaneously($Factor5, $Factor6)
+
+        # Handle windows security alert dialog
+        Start-Sleep 8 ; $Desktop = $Handler.GetDesktop()
+        $Window1 = $Desktop.FindFirstDescendant($Handler.ConditionFactory.ByName("Windows Security Alert"))
+        $Button1 = $Window1.FindFirstDescendant($Handler.ConditionFactory.ByName("Allow access"))
+        $Button1.Click()
+
+        # Finish pycharm window
+        Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::TypeSimultaneously(
+            [FlaUI.Core.WindowsAPI.VirtualKeyShort]::ALT,
+            [FlaUI.Core.WindowsAPI.VirtualKeyShort]::F4
+        )
+
+        # Finish pycharm process
         Start-Sleep 4 ; Stop-Process -Name "pycharm64" -EA SI
     }
 
