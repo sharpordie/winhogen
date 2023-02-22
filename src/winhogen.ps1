@@ -890,8 +890,6 @@ If ($MyInvocation.InvocationName -Ne ".") {
     $Correct = (Update-Gsudo) -And ! (gsudo cache on -d -1 2>&1).ToString().Contains("Error")
     If (-Not $Correct) { Write-Host "$Failure`n" -FO Red ; Exit } ; Update-Powershell
 
-    Enable-Feature "Activation" ; Exit
-
     # Handle elements
     $Members = Export-Members -Variant "Development" -Machine "WINHOGEN"
 
