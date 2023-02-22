@@ -814,8 +814,6 @@ Function Update-Pycharm {
     If (-Not $Present -Or $True) { # TODO: Remove dummy
         Update-Jetbra
         $License = Invoke-Scraper "Jetbra" "PyCharm"
-        $License = $License.Substring(0, 1) + "$License"
-        echo $License
         Import-Library "Interop.UIAutomationClient"
         Import-Library "FlaUI.Core"
         Import-Library "FlaUI.UIA3"
@@ -838,12 +836,9 @@ Function Update-Pycharm {
         $Factor2 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::KEY_C
         Start-Sleep 1 ; [FlaUI.Core.Input.Keyboard]::TypeSimultaneously($Factor1, $Factor2)
         # Type License
-        Start-Sleep 4 ; [FlaUI.Core.Input.Keyboard]::Type("$License") ; Exit
-        # $Factor3 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::CONTROL
-        # $Factor4 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::KEY_V
-        # Start-Sleep 1 ; [FlaUI.Core.Input.Keyboard]::TypeSimultaneously($Factor3, $Factor4)
-        # TAB + SPACE + SPACE(Continue)
-        Start-Sleep 8 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB)
+        $License = $License.Substring(0, 1) + "$License" # HACK: Doubling the first letter of the code is required
+        Start-Sleep 4 ; [FlaUI.Core.Input.Keyboard]::Type("$License")
+        Start-Sleep 4 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB)
         Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE)
         Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE)
         # WINDOWS SECURITY ALERT ALLOW ACCESS
