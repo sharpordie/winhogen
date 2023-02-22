@@ -53,6 +53,13 @@ Function Enable-Feature {
     )
 
     Switch ($Feature) {
+        "Activation" {
+            $Content = (Write-Output ((cscript /nologo "C:\Windows\System32\slmgr.vbs" /xpr) -Join ""))
+            If (-Not $Content.Contains("permanently activated")) {
+                $Fetched = Invoke-Fetcher "https://massgrave.dev/get.ps1"
+                Start-Process "powershell" "-f `"$Fetched`"" -WindowStyle Hidden -Wait
+            }
+        }
         "HyperV" {
             $Content = Invoke-Gsudo { (Get-WindowsOptionalFeature -FE "Microsoft-Hyper-V-All" -Online).State }
             If ($Content.Value -Ne "Enabled") {
@@ -879,6 +886,8 @@ If ($MyInvocation.InvocationName -Ne ".") {
     Write-Host "$Loading" -FO DarkYellow -NoNewline ; Remove-Feature "Uac" ; Remove-Feature "Sleeping"
     $Correct = (Update-Gsudo) -And ! (gsudo cache on -d -1 2>&1).ToString().Contains("Error")
     If (-Not $Correct) { Write-Host "$Failure`n" -FO Red ; Exit } ; Update-Powershell
+
+    Enable-Feature "Activation" ; Exit
 
     # Handle elements
     $Members = Export-Members -Variant "Development" -Machine "WINHOGEN"
