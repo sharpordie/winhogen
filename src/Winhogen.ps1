@@ -637,7 +637,7 @@ Function Update-Jetbra {
 
     $Deposit = "$Env:UserProfile\.jetbra"
     $Starter = "$Deposit\ja-netfilter.jar"
-    $Updated = Test-Path "$Starter" -NewerThan (Get-Date).AddDays(-180)
+    $Updated = Test-Path "$Starter" -NewerThan (Get-Date).AddDays(-360)
 
     If (-Not $Updated) {
         Remove-Item "$Deposit" -Recurse -Force -EA SI
@@ -837,9 +837,11 @@ Function Update-Pycharm {
         Start-Sleep 1 ; [FlaUI.Core.Input.Keyboard]::TypeSimultaneously($Factor1, $Factor2)
         # Type License
         # Start-Sleep 4 ; [FlaUI.Core.Input.Keyboard]::Type($License)
-        $Factor3 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::CONTROL
-        $Factor4 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::KEY_V
-        Start-Sleep 1 ; [FlaUI.Core.Input.Keyboard]::TypeSimultaneously($Factor3, $Factor4)
+        # $Factor3 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::CONTROL
+        # $Factor4 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::KEY_V
+        # Start-Sleep 1 ; [FlaUI.Core.Input.Keyboard]::TypeSimultaneously($Factor3, $Factor4)
+        Add-Type -AssemblyName System.Windows.Forms
+        Start-Sleep 1 ; [Windows.Forms.SendKeys]::SendWait("^v")
         # TAB + SPACE + SPACE(Continue)
         Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB)
         Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE)
