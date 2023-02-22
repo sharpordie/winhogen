@@ -758,6 +758,8 @@ Function Update-Pycharm {
         [String] $Margins = 140
     )
 
+    Update-Jetbra
+
     $Starter = "$Env:ProgramFiles\JetBrains\PyCharm\bin\pycharm64.exe"
     $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
     $Present = $Current -Ne "0.0.0.0"
@@ -783,8 +785,6 @@ Function Update-Pycharm {
     }
 
     If (-Not $Present) {
-        Update-Jetbra
-
         # Gather activation code
         $License = Invoke-Scraper "Jetbra" "PyCharm"
         $License = $License.Substring(0, 1) + "$License"
