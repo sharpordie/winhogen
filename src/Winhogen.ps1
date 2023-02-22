@@ -115,9 +115,9 @@ Function Export-Members {
         "Development" {
             Return @(
                 "Update-Windows '$Country' '$Machine'"
-                # "Update-Antidote"
+                "Update-Antidote"
                 "Update-Pycharm"
-                # "Update-Noxplayer"
+                "Update-Noxplayer"
             )
         }
         "GameStreaming" {
@@ -867,7 +867,7 @@ If ($MyInvocation.InvocationName -Ne ".") {
     Clear-Host ; $ProgressPreference = "SilentlyContinue"
     Write-Output "+---------------------------------------------------------------+"
     Write-Output "|                                                               |"
-    Write-Output "|  > WINHOGEN                                                   |"
+    Write-Output "|  > WINHOGEN1                                                   |"
     Write-Output "|                                                               |"
     Write-Output "|  > CONFIGURATION SCRIPT FOR WINDOWS 11                        |"
     Write-Output "|                                                               |"
