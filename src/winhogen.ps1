@@ -125,20 +125,23 @@ Function Export-Members {
         "Development" {
             Return @(
                 "Update-Windows '$Country' '$Machine'"
-                "Update-Antidote"
                 "Update-Pycharm"
+                
+                "Update-Antidote"
                 "Update-Noxplayer"
             )
         }
         "GameStreaming" {
             Return @(
                 "Update-Windows '$Country' '$Machine'"
+
                 "Update-Sunshine"
             )
         }
         "Gaming" {
             Return @(
                 "Update-Windows '$Country' '$Machine'"
+                
                 "Update-Bluestacks"
             )
         }
