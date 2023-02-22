@@ -842,12 +842,9 @@ Function Update-Pycharm {
         Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE)
         Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE)
         # WINDOWS SECURITY ALERT ALLOW ACCESS
-        Start-Sleep 8
-        $Desktop = $Handler.GetDesktop()
-        echo $Desktop.GetAllTopLevelWindows($Handler)
+        Start-Sleep 8 ; $Desktop = $Handler.GetDesktop()
         $Window1 = $Desktop.FindFirstDescendant($Handler.ConditionFactory.ByName("Windows Security Alert"))
-        [FlaUI.Core.AutomationElements.AutomationElementExtensions]::AsWindow($Window1)
-        echo $Windows1
+        # [FlaUI.Core.AutomationElements.AutomationElementExtensions]::AsWindow($Window1)
         $Button1 = $Window1.FindFirstDescendant($Handler.ConditionFactory.ByName("Allow access"))
         $button1.Click()
         # ALT+F4
