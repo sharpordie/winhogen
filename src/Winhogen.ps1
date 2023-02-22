@@ -837,7 +837,7 @@ Function Update-Pycharm {
         Start-Sleep 1 ; [FlaUI.Core.Input.Keyboard]::TypeSimultaneously($Factor1, $Factor2)
         # Type License
         $License = $License.Substring(0, 1) + "$License" # HACK: Doubling the first letter of the code is required
-        Start-Sleep 4 ; [FlaUI.Core.Input.Keyboard]::Type("$License")
+        Start-Sleep 8 ; [FlaUI.Core.Input.Keyboard]::Type("$License")
         Start-Sleep 4 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB)
         Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE)
         Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE)
@@ -845,8 +845,9 @@ Function Update-Pycharm {
         # ALT+F4
         $Factor5 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::ALT
         $Factor6 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::F4
-        Start-Sleep 4 ; [FlaUI.Core.Input.Keyboard]::TypeSimultaneously($Factor5, $Factor6)
-        Start-Sleep 4 ; Stop-Process -Name "pycharm64"
+        Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::TypeSimultaneously($Factor5, $Factor6)
+        Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::TypeSimultaneously($Factor5, $Factor6)
+        Start-Sleep 4 ; Stop-Process -Name "pycharm64" -EA SI
     }
 
 }
