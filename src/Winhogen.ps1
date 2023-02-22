@@ -811,7 +811,8 @@ Function Update-Pycharm {
         Invoke-Gsudo { Rename-Item -Path "$Using:Forward" -NewName "$Using:Created" }
     }
 
-    If (-Not $Present -Or $True) { # TODO: Remove dummy
+    If (-Not $Present -Or $True) {
+        # TODO: Remove dummy
         Update-Jetbra
         $License = Invoke-Scraper "Jetbra" "PyCharm"
         Import-Library "Interop.UIAutomationClient"
@@ -842,11 +843,14 @@ Function Update-Pycharm {
         Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE)
         Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE)
         # WINDOWS SECURITY ALERT ALLOW ACCESS
-        Start-Sleep 8 ; $Desktop = $Handler.GetDesktop()
-        $Window1 = $Desktop.FindFirstDescendant($Handler.ConditionFactory.ByName("Windows Security Alert"))
-        # [FlaUI.Core.AutomationElements.AutomationElementExtensions]::AsWindow($Window1)
-        $Button1 = $Window1.FindFirstDescendant($Handler.ConditionFactory.ByName("Allow access"))
-        $button1.Click()
+        Try {
+            Start-Sleep 8 ; $Desktop = $Handler.GetDesktop()
+            $Window1 = $Desktop.FindFirstDescendant($Handler.ConditionFactory.ByName("Windows Security Alert"))
+            # [FlaUI.Core.AutomationElements.AutomationElementExtensions]::AsWindow($Window1)
+            $Button1 = $Window1.FindFirstDescendant($Handler.ConditionFactory.ByName("Allow access"))
+            $button1.Click()
+        }
+        Catch {}
         # ALT+F4
         $Factor5 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::ALT
         $Factor6 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::F4
