@@ -129,6 +129,7 @@ Function Export-Members {
                 "Update-Pycharm"
                 "Update-Antidote"
                 "Update-Noxplayer"
+                "Update-Scrcpy"
             )
         }
         "GameStreaming" {
@@ -744,6 +745,7 @@ Function Update-Noxplayer {
             Start-Sleep 4 ; Stop-Process -Name "*nox*setup*" -EA SI
         }
         Remove-Desktop "Nox*.lnk" ; Remove-Desktop "Nox*Ass*.lnk"
+        Remove-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Name "NoxMultiPlayer" -EA SI
     }
 
 }
@@ -852,6 +854,27 @@ Function Update-Pycharm {
 
         # Finish pycharm process
         Start-Sleep 4 ; Stop-Process -Name "pycharm64" -EA SI
+    }
+
+}
+
+Function Update-Scrcpy {
+
+    $Deposit = "$Env:LocalAppData\Programs\Scrcpy"
+    $Starter = "$Deposit\scrcpy.exe"
+    $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
+    
+    $Address = "https://api.github.com/repos/Genymobile/scrcpy/releases/latest"
+    $Version = [Regex]::Match((Invoke-Scraper "Json" "$Address").tag_name , "[\d.]+").Value
+    $Updated = [Version] "$Current" -Ge [Version] "$Version"
+
+    If (-Not $Updated) {
+        Remove-Item "$Deposit" -Recurse -Force -EA SI
+        $Results = (Invoke-Scraper "Json" "$Address").assets
+        $Address = $Results.Where( { $_.browser_download_url -Like "*win64*.zip" } ).browser_download_url
+        $Fetched = Invoke-Fetcher "Webclient" "$Address"
+        $Extract = Invoke-Extract "$Fetched" "$(Split-Path "$Deposit")"
+        Rename-Item -Path "$Extract\scr*" -NewName "$Deposit"
     }
 
 }
