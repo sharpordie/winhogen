@@ -758,7 +758,10 @@ Function Update-Powershell {
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
 
     If (-Not $Updated) {
-        Invoke-Gsudo { Invoke-Expression "& { $(Invoke-RestMethod https://aka.ms/install-powershell.ps1) } -UseMSI -Quiet" *> $Null }
+        Invoke-Gsudo {
+            $ProgressPreference = "SilentlyContinue"
+            Invoke-Expression "& { $(Invoke-RestMethod https://aka.ms/install-powershell.ps1) } -UseMSI -Quiet" *> $Null
+        }
     }
 
     If ($PSVersionTable.PSVersion -Lt [Version] "7.0.0.0") { Invoke-Restart }
