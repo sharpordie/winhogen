@@ -67,8 +67,9 @@ Function Enable-Feature {
             $Content = Invoke-Gsudo { (Get-WindowsOptionalFeature -FE "Microsoft-Hyper-V-All" -Online).State }
             If ($Content.Value -Ne "Enabled") {
                 $Address = "https://cdn3.bluestacks.com/support_files/HD-EnableHyperV.exe"
-                $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
-                (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
+                $Fetched = Invoke-Fetcher "Webclient" "$Address"
+                # $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
+                # (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
                 Invoke-Gsudo { Start-Process "$Using:Fetched" ; Start-Sleep 10 ; Stop-Process -Name "HD-EnableHyperV" }
                 Invoke-Restart
             }
@@ -126,7 +127,6 @@ Function Export-Members {
             Return @(
                 "Update-Windows '$Country' '$Machine'"
                 "Update-Pycharm"
-                
                 "Update-Antidote"
                 "Update-Noxplayer"
             )
@@ -134,14 +134,12 @@ Function Export-Members {
         "GameStreaming" {
             Return @(
                 "Update-Windows '$Country' '$Machine'"
-
                 "Update-Sunshine"
             )
         }
         "Gaming" {
             Return @(
                 "Update-Windows '$Country' '$Machine'"
-                
                 "Update-Bluestacks"
             )
         }
@@ -348,8 +346,9 @@ Function Remove-Feature {
             $Content = Invoke-Gsudo { (Get-WindowsOptionalFeature -FE "Microsoft-Hyper-V-All" -Online).State }
             If ($Content.Value -Eq "Enabled") {
                 $Address = "https://cdn3.bluestacks.com/support_files/HD-DisableHyperV_native_v2.exe"
-                $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
-                (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
+                $Fetched = Invoke-Fetcher "Webclient" "$Address"
+                # $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
+                # (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
                 Invoke-Gsudo { Start-Process "$Using:Fetched" ; Start-Sleep 10 ; Stop-Process -Name "HD-DisableHyperV" }
                 If (Assert-Pending -Eq $True) { Invoke-Restart }
             }
@@ -570,8 +569,9 @@ Function Update-Bluestacks {
 
     If (-Not $Updated) {
         $Address = "https://cdn3.bluestacks.com/downloads/windows/nxt/$Version/$Hashing/FullInstaller/x64/BlueStacksFullInstaller_${Version}_amd64_native.exe"
-        $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
-        (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
+        # $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
+        # (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
+        $Fetched = Invoke-Fetcher "Webclient" "$Address"
         $ArgList = "-s --defaultImageName Rvc64 --imageToLaunch Rvc64"
         If ($Android -Eq "9") { $ArgList = "-s --defaultImageName Pie64 --imageToLaunch Pie64" }
         If ($Android -Eq "7") { $ArgList = "-s --defaultImageName Nougat64 --imageToLaunch Nougat64" }
@@ -605,8 +605,9 @@ Function Update-Gsudo {
         If (-Not $Updated) {
             $Results = (Invoke-Scraper "Json" "$Address").assets
             $Address = $Results.Where( { $_.browser_download_url -Like "*.msi" } ).browser_download_url
-            $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
-            (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
+            # $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
+            # (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
+            $Fetched = Invoke-Fetcher "Webclient" "$Address"
             If (-Not $Present) { Start-Process "msiexec" "/i `"$Fetched`" /qn" -Verb RunAs -Wait }
             Else { Invoke-Gsudo { msiexec /i "$Using:Fetched" /qn } }
             Start-Sleep 4
@@ -656,8 +657,9 @@ Function Update-Ldplayer {
 
     If (-Not $Updated) {
         $Address = "https://encdn.ldmnq.com/download/package/LDPlayer_$Version.exe"
-        $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
-        (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
+        # $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
+        # (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
+        $Fetched = Invoke-Fetcher "Webclient" "$Address"
         $Current = $Script:MyInvocation.MyCommand.Path
         Invoke-Gsudo {
             . $Using:Current ; Start-Sleep 4
@@ -699,12 +701,11 @@ Function Update-Nanazip {
     If (-Not $Updated) {
         $Results = (Invoke-Scraper "Json" "$Address").assets
         $Address = $Results.Where( { $_.browser_download_url -Like "*.msixbundle" } ).browser_download_url
-        $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
-        (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
+        # $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
+        # (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
+        $Fetched = Invoke-Fetcher "Webclient" "$Address"
         Add-AppxPackage -Path "$Fetched" -DeferRegistrationWhenPackagesAreInUse -ForceUpdateFromAnyVersion
     }
-
-    # Update-SysPath "$Env:LocalAppData\Microsoft\WindowsApps" "Process"
 
 }
 
