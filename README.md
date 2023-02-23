@@ -6,7 +6,7 @@ Opinionated post-installation script for Windows 11.
 
 # <samp>GUIDANCE</samp>
 
-### Gather and launch latest script release
+### Launch latest script release
 
 ```powershell
 $address = "https://raw.githubusercontent.com/sharpordie/winhogen/main/src/winhogen.ps1"
