@@ -474,10 +474,9 @@ Function Update-Antidote {
     $Starter = (Get-Item "$Env:ProgramFiles\Drui*\Anti*\Appl*\Bin6*\Antidote.exe" -EA SI).FullName
     $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
     $Present = $Current -Ne "0.0.0.0"
-
     $Address = "https://filecr.com/windows/antidote"
-    $Results = [Regex]::Matches((Invoke-Scraper "Html" "$Address"), "<title>Antidote ([\d]+) v([\d.]+) .*</title>")
-    $Version = "$($Results.Groups[1].Value).$($Results.Groups[2].Value)"
+    # $Results = [Regex]::Matches((Invoke-Scraper "Html" "$Address"), "<title>Antidote ([\d]+) v([\d.]+) .*</title>")
+    # $Version = "$($Results.Groups[1].Value).$($Results.Groups[2].Value)"
     # $Updated = [Version] "$Current" -Ge [Version] "$Version"
 
     If (-Not $Present) {
@@ -505,7 +504,6 @@ Function Update-Antidote {
         Stop-Process -Name "AgentConnectix" -EA SI
         Stop-Process -Name "Antidote" -EA SI
         Stop-Process -Name "Connectix" -EA SI
-
         Import-Library "Interop.UIAutomationClient"
         Import-Library "FlaUI.Core"
         Import-Library "FlaUI.UIA3"
@@ -514,16 +512,13 @@ Function Update-Antidote {
         $Handler = [FlaUI.UIA3.UIA3Automation]::New()
         $Starter = (Get-Item "$Env:ProgramFiles\Drui*\Anti*\Appl*\Bin6*\Antidote.exe" -EA SI).FullName
         $Started = [FlaUI.Core.Application]::Launch("$Starter")
-
         $Window1 = $Started.GetMainWindow($Handler)
         $Window1.Focus() ; Start-Sleep 1
         [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::ENTER) ; Start-Sleep 4
-
         $Window2 = $Started.GetMainWindow($Handler)
         $Window2.Focus() ; Start-Sleep 1
         $Button2 = $Window2.FindFirstDescendant($Handler.ConditionFactory.ByName("Manual activation…"))
         $Button2.Click() ; Start-Sleep 6
-        
         $Window3 = $Started.GetMainWindow($Handler)
         $Window3.Focus() ; Start-Sleep 1
         [FlaUI.Core.Input.Keyboard]::Type("John") ; Start-Sleep 1
@@ -533,14 +528,12 @@ Function Update-Antidote {
         [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB) ; Start-Sleep 1
         [FlaUI.Core.Input.Keyboard]::Type("123-456-789-012-A11") ; Start-Sleep 1
         [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE) ; Start-Sleep 4
-
         $Window4 = $Started.GetMainWindow($Handler)
         $Window4.Focus() ; Start-Sleep 1
         [FlaUI.Core.Input.Keyboard]::Type("BV-12345-67890-12345-67890-12345") ; Start-Sleep 1
         [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB) ; Start-Sleep 1
         [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB) ; Start-Sleep 1
         [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE) ; Start-Sleep 4
-
         Stop-Process -Name "AgentConnectix" -EA SI
         Stop-Process -Name "Antidote" -EA SI
         Stop-Process -Name "Connectix" -EA SI
@@ -560,8 +553,6 @@ Function Update-Bluestacks {
 
     $Starter = (Get-Item "$Env:ProgramFiles\BlueStacks*\HD-Player.exe" -EA SI).FullName
     $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
-    # $Present = $Current -Ne "0.0.0.0"
-
     $Address = "https://support.bluestacks.com/hc/en-us/articles/4402611273485-BlueStacks-5-offline-installer"
     $Results = [Regex]::Matches((Invoke-Scraper "Html" "$Address"), "windows/nxt/([\d.]+)/(?<sha>[0-9a-f]+)/")
     $Version = $Results.Groups[1].Value
@@ -570,8 +561,6 @@ Function Update-Bluestacks {
 
     If (-Not $Updated) {
         $Address = "https://cdn3.bluestacks.com/downloads/windows/nxt/$Version/$Hashing/FullInstaller/x64/BlueStacksFullInstaller_${Version}_amd64_native.exe"
-        # $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
-        # (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
         $Fetched = Invoke-Fetcher "Webclient" "$Address"
         $ArgList = "-s --defaultImageName Rvc64 --imageToLaunch Rvc64"
         If ($Android -Eq "9") { $ArgList = "-s --defaultImageName Pie64 --imageToLaunch Pie64" }
@@ -597,7 +586,6 @@ Function Update-Gsudo {
     $Starter = "${Env:ProgramFiles(x86)}\gsudo\gsudo.exe"
     $Current = Try { (Get-Item "$Starter" -EA SI).VersionInfo.FileVersion.ToString() } Catch { "0.0.0.0" }
     $Present = $Current -Ne "0.0.0.0"
-
     $Address = "https://api.github.com/repos/gerardog/gsudo/releases/latest"
     $Version = [Regex]::Match((Invoke-Scraper "Json" "$Address").tag_name , "[\d.]+").Value
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
@@ -650,16 +638,12 @@ Function Update-Ldplayer {
 
     $Starter = (Get-Item "C:\LDPlayer\LDPlayer*\dnplayer.exe" -EA SI).FullName
     $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
-    # $Present = $Current -Ne "0.0.0.0"
-
     $Address = "https://www.ldplayer.net/other/version-history-and-release-notes.html"
     $Version = [Regex]::Matches((Invoke-Scraper "Html" "$Address"), "LDPlayer_([\d.]+).exe").Groups[1].Value
     $Updated = [Version] "$Current" -Ge [Version] $Version.SubString(0, 6)
 
     If (-Not $Updated) {
         $Address = "https://encdn.ldmnq.com/download/package/LDPlayer_$Version.exe"
-        # $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
-        # (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
         $Fetched = Invoke-Fetcher "Webclient" "$Address"
         $Current = $Script:MyInvocation.MyCommand.Path
         Invoke-Gsudo {
@@ -693,8 +677,6 @@ Function Update-Nanazip {
 
     $Starter = "$Env:LocalAppData\Microsoft\WindowsApps\7z.exe"
     $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
-    # $Present = $Current -Ne "0.0.0.0"
-
     $Address = "https://api.github.com/repos/m2team/nanazip/releases/latest"
     $Version = [Regex]::Match((Invoke-Scraper "Json" "$Address").tag_name , "[\d.]+").Value
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
@@ -702,8 +684,6 @@ Function Update-Nanazip {
     If (-Not $Updated) {
         $Results = (Invoke-Scraper "Json" "$Address").assets
         $Address = $Results.Where( { $_.browser_download_url -Like "*.msixbundle" } ).browser_download_url
-        # $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
-        # (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
         $Fetched = Invoke-Fetcher "Webclient" "$Address"
         Add-AppxPackage -Path "$Fetched" -DeferRegistrationWhenPackagesAreInUse -ForceUpdateFromAnyVersion
     }
@@ -714,8 +694,6 @@ Function Update-Noxplayer {
 
     $Starter = "${Env:ProgramFiles(x86)}\Nox\bin\Nox.exe"
     $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
-    # $Present = $Current -Ne "0.0.0.0"
-
     $Address = "https://support.bignox.com/en/win-release"
     $Version = [Regex]::Matches((Invoke-Scraper "BrowserHtml" "$Address"), ".*V([\d.]+) Release Note").Groups[1].Value
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
@@ -754,7 +732,6 @@ Function Update-Powershell {
 
     $Starter = (Get-Item "$Env:ProgramFiles\PowerShell\*\pwsh.exe" -EA SI).FullName
     $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
-
     $Address = "https://api.github.com/repos/powershell/powershell/releases/latest"
     $Version = [Regex]::Match((Invoke-Scraper "Json" "$Address").tag_name , "[\d.]+").Value
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
@@ -778,11 +755,9 @@ Function Update-Pycharm {
     )
 
     Update-Jetbra
-
     $Starter = "$Env:ProgramFiles\JetBrains\PyCharm\bin\pycharm64.exe"
     $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
     $Present = $Current -Ne "0.0.0.0"
-
     $Address = "https://data.services.jetbrains.com/products/releases?code=PCP&latest=true&type=release"
     $Version = [Regex]::Match((Invoke-Scraper "Json" "$Address").PCP[0].version , "[\d.]+").Value
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
