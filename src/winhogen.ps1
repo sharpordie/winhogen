@@ -862,11 +862,7 @@ Function Update-Scrcpy {
 
     $Deposit = "$Env:LocalAppData\Programs\Scrcpy"
     $Starter = "$Deposit\scrcpy.exe"
-    $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
-    
-    $Address = "https://api.github.com/repos/Genymobile/scrcpy/releases/latest"
-    $Version = [Regex]::Match((Invoke-Scraper "Json" "$Address").tag_name , "[\d.]+").Value
-    $Updated = [Version] "$Current" -Ge [Version] "$Version"
+    $Updated = Test-Path "$Starter" -NewerThan (Get-Date).AddDays(-10)
 
     If (-Not $Updated) {
         Remove-Item "$Deposit" -Recurse -Force -EA SI
