@@ -862,10 +862,11 @@ Function Update-Scrcpy {
 
     $Deposit = "$Env:LocalAppData\Programs\Scrcpy"
     $Starter = "$Deposit\scrcpy.exe"
-    $Updated = Test-Path "$Starter" -NewerThan (Get-Date).AddDays(-10)
+    $Updated = Test-Path "$Starter" -NewerThan (Get-Date).AddDays(-120)
 
     If (-Not $Updated) {
         Remove-Item "$Deposit" -Recurse -Force -EA SI
+        $Address = "https://api.github.com/repos/genymobile/scrcpy/releases/latest"
         $Results = (Invoke-Scraper "Json" "$Address").assets
         $Address = $Results.Where( { $_.browser_download_url -Like "*win64*.zip" } ).browser_download_url
         $Fetched = Invoke-Fetcher "Webclient" "$Address"
