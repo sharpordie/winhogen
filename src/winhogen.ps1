@@ -128,11 +128,11 @@ Function Export-Members {
                 "Update-Git"
                 "Update-Pycharm"
                 "Update-VisualStudioCode"
-                # "Update-Antidote"
-                # "Update-DbeaverUltimate"
-                # "Update-Noxplayer"
+                "Update-Antidote"
+                "Update-DbeaverUltimate"
+                "Update-Noxplayer"
+                "Update-Flutter"
                 "Update-Scrcpy"
-                "Update-VisualStudioCode"
             )
         }
         "GameStreaming" {
@@ -511,7 +511,7 @@ Function Update-AndroidStudio {
     }
 
     If (-Not $Present) {
-        Write-Output $("y`n" * 10) | sdkmanager "build-tools;33.0.1"
+        Write-Output $("y`n" * 10) | sdkmanager "build-tools;33.0.2"
         Write-Output $("y`n" * 10) | sdkmanager "emulator"
         Write-Output $("y`n" * 10) | sdkmanager "extras;intel;Hardware_Accelerated_Execution_Manager"
         Write-Output $("y`n" * 10) | sdkmanager "platform-tools"
