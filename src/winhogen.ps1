@@ -707,8 +707,6 @@ Function Update-Gsudo {
         If (-Not $Updated) {
             $Results = (Invoke-Scraper "Json" "$Address").assets
             $Address = $Results.Where( { $_.browser_download_url -Like "*.msi" } ).browser_download_url
-            # $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
-            # (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
             $Fetched = Invoke-Fetcher "Webclient" "$Address"
             If (-Not $Present) { Start-Process "msiexec" "/i `"$Fetched`" /qn" -Verb RunAs -Wait }
             Else { Invoke-Gsudo { msiexec /i "$Using:Fetched" /qn } }
