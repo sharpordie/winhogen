@@ -126,6 +126,7 @@ Function Export-Members {
                 "Update-Windows '$Country' '$Machine'"
                 "Update-Pycharm"
                 "Update-Antidote"
+                "Update-DbeaverUltimate"
                 "Update-Noxplayer"
                 "Update-Scrcpy"
             )
@@ -590,20 +591,19 @@ Function Update-DbeaverUltimate {
     $Version = [Regex]::Matches((Invoke-Scraper "Html" "$Address"), "<title>DBeaver ([\d.]+) .*</title>").Groups[1].Value
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
 
-    If (-Not $Updated -Or $True) {
+    If (-Not $Updated) {
         $Fetched = Invoke-Fetcher "Filecr" "$Address"
         $Deposit = Invoke-Extract -Archive "$Fetched" -Secrets "123"
         $RootDir = (Get-Item "$Deposit\D*").FullName
         $Program = (Get-Item "$RootDir\dbeaver*.exe").FullName
         Invoke-Gsudo { Start-Process "$Using:Program" "/S /allusers" -Wait }
-        If (-Not $Present -Or $True) {
+        If (-Not $Present) {
             # Handle archives
             $RarFile = (Get-Item "$RootDir\*.rar").FullName
             $Extract = Invoke-Extract -Archive "$RarFile"
             $RarFile = (Get-Item "$Extract\*.rar").FullName
             $Extract = Invoke-Extract -Archive "$RarFile"
             $JarFile = (Get-Item "$Extract\*.jar").FullName
-            # $JarFile = "C:\Users\Admin\AppData\Local\Temp\acfdbf21-ec3c-4458-b29d-583623ccd9a0\dvt-DBeaver-KeyMaker.jar"
             # Launch jar file
             $Current = $Script:MyInvocation.MyCommand.Path
             Invoke-Gsudo {
@@ -1012,8 +1012,6 @@ If ($MyInvocation.InvocationName -Ne ".") {
     Write-Host "$Loading" -FO DarkYellow -NoNewline ; Remove-Feature "Uac" ; Remove-Feature "Sleeping"
     $Correct = (Update-Gsudo) -And ! (gsudo cache on -d -1 2>&1).ToString().Contains("Error")
     If (-Not $Correct) { Write-Host "$Failure`n" -FO Red ; Exit } ; Update-Powershell
-
-    Update-DbeaverUltimate ; Exit
 
     # Handle elements
     $Members = Export-Members -Variant "Development" -Machine "WINHOGEN"
