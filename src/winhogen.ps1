@@ -378,7 +378,7 @@ Function Remove-Feature {
 Function Update-Element {
 
     Param(
-        [ValidateSet("Computer", "Plan", "Timezzone")] [String] $Element,
+        [ValidateSet("Computer", "Plan", "Timezone")] [String] $Element,
         [String] $Payload
     )
 
