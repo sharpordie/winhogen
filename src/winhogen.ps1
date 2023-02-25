@@ -581,6 +581,121 @@ Function Update-Bluestacks {
 
 }
 
+Function Update-DbeaverUltimate {
+
+    Update-MicrosoftOpenjdk
+    $BaseDir = "$Env:ProgramFiles\DBeaverUltimate"
+    $Starter = (Get-Item "$BaseDir\Uninstall.exe" -EA SI).FullName
+    $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
+    $Present = $Current -Ne "0.0.0.0"
+    $Address = "https://filecr.com/windows/dbeaver-ultimate"
+    $Version = [Regex]::Matches((Invoke-Scraper "Html" "$Address"), "<title>DBeaver ([\d.]+) .*</title>").Groups[1].Value
+    $Updated = [Version] "$Current" -Ge [Version] "$Version"
+
+    If (-Not $Updated -Or $True) {
+        $Fetched = Invoke-Fetcher "Filecr" "$Address"
+        $Deposit = Invoke-Extract -Archive "$Fetched" -Secrets "123"
+        $RootDir = (Get-Item "$Deposit\D*").FullName
+        $Program = (Get-Item "$RootDir\dbeaver*.exe").FullName
+        Invoke-Gsudo { Start-Process "$Using:Program" "/S /allusers" -Wait }
+        If (-Not $Present -Or $True) {
+            # Handle archives
+            $RarFile = (Get-Item "$RootDir\*.rar").FullName
+            $Extract = Invoke-Extract -Archive "$RarFile"
+            $RarFile = (Get-Item "$Extract\*.rar").FullName
+            $Extract = Invoke-Extract -Archive "$RarFile"
+            $JarFile = (Get-Item "$Extract\*.jar").FullName
+            # $JarFile = "C:\Users\Admin\AppData\Local\Temp\acfdbf21-ec3c-4458-b29d-583623ccd9a0\dvt-DBeaver-KeyMaker.jar"
+            # Launch jar file
+            $Current = $Script:MyInvocation.MyCommand.Path
+            Invoke-Gsudo {
+                . $Using:Current ; Start-Sleep 4
+                Import-Library "Interop.UIAutomationClient"
+                Import-Library "FlaUI.Core"
+                Import-Library "FlaUI.UIA3"
+                Import-Library "System.Drawing.Common"
+                Import-Library "System.Security.Permissions"
+                Start-Process "java" "-jar `"$Using:JarFile`"" 
+                $Handler = [FlaUI.UIA3.UIA3Automation]::New()
+                Start-Sleep 8 ; $Desktop = $Handler.GetDesktop()
+                $Window1 = $Desktop.FindFirstDescendant($Handler.ConditionFactory.ByClassName("SunAwtFrame"))
+                $Window1.Focus()
+                # Insert name
+                $Factor1 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::CONTROL
+                $Factor2 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::KEY_A
+                Start-Sleep 4 ; [FlaUI.Core.Input.Keyboard]::TypeSimultaneously($Factor1, $Factor2)
+                Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type("$Env:Username")
+                # Insert company
+                [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB)
+                Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::TypeSimultaneously($Factor1, $Factor2)
+                Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type(" ")
+                # Insert email
+                [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB)
+                Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::TypeSimultaneously($Factor1, $Factor2)
+                Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type(" ")
+                # Gather license
+                Start-Sleep 1 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB)
+                Start-Sleep 1 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB)
+                Start-Sleep 1 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB)
+                Start-Sleep 1 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB)
+                Start-Sleep 1 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE)
+                # Invoke patch
+                [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB)
+                [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE)
+                # Handle patching
+                Start-Sleep 1 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB)
+                Start-Sleep 1 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB)
+                Start-Sleep 1 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB)
+                Start-Sleep 1 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB)
+                Start-Sleep 1 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB)
+                Start-Sleep 1 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB)
+                $Payload = (Get-Item "$Using:BaseDir\plugins\com.dbeaver.lm.core_*.jar").FullName
+                Start-Sleep 1 ; [FlaUI.Core.Input.Keyboard]::Type("$Payload")
+                Start-Sleep 1 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::ENTER)
+                Start-Sleep 1 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB)
+                Start-Sleep 1 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB)
+                Start-Sleep 1 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB)
+                Start-Sleep 1 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB)
+                Start-Sleep 1 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB)
+                Start-Sleep 1 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB)
+                $Payload = (Get-Item "$Using:BaseDir\plugins\com.dbeaver.app.ultimate_*.jar").FullName
+                $Factor1 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::CONTROL
+                $Factor2 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::KEY_A
+                Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::TypeSimultaneously($Factor1, $Factor2)
+                Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type("$Payload")
+                Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::ENTER)
+                # Invoke exit
+                Start-Sleep 2 ; Stop-Process -Name "java" -EA SI ; Start-Sleep 2
+                # Handle windows security alert dialog
+                Try {
+                    Start-Process "$Using:BaseDir\dbeaver.exe" ; Start-Sleep 20
+                    $Desktop = $Handler.GetDesktop()
+                    $Window1 = $Desktop.FindFirstDescendant($Handler.ConditionFactory.ByName("Windows Security Alert"))
+                    $Button1 = $Window1.FindFirstDescendant($Handler.ConditionFactory.ByName("Allow access"))
+                    $Button1.Click()
+                }
+                Catch {}
+                Start-Sleep 4 ; Stop-Process -Name "dbeaver" -EA SI
+                # Import license
+                Start-Sleep 2 ; Start-Process "$Using:BaseDir\dbeaver.exe" ; Start-Sleep 20
+                Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::ENTER)
+                $Factor1 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::CONTROL
+                $Factor2 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::KEY_V
+                Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::TypeSimultaneously($Factor1, $Factor2)
+                $Factor1 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::SHIFT
+                $Factor2 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB
+                Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::TypeSimultaneously($Factor1, $Factor2)
+                Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::TypeSimultaneously($Factor1, $Factor2)
+                Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::ENTER)
+                Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::ENTER)
+                # Finish process
+                Stop-Process -Name "dbeaver" -EA SI
+            }
+        }
+    }
+
+}
+
 Function Update-Gsudo {
 
     $Starter = "${Env:ProgramFiles(x86)}\gsudo\gsudo.exe"
@@ -670,6 +785,26 @@ Function Update-Ldplayer {
         }
         Remove-Desktop "LDM*.lnk" ; Remove-Desktop "LDP*.lnk"
     }
+
+}
+
+Function Update-MicrosoftOpenjdk {
+
+    $Starter = (Get-Item "$Env:ProgramFiles\Microsoft\jdk-*\bin\java.exe" -EA SI).FullName
+    $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
+    # $Present = $Current -Ne "0.0.0.0"
+    $Address = "https://learn.microsoft.com/en-us/java/openjdk/download"
+    $Version = [Regex]::Matches((Invoke-Scraper "Html" "$Address"), "OpenJDK ([\d.]+) LTS").Groups[1].Value
+    $Updated = [Version] "$Current" -Ge [Version] "$Version"
+
+    If (-Not $Updated) {
+        $Address = "https://aka.ms/download-jdk/microsoft-jdk-$Version-windows-x64.msi"
+        $Fetched = Invoke-Fetcher "Webclient" "$Address"
+        Invoke-Gsudo { Start-Process "msiexec" "/i `"$Using:Fetched`" INSTALLLEVEL=3 /quiet" -Wait }
+    }
+
+    $Deposit = (Get-Item "$Env:ProgramFiles\Microsoft\jdk-*\bin" -EA SI).FullName
+    Update-SysPath "$Deposit" "Process"
 
 }
 
@@ -782,8 +917,7 @@ Function Update-Pycharm {
         # Gather activation code
         $License = Invoke-Scraper "Jetbra" "PyCharm"
         $License = $License.Substring(0, 1) + "$License"
-
-        # Handle pycharm application
+        # Launch pycharm application
         Import-Library "Interop.UIAutomationClient"
         Import-Library "FlaUI.Core"
         Import-Library "FlaUI.UIA3"
@@ -793,40 +927,31 @@ Function Update-Pycharm {
         $Started = [FlaUI.Core.Application]::Launch("$Starter")
         $Window1 = $Started.GetMainWindow($Handler)
         $Window1.Focus()
-
         # Handle first dialog
         Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB)
         Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE)
         Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE)
-        
         # Handle second dialog
         Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB)
         Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE)
-
         # Select activation code
-        Start-Sleep 8 ; [FlaUI.Core.Input.Keyboard]::TypeSimultaneously(
-            [FlaUI.Core.WindowsAPI.VirtualKeyShort]::ALT,
-            [FlaUI.Core.WindowsAPI.VirtualKeyShort]::KEY_C
-        )
-
+        $Factor1 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::ALT
+        $Factor2 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::KEY_C
+        Start-Sleep 8 ; [FlaUI.Core.Input.Keyboard]::TypeSimultaneously($Factor1, $Factor2)
         # Insert activation code
         Start-Sleep 8 ; [FlaUI.Core.Input.Keyboard]::Type("$License")
         Start-Sleep 4 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB)
         Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE)
         Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE)
-
         # Handle windows security alert dialog
         Start-Sleep 8 ; $Desktop = $Handler.GetDesktop()
         $Window1 = $Desktop.FindFirstDescendant($Handler.ConditionFactory.ByName("Windows Security Alert"))
         $Button1 = $Window1.FindFirstDescendant($Handler.ConditionFactory.ByName("Allow access"))
         $Button1.Click()
-
         # Finish pycharm window
-        Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::TypeSimultaneously(
-            [FlaUI.Core.WindowsAPI.VirtualKeyShort]::ALT,
-            [FlaUI.Core.WindowsAPI.VirtualKeyShort]::F4
-        )
-
+        $Factor1 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::ALT
+        $Factor2 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::F4
+        Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::TypeSimultaneously($Factor1, $Factor2)
         # Finish pycharm process
         Start-Sleep 4 ; Stop-Process -Name "pycharm64" -EA SI
     }
@@ -891,6 +1016,8 @@ If ($MyInvocation.InvocationName -Ne ".") {
     Write-Host "$Loading" -FO DarkYellow -NoNewline ; Remove-Feature "Uac" ; Remove-Feature "Sleeping"
     $Correct = (Update-Gsudo) -And ! (gsudo cache on -d -1 2>&1).ToString().Contains("Error")
     If (-Not $Correct) { Write-Host "$Failure`n" -FO Red ; Exit } ; Update-Powershell
+
+    Update-DbeaverUltimate ; Exit
 
     # Handle elements
     $Members = Export-Members -Variant "Development" -Machine "WINHOGEN"
