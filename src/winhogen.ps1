@@ -124,11 +124,15 @@ Function Export-Members {
         "Development" {
             Return @(
                 "Update-Windows '$Country' '$Machine'"
+                "Update-AndroidStudio"
+                "Update-Git"
                 "Update-Pycharm"
-                "Update-Antidote"
-                "Update-DbeaverUltimate"
-                "Update-Noxplayer"
+                "Update-VisualStudioCode"
+                # "Update-Antidote"
+                # "Update-DbeaverUltimate"
+                # "Update-Noxplayer"
                 "Update-Scrcpy"
+                "Update-VisualStudioCode"
             )
         }
         "GameStreaming" {
@@ -464,6 +468,75 @@ Function Update-SysPath {
 
 #EndRegion
 
+Function Update-AndroidCmdline {
+
+    Update-MicrosoftOpenjdk
+    $SdkHome = "$Env:LocalAppData\Android\Sdk"
+    $Starter = "$SdkHome\cmdline-tools\latest\bin\sdkmanager.bat"
+    $Updated = Test-Path "$Starter" -NewerThan (Get-Date).AddDays(-90)
+
+    If (-Not $Updated) {
+        $Address = "https://developer.android.com/studio#command-tools"
+        $Release = [Regex]::Matches((Invoke-Scraper "Html" "$Address"), "commandlinetools-win-(\d+)").Groups[1].Value
+        $Address = "https://dl.google.com/android/repository/commandlinetools-win-${Release}_latest.zip"
+        $Fetched = Invoke-Fetcher "Webclient" "$Address"
+        $Extract = Invoke-Extract "$Fetched"
+        New-Item "$SdkHome" -ItemType Directory -EA SI
+        $Manager = "$Extract\cmdline-tools\bin\sdkmanager.bat"
+        Write-Output $("y`n" * 10) | & "$Manager" --sdk_root="$SdkHome" "cmdline-tools;latest"
+    }
+
+    Invoke-Gsudo { [Environment]::SetEnvironmentVariable("ANDROID_HOME", "$Using:SdkHome", "Machine") }
+    [Environment]::SetEnvironmentVariable("ANDROID_HOME", "$SdkHome", "Process")
+    Update-SysPath "$SdkHome\cmdline-tools\latest\bin" "Machine"
+    Update-SysPath "$SdkHome\emulator" "Machine"
+    Update-SysPath "$SdkHome\platform-tools" "Machine"
+
+}
+
+Function Update-AndroidStudio {
+
+    Update-AndroidCmdline
+    $Starter = "$Env:ProgramFiles\Android\Android Studio\bin\studio64.exe"
+    $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
+    $Present = $Current -Ne "0.0.0.0"
+    $Address = "https://raw.githubusercontent.com/scoopinstaller/extras/master/bucket/android-studio.json"
+    $Version = [Regex]::Match((Invoke-Scraper "Json" "$Address").version , "[\d.]+").Value
+    $Updated = [Version] "$Current" -Ge [Version] ($Version.SubString(0, 6))
+
+    If (-Not $Updated) {
+        $Address = "https://redirector.gvt1.com/edgedl/android/studio/install/$Version/android-studio-$Version-windows.exe"
+        $Fetched = Invoke-Fetcher "Webclient" "$Address"
+        Invoke-Gsudo { Start-Process "$Using:Fetched" "/S" -Wait }
+    }
+
+    If (-Not $Present) {
+        Write-Output $("y`n" * 10) | sdkmanager "build-tools;33.0.1"
+        Write-Output $("y`n" * 10) | sdkmanager "emulator"
+        Write-Output $("y`n" * 10) | sdkmanager "extras;intel;Hardware_Accelerated_Execution_Manager"
+        Write-Output $("y`n" * 10) | sdkmanager "platform-tools"
+        Write-Output $("y`n" * 10) | sdkmanager "platforms;android-33"
+        Write-Output $("y`n" * 10) | sdkmanager "platforms;android-33-ext4"
+        Write-Output $("y`n" * 10) | sdkmanager "sources;android-33"
+        Write-Output $("y`n" * 10) | sdkmanager "system-images;android-33;google_apis;x86_64"
+        Write-Output $("y`n" * 10) | sdkmanager --licenses
+        avdmanager create avd -n "Pixel_3_API_33" -d "pixel_3" -k "system-images;android-33;google_apis;x86_64"
+    }
+
+    If (-Not $Present) {
+        Add-Type -AssemblyName System.Windows.Forms ; Start-Process "$Starter"
+        Start-Sleep 10 ; [Windows.Forms.SendKeys]::SendWait("{TAB}") ; Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+        Start-Sleep 20 ; [Windows.Forms.SendKeys]::SendWait("{TAB}" * 2) ; Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+        Start-Sleep 2; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{TAB}" * 2) ; Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{TAB}" * 3) ; Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+        Start-Sleep 6 ; [Windows.Forms.SendKeys]::SendWait("%{F4}")
+    }
+
+}
+
 Function Update-Antidote {
 
     Param(
@@ -694,6 +767,72 @@ Function Update-DbeaverUltimate {
 
 }
 
+Function Update-Flutter {
+
+    Update-Git
+    $Deposit = "$Env:LocalAppData\Android\Flutter"
+    git clone "https://github.com/flutter/flutter.git" -b stable "$Deposit"
+
+    Update-SysPath "$Deposit\bin" "Machine"
+    flutter channel stable ; flutter precache ; flutter upgrade
+    Write-Output $("y`n" * 10) | flutter doctor --android-licenses
+    dart --disable-analytics ; flutter config --no-analytics
+
+    $Browser = "$Env:ProgramFiles\Chromium\Application\chrome.exe"
+    If (Test-Path "$Browser") {
+        Invoke-Gsudo { [Environment]::SetEnvironmentVariable("CHROME_EXECUTABLE", "$Using:Browser", "Machine") }
+        [Environment]::SetEnvironmentVariable("CHROME_EXECUTABLE", "$Browser", "Process")
+    }
+
+    $Product = "$Env:ProgramFiles\Android\Android Studio"
+    Update-JetbrainsPlugin "$Product" "6351"  # dart
+    Update-JetbrainsPlugin "$Product" "9212"  # flutter
+    Update-JetbrainsPlugin "$Product" "13666" # flutter-intl
+    Update-JetbrainsPlugin "$Product" "14641" # flutter-riverpod-snippets
+
+    Update-VisualStudioCodeExtension "Dart-Code.flutter"
+    Update-VisualStudioCodeExtension "alexisvt.flutter-snippets"
+    Update-VisualStudioCodeExtension "pflannery.vscode-versionlens"
+    Update-VisualStudioCodeExtension "robert-brunhage.flutter-riverpod-snippets"
+    Update-VisualStudioCodeExtension "usernamehw.errorlens"
+
+    If (Test-Path "$Env:ProgramFiles\Microsoft Visual Studio\2022\Professional\Common7\IDE\devenv.exe") {
+        Update-VisualStudio2022Workload "Microsoft.VisualStudio.Workload.NativeDesktop"
+    }
+
+}
+
+Function Update-Git {
+
+    Param (
+        [String] $Default = "main",
+        [String] $GitMail,
+        [String] $GitUser
+    )
+
+    $Starter = "$Env:ProgramFiles\Git\git-bash.exe"
+    $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
+    # $Present = $Current -Ne "0.0.0.0"
+    $Address = "https://api.github.com/repos/git-for-windows/git/releases/latest"
+    $Version = [Regex]::Match((Invoke-Scraper "Json" "$Address").tag_name.Replace("windows.", "") , "[\d.]+").Value
+    $Updated = [Version] "$Current" -Ge [Version] "$Version"
+
+    If (-Not $Updated) {
+        $Results = (Invoke-WebRequest "$Address" | ConvertFrom-Json).assets
+        $Address = $Results.Where( { $_.browser_download_url -Like "*64-bit.exe" } ).browser_download_url
+        $Fetched = Invoke-Fetcher "Webclient" "$Address"
+        $ArgList = "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART, /NOCANCEL, /SP- /COMPONENTS=`"`""
+        Invoke-Gsudo { Start-Process "$Using:Fetched" "$Using:ArgList" -Wait }
+    }
+
+    Update-SysPath "$Env:ProgramFiles\Git\cmd" "Process"
+    If (-Not [String]::IsNullOrWhiteSpace($GitMail)) { git config --global user.email "$GitMail" }
+    If (-Not [String]::IsNullOrWhiteSpace($GitUser)) { git config --global user.name "$GitUser" }
+    git config --global http.postBuffer 1048576000
+    git config --global init.defaultBranch "$Default"
+	
+}
+
 Function Update-Gsudo {
 
     $Starter = "${Env:ProgramFiles(x86)}\gsudo\gsudo.exe"
@@ -741,6 +880,40 @@ Function Update-Jetbra {
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
         Start-Sleep 4 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
         Start-Sleep 4 ; Invoke-Restart
+    }
+
+}
+
+Function Update-JetbrainsPlugin {
+
+    Param(
+        [String] $Deposit,
+        [String] $Element
+    )
+
+    If (-Not (Test-Path "$Deposit") -Or ([String]::IsNullOrWhiteSpace($Element))) { Return }
+    $Release = (Get-Content "$Deposit\product-info.json" | ConvertFrom-Json).buildNumber
+    $Release = [Regex]::Matches("$Release", "([\d.]+)\.").Groups[1].Value
+    $DataDir = (Get-Content "$Deposit\product-info.json" | ConvertFrom-Json).dataDirectoryName
+    $Adjunct = If ("$DataDir" -Like "AndroidStudio*") { "Google\$DataDir" } Else { "JetBrains\$DataDir" }
+    $Plugins = "$Env:AppData\$Adjunct\plugins" ; New-Item "$Plugins" -ItemType Directory -EA SI
+    :Outer For ($I = 1; $I -Le 3; $I++) {
+        $Address = "https://plugins.jetbrains.com/api/plugins/$Element/updates?page=$I"
+        $Content = Invoke-WebRequest "$Address" | ConvertFrom-Json
+        For ($J = 0; $J -Le 19; $J++) {
+            $Maximum = $Content["$J"].until.Replace("`"", "").Replace("*", "9999")
+            $Minimum = $Content["$J"].since.Replace("`"", "").Replace("*", "9999")
+            If ([String]::IsNullOrWhiteSpace($Maximum)) { $Maximum = "9999.0" }
+            If ([String]::IsNullOrWhiteSpace($Minimum)) { $Maximum = "0000.0" }
+            If ([Version] "$Minimum" -Le "$Release" -And "$Release" -Le "$Maximum") {
+                $Address = $Content["$J"].file.Replace("`"", "")
+                $Address = "https://plugins.jetbrains.com/files/$Address"
+                $Fetched = Invoke-Fetcher "Webclient" "$Address"
+                Invoke-Extract "$Fetched" "$Plugins"
+                Break Outer
+            }
+        }
+        Start-Sleep 1
     }
 
 }
@@ -971,6 +1144,51 @@ Function Update-Scrcpy {
     }
 
     Update-SysPath "$Deposit" "Machine"
+
+}
+
+Function Update-VisualStudioCode {
+
+    $Starter = "$Env:LocalAppData\Programs\Microsoft VS Code\Code.exe"
+    $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
+    # $Present = $Current -Ne "0.0.0.0"
+    $Address = "https://code.visualstudio.com/sha?build=stable"
+    $Version = [Regex]::Match((Invoke-Scraper "Json" "$Address").products[1].name , "[\d.]+").Value
+    $Updated = [Version] "$Current" -Ge [Version] ($Version.SubString(0, 6))
+
+    If (-Not $Updated -And "$Env:TERM_PROGRAM" -Ne "Vscode") {
+        $Address = "https://aka.ms/win32-x64-user-stable"
+        $Fetched = Invoke-Fetcher "Webclient" "$Address" "$Env:Temp\VSCodeUserSetup-x64-Latest.exe"
+        $ArgList = "/VERYSILENT /MERGETASKS=`"!runcode`""
+        Invoke-Gsudo { Stop-Process -Name "Code" -EA SI ; Start-Process "$Using:Fetched" "$Using:ArgList" -Wait }
+    }
+
+    Update-SysPath "$Env:LocalAppData\Programs\Microsoft VS Code\bin" "Machine"
+    Update-VisualStudioCodeExtension "github.github-vscode-theme"
+    Update-VisualStudioCodeExtension "ms-vscode.powershell"
+
+    $Configs = "$Env:AppData\Code\User\settings.json"
+    New-Item "$(Split-Path "$Configs")" -ItemType Directory -EA SI
+    New-Item "$Configs" -ItemType File -EA SI
+    $NewJson = New-Object PSObject
+    $NewJson | Add-Member -Type NoteProperty -Name "editor.bracketPairColorization.enabled" -Value $True -Force
+    $NewJson | Add-Member -Type NoteProperty -Name "editor.fontSize" -Value 14 -Force
+    $NewJson | Add-Member -Type NoteProperty -Name "editor.lineHeight" -Value 28 -Force
+    $NewJson | Add-Member -Type NoteProperty -Name "security.workspace.trust.enabled" -Value $False -Force
+    $NewJson | Add-Member -Type NoteProperty -Name "telemetry.telemetryLevel" -Value "crash" -Force
+    $NewJson | Add-Member -Type NoteProperty -Name "update.mode" -Value "none" -Force
+    $NewJson | Add-Member -Type NoteProperty -Name "workbench.colorTheme" -Value "GitHub Dark Default" -Force
+    $NewJson | ConvertTo-Json | Set-Content "$Configs"
+
+}
+
+Function Update-VisualStudioCodeExtension {
+
+    Param(
+        [String] $Payload
+    )
+
+    Start-Process "code" "--install-extension $Payload --force" -WindowStyle Hidden -Wait
 
 }
 
