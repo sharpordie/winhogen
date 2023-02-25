@@ -970,6 +970,8 @@ Function Update-Scrcpy {
         Rename-Item -Path "$Extract\scr*" -NewName "$Deposit"
     }
 
+    Update-SysPath "$Deposit" "Machine"
+
 }
 
 Function Update-Windows {
