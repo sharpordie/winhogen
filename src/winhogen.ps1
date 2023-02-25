@@ -49,7 +49,7 @@ Function Deploy-Browser {
 Function Enable-Feature {
 
     Param(
-        [String] $Feature
+        [ValidateSet("Activation", "HyperV", "RemoteDesktop", "Sleeping", "Uac", "Wsl")] [String] $Feature
     )
 
     Switch ($Feature) {
@@ -68,8 +68,6 @@ Function Enable-Feature {
             If ($Content.Value -Ne "Enabled") {
                 $Address = "https://cdn3.bluestacks.com/support_files/HD-EnableHyperV.exe"
                 $Fetched = Invoke-Fetcher "Webclient" "$Address"
-                # $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
-                # (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
                 Invoke-Gsudo { Start-Process "$Using:Fetched" ; Start-Sleep 10 ; Stop-Process -Name "HD-EnableHyperV" }
                 Invoke-Restart
             }
@@ -339,7 +337,7 @@ Function Remove-Desktop {
 Function Remove-Feature {
 
     Param(
-        [String] $Feature
+        [ValidateSet("HyperV", "Sleeping", "Uac")] [String] $Feature
     )
 
     Switch ($Feature) {
@@ -379,7 +377,7 @@ Function Remove-Feature {
 Function Update-Element {
 
     Param(
-        [String] $Element,
+        [ValidateSet("Computer", "Plan", "Timezzone")] [String] $Element,
         [String] $Payload
     )
 
@@ -403,7 +401,7 @@ Function Update-Element {
                 If (-Not $Desktop) { & "$Program" /setacvalueindex $Picking sub_buttons lidaction 000 }
             }
         }
-        "Timezone" {
+        "Timezzone" {
             Set-TimeZone -Name "$Payload"
             Invoke-Gsudo {
                 Start-Process "w32tm" "/unregister" -WindowStyle Hidden -Wait
