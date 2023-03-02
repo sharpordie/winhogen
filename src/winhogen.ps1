@@ -413,7 +413,7 @@ Function Update-Element {
                 If (-Not $Desktop) { & "$Program" /setacvalueindex $Picking sub_buttons lidaction 000 }
             }
         }
-        "Timezzone" {
+        "Timezone" {
             Set-TimeZone -Name "$Payload"
             Invoke-Gsudo {
                 Start-Process "w32tm" "/unregister" -WindowStyle Hidden -Wait
