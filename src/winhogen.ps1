@@ -98,6 +98,7 @@ Function Enable-Feature {
             Remove-Item "$Created" -Force
         }
         "Wsl" {
+            Enable-Feature "HyperV"
             $Content = Invoke-Gsudo { (Get-WindowsOptionalFeature -FE "Microsoft-Windows-Subsystem-Linux" -Online).State }
             If ($Content.Value -Ne "Enabled") {
                 Invoke-Gsudo {
@@ -124,12 +125,15 @@ Function Export-Members {
         "Development" {
             Return @(
                 "Update-Windows '$Country' '$Machine'"
+                # "Update-NvidiaGameDriver"
                 "Update-AndroidStudio"
-                "Update-Git"
+                "Update-Chromium"
+                "Update-Git 'main' '72373746+sharpordie@users.noreply.github.com' 'sharpordie'"
                 "Update-Pycharm"
                 "Update-VisualStudioCode"
                 "Update-Antidote"
                 "Update-DbeaverUltimate"
+                "Update-DockerDesktop"
                 "Update-Noxplayer"
                 "Update-Flutter"
                 "Update-Scrcpy"
@@ -234,6 +238,7 @@ Function Invoke-Fetcher {
             Return "$Fetched"
         }
         "Jetbra" {
+            # TODO: Handle host is unavailable exception
             $Handler = Deploy-Browser
             $Browser = $Handler.Chromium.LaunchAsync(@{ "Headless" = $False }).GetAwaiter().GetResult()
             $WebPage = $Browser.NewPageAsync().GetAwaiter().GetResult()
@@ -502,7 +507,7 @@ Function Update-AndroidStudio {
     $Present = $Current -Ne "0.0.0.0"
     $Address = "https://raw.githubusercontent.com/scoopinstaller/extras/master/bucket/android-studio.json"
     $Version = [Regex]::Match((Invoke-Scraper "Json" "$Address").version , "[\d.]+").Value
-    $Updated = [Version] "$Current" -Ge [Version] ($Version.SubString(0, 6))
+    $Updated = [Version] "$Current" -Ge [Version] $Version.SubString(0, 6)
 
     If (-Not $Updated) {
         $Address = "https://redirector.gvt1.com/edgedl/android/studio/install/$Version/android-studio-$Version-windows.exe"
@@ -653,6 +658,226 @@ Function Update-Bluestacks {
 
 }
 
+Function Update-Chromium {
+
+    Param (
+        [String] $Deposit = "$Env:UserProfile\Downloads\DDL",
+        [String] $Startup = "about:blank"
+    )
+
+    $Starter = "$Env:ProgramFiles\Chromium\Application\chrome.exe"
+    $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString().Replace(".0", "") } Catch { "0.0.0.0" }
+    $Present = $Current -Ne "0.0.0.0"
+    $Address = "https://api.github.com/repos/macchrome/winchrome/releases/latest"
+    $Version = [Regex]::Match((Invoke-Scraper "Json" "$Address").tag_name, "[\d.]+").Value
+    $Updated = [Version] "$Current" -Ge [Version] "$Version"
+	
+    If (-Not $Updated) {
+        $Results = (Invoke-Scraper "Json" "$Address").assets
+        $Address = $Results.Where( { $_.browser_download_url -Like "*installer.exe" } ).browser_download_url
+        $Fetched = Invoke-Fetcher "Webclient" "$Address"
+        Invoke-Gsudo { Start-Process "$Using:Fetched" "--system-level --do-not-launch-chrome" -Wait }
+    }
+
+    If (-Not $Present) {
+        Add-Type -AssemblyName System.Windows.Forms
+        New-Item "$Deposit" -ItemType Directory -EA SI
+        Start-Process "$Starter" "--lang=en --start-maximized"
+        Start-Sleep 4 ; [Windows.Forms.SendKeys]::SendWait("^l")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("chrome://settings/")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("before downloading")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{TAB}" * 3)
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("$Deposit")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{TAB}")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{TAB}")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("%{F4}") ; Start-Sleep 2
+
+        Start-Process "$Starter" "--lang=en --start-maximized"
+        Start-Sleep 4 ; [Windows.Forms.SendKeys]::SendWait("^l")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("chrome://flags/")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("custom-ntp")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{TAB}" * 5)
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("^a")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("$Startup")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{TAB}" * 2)
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{DOWN}")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("%{F4}") ; Start-Sleep 2
+
+        Start-Process "$Starter" "--lang=en --start-maximized"
+        Start-Sleep 4 ; [Windows.Forms.SendKeys]::SendWait("^l")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("chrome://settings/")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("search engines")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{TAB}" * 3)
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("duckduckgo")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("%{F4}") ; Start-Sleep 2
+
+        Start-Process "$Starter" "--lang=en --start-maximized"
+        Start-Sleep 4 ; [Windows.Forms.SendKeys]::SendWait("^l")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("chrome://flags/")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("extension-mime-request-handling")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{TAB}" * 6)
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{DOWN}" * 2)
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("%{F4}") ; Start-Sleep 2
+
+        Start-Process "$Starter" "--lang=en --start-maximized"
+        Start-Sleep 4 ; [Windows.Forms.SendKeys]::SendWait("^l")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("chrome://flags/")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("hide-sidepanel-button")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{TAB}" * 6)
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{DOWN}")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("%{F4}") ; Start-Sleep 2
+
+        Start-Process "$Starter" "--lang=en --start-maximized"
+        Start-Sleep 4 ; [Windows.Forms.SendKeys]::SendWait("^l")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("chrome://flags/")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("remove-tabsearch-button")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{TAB}" * 6)
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{DOWN}")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("%{F4}") ; Start-Sleep 2
+
+        Start-Process "$Starter" "--lang=en --start-maximized"
+        Start-Sleep 4 ; [Windows.Forms.SendKeys]::SendWait("^l")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("chrome://flags/")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("win-10-tab-search-caption-button")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{TAB}" * 6)
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{DOWN}" * 2)
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("%{F4}") ; Start-Sleep 2
+
+        Start-Process "$Starter" "--lang=en --start-maximized"
+        Start-Sleep 4 ; [Windows.Forms.SendKeys]::SendWait("^l")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("chrome://flags/")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("show-avatar-button")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{TAB}" * 6)
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{DOWN}" * 3)
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("%{F4}") ; Start-Sleep 2
+
+        Start-Process "$Starter" "--lang=en --start-maximized"
+        Start-Sleep 4 ; [Windows.Forms.SendKeys]::SendWait("^l")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("^+b")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("%{F4}") ; Start-Sleep 2
+
+        Remove-Desktop "Chromium*.lnk"
+
+        $Address = "https://api.github.com/repos/NeverDecaf/chromium-web-store/releases/latest"
+        $Results = (Invoke-WebRequest "$Address" | ConvertFrom-Json).assets
+        $Address = $Results.Where( { $_.browser_download_url -Like "*.crx" } ).browser_download_url
+        Update-ChromiumExtension "$Address"
+
+        Update-ChromiumExtension "omoinegiohhgbikclijaniebjpkeopip" # clickbait-remover-for-you
+        Update-ChromiumExtension "bcjindcccaagfpapjjmafapmmgkkhgoa" # json-formatter
+        Update-ChromiumExtension "ibplnjkanclpjokhdolnendpplpjiace" # simple-translate
+        Update-ChromiumExtension "mnjggcdmjocbbbhaepdhchncahnbgone" # sponsorblock-for-youtube
+        Update-ChromiumExtension "cjpalhdlnbpafiamejdnhcphjbkeiagm" # ublock-origin
+    }
+
+    Update-ChromiumExtension "https://github.com/iamadamdev/bypass-paywalls-chrome/archive/master.zip"
+
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+    $Address = "https://raw.githubusercontent.com/DanysysTeam/PS-SFTA/master/SFTA.ps1"
+    Invoke-Expression ((New-Object Net.WebClient).DownloadString("$Address"))
+    $FtaList = @(".htm", ".html", ".pdf", ".shtml", ".svg", ".xht", ".xhtml")
+    Foreach ($Element In $FtaList) { Set-FTA "ChromiumHTM" "$Element" }
+    $PtaList = @("ftp", "http", "https")
+    Foreach ($Element In $PtaList) { Set-PTA "ChromiumHTM" "$Element" }
+
+}
+
+Function Update-ChromiumExtension {
+
+    Param (
+        [String] $Payload
+    )
+
+    $Package = $Null
+    $Starter = "$Env:ProgramFiles\Chromium\Application\chrome.exe"
+    If (Test-path "$Starter") {
+        If ($Payload -Like "http*") {
+            $Address = "$Payload"
+            $Package = Invoke-Fetcher "Webclient" "$Address"
+        }
+        Else {
+            $Version = Try { (Get-Item "$Starter" -EA SI).VersionInfo.FileVersion.ToString() } Catch { "0.0.0.0" }
+            $Address = "https://clients2.google.com/service/update2/crx?response=redirect&acceptformat=crx2,crx3"
+            $Address = "${Address}&prodversion=${Version}&x=id%3D${Payload}%26installsource%3Dondemand%26uc"
+            $Package = Invoke-Fetcher "Webclient" "$Address" "$Env:Temp\$Payload.crx"
+        }
+        If ($Null -Ne $Package -And (Test-Path "$Package")) {
+            Add-Type -AssemblyName System.Windows.Forms
+            If ($Package -Like "*.zip") {
+                $Deposit = "$Env:ProgramFiles\Chromium\Unpacked\$($Payload.Split("/")[4])"
+                $Present = Test-Path "$Deposit"
+                Invoke-Gsudo { New-Item "$Using:Deposit" -ItemType Directory -EA SI }
+                # Update-Nanazip ; $Extract = [IO.Directory]::CreateDirectory("$Env:Temp\$([Guid]::NewGuid().Guid)").FullName
+                # Start-Process "7z.exe" "x `"$Package`" -o`"$Extract`" -y -bso0 -bsp0" -WindowStyle Hidden -Wait
+                $Extract = Invoke-Extract "$Package"
+                $Topmost = (Get-ChildItem -Path "$Extract" -Directory | Select-Object -First 1).FullName
+                Invoke-Gsudo { Copy-Item -Path "$Using:Topmost\*" -Destination "$Using:Deposit" -Recurse -Force }
+                If ($Present) { Return }
+                Start-Process "$Starter" "--lang=en --start-maximized"
+                Start-Sleep 4 ; [Windows.Forms.SendKeys]::SendWait("^l")
+                Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("chrome://extensions/")
+                Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+                Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{TAB}")
+                Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+                Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{TAB}")
+                Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+                Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("$Deposit")
+                Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+                Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{TAB}")
+                Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+                Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("%{F4}") ; Start-Sleep 2
+                Start-Process "$Starter" "--lang=en --start-maximized"
+                Start-Sleep 4 ; [Windows.Forms.SendKeys]::SendWait("^l")
+                Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("chrome://extensions/")
+                Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+                Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{TAB}")
+                Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+                Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("%{F4}") ; Start-Sleep 2
+            }
+            Else {
+                Start-Process "$Starter" "`"$Package`" --start-maximized --lang=en"
+                Start-Sleep 4 ; [Windows.Forms.SendKeys]::SendWait("{DOWN}")
+                Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+                Start-Sleep 4 ; [Windows.Forms.SendKeys]::SendWait("%{F4}") ; Start-Sleep 2
+            }
+        }
+    }
+
+}
+
 Function Update-DbeaverUltimate {
 
     Update-MicrosoftOpenjdk
@@ -763,6 +988,39 @@ Function Update-DbeaverUltimate {
                 Stop-Process -Name "dbeaver" -EA SI
             }
         }
+    }
+
+}
+
+Function Update-DockerDesktop {
+
+    $Starter = "$Env:ProgramFiles\Docker\Docker\Docker Desktop.exe"
+    $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
+    $Present = $Current -Ne "0.0.0.0"
+    $Address = "https://community.chocolatey.org/packages/docker-desktop"
+    $Version = [Regex]::Matches((Invoke-Scraper "Html" "$Address"), "Docker Desktop ([\d.]+)</title>").Groups[1].Value
+    $Updated = [Version] "$Current" -Ge [Version] "$Version"
+
+    If (-Not $Updated) {
+        Update-Wsl
+        $Address = "https://desktop.docker.com/win/stable/Docker Desktop Installer.exe"
+        $Fetched = Invoke-Fetcher "Webclient" "$Address"
+        Invoke-Gsudo { Start-Process "$Using:Fetched" "install --quiet --accept-license" -Wait }
+        Remove-Desktop "Docker*.lnk"
+        If (-Not $Present) { Invoke-Restart }
+    }
+
+    $Configs = "$Env:AppData\Docker\settings.json"
+    If (Test-Path "$Configs") {
+        $Content = Get-Content "$Configs" | ConvertFrom-Json
+        $Content.analyticsEnabled = $False
+        $Content.autoStart = $True
+        $Content.disableTips = $True
+        $Content.disableUpdate = $True
+        $Content.displayedTutorial = $True
+        $Content.licenseTermsVersion = 2
+        $Content.openUIOnStartupDisabled = $True
+        $Content | ConvertTo-Json | Set-Content "$Configs"
     }
 
 }
@@ -1000,7 +1258,7 @@ Function Update-Noxplayer {
     $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
     $Address = "https://support.bignox.com/en/win-release"
     $Version = [Regex]::Matches((Invoke-Scraper "BrowserHtml" "$Address"), ".*V([\d.]+) Release Note").Groups[1].Value
-    $Updated = [Version] "$Current" -Ge [Version] "$Version"
+    $Updated = [Version] "$Current" -Ge [Version] $Version.SubString(0, 5)
 
     If (-Not $Updated) {
         $Address = "https://www.bignox.com/en/download/fullPackage/win_64_9?formal"
@@ -1028,6 +1286,44 @@ Function Update-Noxplayer {
         }
         Remove-Desktop "Nox*.lnk" ; Remove-Desktop "Nox*Ass*.lnk"
         Remove-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Name "NoxMultiPlayer" -EA SI
+    }
+
+}
+
+Function Update-NvidiaCudaDriver {
+
+    # TODO: Verify nvidia card presence
+    $Current = (Get-Package "*cuda*runtime*" -EA SI).Version
+    If ($Null -Eq $Current) { $Current = "0.0.0.0" }
+    # $Present = $Current -Ne "0.0.0.0"
+    $Address = "https://raw.githubusercontent.com/scoopinstaller/main/master/bucket/cuda.json"
+    $Version = [Regex]::Match((Invoke-Scraper "Json" "$Address").version, "[\d.]+").Value
+    $Updated = [Version] "$Current" -Ge [Version] $Version.SubString(0, 4)
+
+    If (-Not $Updated) {
+        $Address = (Invoke-Scraper "Json" "$Address").architecture."64bit".url.Replace("#/dl.7z", "")
+        $Fetched = Invoke-Fetcher "Webclient" "$Address"
+        Invoke-Gsudo { Start-Process "$Using:Fetched" "/s /noreboot" -Wait }
+        Remove-Desktop "GeForce*.lnk"
+    }
+
+}
+
+Function Update-NvidiaGameDriver {
+
+    # TODO: Verify nvidia card presence
+    $Current = (Get-Package "*nvidia*graphics*driver*" -EA SI).Version
+    If ($Null -Eq $Current) { $Current = "0.0.0.0" }
+    # $Present = $Current -Ne "0.0.0.0"
+    $Address = "https://community.chocolatey.org/packages/geforce-game-ready-driver"
+    $Version = [Regex]::Matches((Invoke-WebRequest "$Address"), "Geforce Game Ready Driver ([\d.]+)</title>").Groups[1].Value
+    $Updated = [Version] "$Current" -Ge [Version] "$Version"
+
+    If (-Not $Updated) {
+        $Address = "https://us.download.nvidia.com/Windows/$Version/$Version-desktop-win10-win11-64bit-international-dch-whql.exe"
+        $Fetched = Invoke-Fetcher "Webclient" "$Address"
+        $Extract = Invoke-Extract "$Fetched"
+        Invoke-Gsudo { Start-Process "$Using:Extract\setup.exe" "Display.Driver HDAudio.Driver -clean -s -noreboot" -Wait }
     }
 
 }
@@ -1210,6 +1506,30 @@ Function Update-Windows {
 
 }
 
+Function Update-Wsl {
+
+    Enable-Feature "Wsl"
+
+    $Program = "$Env:Windir\System32\wsl.exe"
+    If (Test-Path "$Program") {
+        & "$Program" --update
+        & "$Program" --shutdown
+        & "$Program" --install ubuntu --no-launch
+    }
+
+    $Program = "$Env:LocalAppData\Microsoft\WindowsApps\ubuntu.exe"
+    If (Test-Path "$Program") {
+        Start-Process "$Program" "install --root" -WindowStyle Hidden -Wait
+        Start-Process "$Program" "run sudo dpkg --configure -a" -WindowStyle Hidden -Wait
+        Start-Process "$Program" "run sudo apt update" -WindowStyle Hidden -Wait
+        Start-Process "$Program" "run sudo apt upgrade -y" -WindowStyle Hidden -Wait
+        Start-Process "$Program" "run sudo apt full-upgrade -y" -WindowStyle Hidden -Wait
+        Start-Process "$Program" "run sudo apt autoremove -y" -WindowStyle Hidden -Wait
+        Start-Process "$Program" "run sudo apt install -y x11-apps" -WindowStyle Hidden -Wait
+    }
+
+}
+
 If ($MyInvocation.InvocationName -Ne ".") {
 
     # Change headline
@@ -1220,9 +1540,9 @@ If ($MyInvocation.InvocationName -Ne ".") {
     Clear-Host ; $ProgressPreference = "SilentlyContinue"
     Write-Output "+---------------------------------------------------------------+"
     Write-Output "|                                                               |"
-    Write-Output "|  > WINHOGEN                                                   |"
+    Write-Output "|   WINHOGEN                                                    |"
     Write-Output "|                                                               |"
-    Write-Output "|  > CONFIGURATION SCRIPT FOR WINDOWS 11                        |"
+    Write-Output "|   CONFIGURATION SCRIPT FOR WINDOWS 11                         |"
     Write-Output "|                                                               |"
     Write-Output "+---------------------------------------------------------------+"
 
