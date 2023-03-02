@@ -134,9 +134,11 @@ Function Export-Members {
                 "Update-Antidote"
                 "Update-DbeaverUltimate"
                 "Update-DockerDesktop"
+                "Update-Mpv"
                 "Update-Noxplayer"
                 "Update-Flutter"
                 "Update-Scrcpy"
+                "Update-YtDlg"
             )
         }
         "GameStreaming" {
@@ -1235,6 +1237,42 @@ Function Update-MicrosoftOpenjdk {
 
 }
 
+Function Update-Mpv {
+
+    $Starter = "$Env:LocalAppData\Programs\Mpv\mpv.exe"
+    $Address = "https://sourceforge.net/projects/mpv-player-windows/files/64bit"
+    $Results = [Regex]::Matches((Invoke-Scraper "Html" "$Address"), "mpv-x86_64-([\d]{8})-git-([\a-z]{7})\.7z")
+    $Version = $Results.Groups[1].Value
+    $Release = $results.Groups[2].Value
+    $Updated = Test-Path "$Starter" -NewerThan (Get-Date).AddDays(-10)
+    
+    If (-Not $Updated) {
+        $Address = "https://sourceforge.net/projects/mpv-player-windows/files/64bit/mpv-x86_64-$Version-git-$Release.7z"
+        $Fetched = Invoke-Fetcher "Webclient" "$Address"
+        $Deposit = Split-Path "$Starter" ; Invoke-Extract "$Fetched" "$Deposit"
+        $LnkFile = "$Env:AppData\Microsoft\Windows\Start Menu\Programs\mpv.lnk"
+        Update-LnkFile -LnkFile "$LnkFile" -Starter "$Starter"
+        Start-Sleep 4 ; Invoke-Gsudo { & "$Using:Deposit\installer\mpv-install.bat" }
+        Start-Sleep 4 ; Stop-Process -Name "SystemSettings" -EA SI
+    }
+
+    $Configs = Join-Path "$(Split-Path "$Starter")" "mpv\mpv.conf"
+    Set-Content -Path "$Configs" -Value "profile=gpu-hq"
+    Add-Content -Path "$Configs" -Value "vo=gpu-next"
+    Add-Content -Path "$Configs" -Value "hwdec=auto-copy"
+    Add-Content -Path "$Configs" -Value "keep-open=yes"
+    Add-Content -Path "$Configs" -Value "ytdl-format=`"bestvideo[height<=?2160]+bestaudio/best`""
+    Add-Content -Path "$Configs" -Value "[protocol.http]"
+    Add-Content -Path "$Configs" -Value "force-window=immediate"
+    Add-Content -Path "$Configs" -Value "hls-bitrate=max"
+    Add-Content -Path "$Configs" -Value "cache=yes"
+    Add-Content -Path "$Configs" -Value "[protocol.https]"
+    Add-Content -Path "$Configs" -Value "profile=protocol.http"
+    Add-Content -Path "$Configs" -Value "[protocol.ytdl]"
+    Add-Content -Path "$Configs" -Value "profile=protocol.http"
+
+}
+
 Function Update-Nanazip {
 
     $Starter = "$Env:LocalAppData\Microsoft\WindowsApps\7z.exe"
@@ -1527,6 +1565,22 @@ Function Update-Wsl {
         Start-Process "$Program" "run sudo apt autoremove -y" -WindowStyle Hidden -Wait
         Start-Process "$Program" "run sudo apt install -y x11-apps" -WindowStyle Hidden -Wait
     }
+
+}
+
+Function Update-YtDlg {
+
+    $Deposit = "$Env:LocalAppData\Programs\YtDlp"
+    $Starter = "$Deposit\yt-dlp.exe"
+    $Updated = Test-Path "$Starter" -NewerThan (Get-Date).AddDays(-10)
+
+    If (-Not $Updated) {
+        $Address = "https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe"
+        New-Item "$Deposit" -ItemType Directory -EA SI
+        Invoke-Fetcher "Webclient" "$Address" "$Starter"
+    }
+
+    Update-SysPath "$Deposit" "Machine"
 
 }
 
