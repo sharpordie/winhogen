@@ -78,7 +78,7 @@ Function Deploy-Library {
 Function Enable-Feature {
 
     Param(
-        [ValidateSet("Activation", "HyperV", "RemoteDesktop", "Sleeping", "Uac", "Wsl")] [String] $Feature
+        [ValidateSet("Activation", "HyperV", "NightLight", "RemoteDesktop", "Sleeping", "Uac", "Wsl")] [String] $Feature
     )
 
     Switch ($Feature) {
@@ -100,6 +100,22 @@ Function Enable-Feature {
                 Invoke-Gsudo { Start-Process "$Using:Fetched" ; Start-Sleep 10 ; Stop-Process -Name "HD-EnableHyperV" }
                 Invoke-Restart
             }
+        }
+        "NightLight" {
+            Start-Process "ms-settings:display"
+            $Handler = Deploy-Library Flaui
+            Start-Sleep 2 ; $Desktop = $Handler.GetDesktop()
+            Start-Sleep 2 ; $Window1 = $Desktop.FindFirstDescendant($Handler.ConditionFactory.ByName("Settings"))
+            $Window1.Focus()
+            Start-Sleep 2
+            $Element = $Window1.FindFirstDescendant($Handler.ConditionFactory.ByAutomationId("SystemSettings_Display_BlueLight_AutomaticOnScheduleWithTime_ButtonEntityItem"))
+            $Element.Click()
+            Start-Sleep 2
+            $Element = $Window1.FindFirstDescendant($Handler.ConditionFactory.ByAutomationId("SystemSettings_Display_BlueLight_ManualToggleOn_Button"))
+            If ($Null -Ne $Element) { $Element.Click() }
+            $Factor1 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::ALT
+            $Factor2 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::F4
+            Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::TypeSimultaneously($Factor1, $Factor2)
         }
         "RemoteDesktop" {
             Invoke-Gsudo {
@@ -158,7 +174,7 @@ Function Export-Members {
                 "Update-AndroidStudio"
                 "Update-Chromium"
                 "Update-Git 'main' '72373746+sharpordie@users.noreply.github.com' 'sharpordie'"
-                # "Update-Pycharm"
+                "Update-Pycharm"
                 "Update-VisualStudioCode"
                 "Update-Antidote"
                 # "Update-DbeaverUltimate"
@@ -378,7 +394,7 @@ Function Remove-Desktop {
 Function Remove-Feature {
 
     Param(
-        [ValidateSet("HyperV", "Sleeping", "Uac")] [String] $Feature
+        [ValidateSet("HyperV", "NightLight", "Sleeping", "Uac")] [String] $Feature
     )
 
     Switch ($Feature) {
@@ -392,6 +408,22 @@ Function Remove-Feature {
                 Invoke-Gsudo { Start-Process "$Using:Fetched" ; Start-Sleep 10 ; Stop-Process -Name "HD-DisableHyperV" }
                 If (Assert-Pending -Eq $True) { Invoke-Restart }
             }
+        }
+        "NightLight" {
+            Start-Process "ms-settings:display"
+            $Handler = Deploy-Library Flaui
+            Start-Sleep 2 ; $Desktop = $Handler.GetDesktop()
+            Start-Sleep 2 ; $Window1 = $Desktop.FindFirstDescendant($Handler.ConditionFactory.ByName("Settings"))
+            $Window1.Focus()
+            Start-Sleep 2
+            $Element = $Window1.FindFirstDescendant($Handler.ConditionFactory.ByAutomationId("SystemSettings_Display_BlueLight_AutomaticOnScheduleWithTime_ButtonEntityItem"))
+            $Element.Click()
+            Start-Sleep 2
+            $Element = $Window1.FindFirstDescendant($Handler.ConditionFactory.ByAutomationId("SystemSettings_Display_BlueLight_ManualToggleOff_Button"))
+            If ($Null -Ne $Element) { $Element.Click() }
+            $Factor1 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::ALT
+            $Factor2 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::F4
+            Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::TypeSimultaneously($Factor1, $Factor2)
         }
         "Sleeping" {
             $Content = @()
@@ -609,15 +641,16 @@ Function Update-Antidote {
     }
 
     If (-Not $Present) {
-        Stop-Process -Name "AgentConnectix" -EA SI
-        Stop-Process -Name "Antidote" -EA SI
-        Stop-Process -Name "Connectix" -EA SI
-        Import-Library "Interop.UIAutomationClient"
-        Import-Library "FlaUI.Core"
-        Import-Library "FlaUI.UIA3"
-        Import-Library "System.Drawing.Common"
-        Import-Library "System.Security.Permissions"
-        $Handler = [FlaUI.UIA3.UIA3Automation]::New()
+        # Stop-Process -Name "AgentConnectix" -EA SI
+        # Stop-Process -Name "Antidote" -EA SI
+        # Stop-Process -Name "Connectix" -EA SI
+        # Import-Library "Interop.UIAutomationClient"
+        # Import-Library "FlaUI.Core"
+        # Import-Library "FlaUI.UIA3"
+        # Import-Library "System.Drawing.Common"
+        # Import-Library "System.Security.Permissions"
+        # $Handler = [FlaUI.UIA3.UIA3Automation]::New()
+        $Handler = Deploy-Library Flaui
         $Starter = (Get-Item "$Env:ProgramFiles\Drui*\Anti*\Appl*\Bin6*\Antidote.exe" -EA SI).FullName
         $Started = [FlaUI.Core.Application]::Launch("$Starter")
         $Window1 = $Started.GetMainWindow($Handler)
@@ -937,13 +970,14 @@ Function Update-DbeaverUltimate {
             $Current = $Script:MyInvocation.MyCommand.Path
             Invoke-Gsudo {
                 . $Using:Current ; Start-Sleep 4
-                Import-Library "Interop.UIAutomationClient"
-                Import-Library "FlaUI.Core"
-                Import-Library "FlaUI.UIA3"
-                Import-Library "System.Drawing.Common"
-                Import-Library "System.Security.Permissions"
+                # Import-Library "Interop.UIAutomationClient"
+                # Import-Library "FlaUI.Core"
+                # Import-Library "FlaUI.UIA3"
+                # Import-Library "System.Drawing.Common"
+                # Import-Library "System.Security.Permissions"
+                # $Handler = [FlaUI.UIA3.UIA3Automation]::New()
+                $Handler = Deploy-Library Flaui
                 Start-Process "java" "-jar `"$Using:JarFile`"" 
-                $Handler = [FlaUI.UIA3.UIA3Automation]::New()
                 Start-Sleep 8 ; $Desktop = $Handler.GetDesktop()
                 $Window1 = $Desktop.FindFirstDescendant($Handler.ConditionFactory.ByClassName("SunAwtFrame"))
                 $Window1.Focus()
@@ -1221,12 +1255,13 @@ Function Update-Ldplayer {
         $Current = $Script:MyInvocation.MyCommand.Path
         Invoke-Gsudo {
             . $Using:Current ; Start-Sleep 4
-            Import-Library "Interop.UIAutomationClient"
-            Import-Library "FlaUI.Core"
-            Import-Library "FlaUI.UIA3"
-            Import-Library "System.Drawing.Common"
-            Import-Library "System.Security.Permissions"
-            $Handler = [FlaUI.UIA3.UIA3Automation]::New()
+            # Import-Library "Interop.UIAutomationClient"
+            # Import-Library "FlaUI.Core"
+            # Import-Library "FlaUI.UIA3"
+            # Import-Library "System.Drawing.Common"
+            # Import-Library "System.Security.Permissions"
+            # $Handler = [FlaUI.UIA3.UIA3Automation]::New()
+            $Handler = Deploy-Library Flaui
             $Started = [FlaUI.Core.Application]::Launch("$Using:Fetched")
             $Window1 = $Started.GetMainWindow($Handler)
             $Window1.Focus()
@@ -1333,11 +1368,7 @@ Function Update-Noxplayer {
         $Current = $Script:MyInvocation.MyCommand.Path
         Invoke-Gsudo {
             . $Using:Current ; Start-Sleep 4
-            Import-Library "Interop.UIAutomationClient"
-            Import-Library "FlaUI.Core"
-            Import-Library "FlaUI.UIA3"
-            Import-Library "System.Drawing.Common"
-            Import-Library "System.Security.Permissions"
+            Deploy-Library Flaui
             Start-Process "$Using:Fetched"
             Add-Type -AssemblyName System.Windows.Forms
             $FactorX = ([Windows.Forms.SystemInformation]::PrimaryMonitorSize.Width / 2)
@@ -1479,14 +1510,9 @@ Function Update-Pycharm {
     If (-Not $Present) {
         # Gather activation code
         $License = Invoke-Scraper "Jetbra" "PyCharm"
-        $License = $License.Substring(0, 1) + "$License"
+        # $License = $License.Substring(0, 1) + "$License"
         # Launch pycharm application
-        Import-Library "Interop.UIAutomationClient"
-        Import-Library "FlaUI.Core"
-        Import-Library "FlaUI.UIA3"
-        Import-Library "System.Drawing.Common"
-        Import-Library "System.Security.Permissions"
-        $Handler = [FlaUI.UIA3.UIA3Automation]::New()
+        $Handler = Deploy-Library Flaui
         $Started = [FlaUI.Core.Application]::Launch("$Starter")
         $Window1 = $Started.GetMainWindow($Handler)
         $Window1.Focus()
@@ -1498,19 +1524,26 @@ Function Update-Pycharm {
         Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB)
         Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE)
         # Select activation code
-        $Factor1 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::ALT
-        $Factor2 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::KEY_C
-        Start-Sleep 8 ; [FlaUI.Core.Input.Keyboard]::TypeSimultaneously($Factor1, $Factor2)
+        Start-Sleep 4 ; $Desktop = $Handler.GetDesktop()
+        $Window1 = $Desktop.FindFirstDescendant($Handler.ConditionFactory.ByName("Licenses"))
+        $Scraped = $Window1.BoundingRectangle
+        $FactorX = $Scraped.X + ($Scraped.Width / 2)
+        $FactorY = $Scraped.Y + ($Scraped.Height / 2)
+        Start-Sleep 4 ; [FlaUI.Core.Input.Mouse]::LeftClick([Drawing.Point]::New($FactorX, $FactorY - 105))
+        Start-Sleep 2 ; [FlaUI.Core.Input.Mouse]::LeftClick([Drawing.Point]::New($FactorX, $FactorY))
         # Insert activation code
-        Start-Sleep 8 ; [FlaUI.Core.Input.Keyboard]::Type("$License")
-        Start-Sleep 4 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB)
+        Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type("$License")
+        Start-Sleep 8 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB)
         Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE)
         Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE)
         # Handle windows security alert dialog
-        Start-Sleep 8 ; $Desktop = $Handler.GetDesktop()
-        $Window1 = $Desktop.FindFirstDescendant($Handler.ConditionFactory.ByName("Windows Security Alert"))
-        $Button1 = $Window1.FindFirstDescendant($Handler.ConditionFactory.ByName("Allow access"))
-        $Button1.Click()
+        Try {
+            Start-Sleep 8 ; $Desktop = $Handler.GetDesktop()
+            $Window1 = $Desktop.FindFirstDescendant($Handler.ConditionFactory.ByName("Windows Security Alert"))
+            $Button1 = $Window1.FindFirstDescendant($Handler.ConditionFactory.ByName("Allow access"))
+            $Button1.Click()
+        }
+        Catch {}
         # Finish pycharm window
         $Factor1 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::ALT
         $Factor2 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::F4
@@ -1593,9 +1626,10 @@ Function Update-Windows {
         [String] $Machine
     )
 
-    Update-Element "Timezone" "$Country"
-    Update-Element "Computer" "$Machine"
-    Enable-Feature "RemoteDesktop"
+    Update-Element Timezone "$Country"
+    Update-Element Computer "$Machine"
+    Enable-Feature RemoteDesktop
+    Enable-Feature NightLight
 
 }
 
