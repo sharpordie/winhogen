@@ -966,47 +966,37 @@ Function Update-DbeaverUltimate {
         $Program = (Get-Item "$RootDir\dbeaver*.exe").FullName
         Invoke-Gsudo { Start-Process "$Using:Program" "/S /allusers" -Wait }
         If (-Not $Present) {
-            # Handle archives
             $RarFile = (Get-Item "$RootDir\*.rar").FullName
             $Extract = Invoke-Extract -Archive "$RarFile"
             $RarFile = (Get-Item "$Extract\*.rar").FullName
             $Extract = Invoke-Extract -Archive "$RarFile"
             $JarFile = (Get-Item "$Extract\*.jar").FullName
-            # Launch jar file
             $Current = $Script:MyInvocation.MyCommand.Path
             Invoke-Gsudo {
                 . $Using:Current ; Start-Sleep 4
-                # Remove volume
                 Update-Element "Volume" 0
-                # Launch application
                 $Handler = Deploy-Library Flaui
                 Start-Process "java" "-jar `"$Using:JarFile`"" 
                 Start-Sleep 8 ; $Desktop = $Handler.GetDesktop()
                 $Window1 = $Desktop.FindFirstDescendant($Handler.ConditionFactory.ByClassName("SunAwtFrame"))
                 $Window1.Focus()
-                # Insert name
                 $Factor1 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::CONTROL
                 $Factor2 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::KEY_A
                 Start-Sleep 4 ; [FlaUI.Core.Input.Keyboard]::TypeSimultaneously($Factor1, $Factor2)
                 Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type("$Env:Username")
-                # Insert company
                 [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB)
                 Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::TypeSimultaneously($Factor1, $Factor2)
                 Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type(" ")
-                # Insert email
                 [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB)
                 Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::TypeSimultaneously($Factor1, $Factor2)
                 Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type(" ")
-                # Gather license
                 Start-Sleep 1 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB)
                 Start-Sleep 1 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB)
                 Start-Sleep 1 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB)
                 Start-Sleep 1 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB)
                 Start-Sleep 1 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE)
-                # Invoke patch
                 [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB)
                 [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE)
-                # Handle patching
                 Start-Sleep 1 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB)
                 Start-Sleep 1 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB)
                 Start-Sleep 1 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB)
@@ -1028,11 +1018,8 @@ Function Update-DbeaverUltimate {
                 Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::TypeSimultaneously($Factor1, $Factor2)
                 Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type("$Payload")
                 Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::ENTER)
-                # Invoke exit
                 Start-Sleep 2 ; Stop-Process -Name "java" -EA SI ; Start-Sleep 2
-                # Revert volume
                 Update-Element "Volume" 40
-                # Handle windows security alert dialog
                 Try {
                     Start-Process "$Using:BaseDir\dbeaver.exe" ; Start-Sleep 20
                     $Desktop = $Handler.GetDesktop()
@@ -1042,7 +1029,6 @@ Function Update-DbeaverUltimate {
                 }
                 Catch {}
                 Start-Sleep 4 ; Stop-Process -Name "dbeaver" -EA SI
-                # Import license
                 Start-Sleep 2 ; Start-Process "$Using:BaseDir\dbeaver.exe" ; Start-Sleep 20
                 Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::ENTER)
                 $Factor1 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::CONTROL
@@ -1054,7 +1040,6 @@ Function Update-DbeaverUltimate {
                 Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::TypeSimultaneously($Factor1, $Factor2)
                 Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::ENTER)
                 Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::ENTER)
-                # Finish process
                 Stop-Process -Name "dbeaver" -EA SI
             }
         }
@@ -1140,7 +1125,6 @@ Function Update-Git {
 
     $Starter = "$Env:ProgramFiles\Git\git-bash.exe"
     $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
-    # $Present = $Current -Ne "0.0.0.0"
     $Address = "https://api.github.com/repos/git-for-windows/git/releases/latest"
     $Version = [Regex]::Match((Invoke-Scraper "Json" "$Address").tag_name.Replace("windows.", "") , "[\d.]+").Value
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
@@ -1260,12 +1244,6 @@ Function Update-Ldplayer {
         $Current = $Script:MyInvocation.MyCommand.Path
         Invoke-Gsudo {
             . $Using:Current ; Start-Sleep 4
-            # Import-Library "Interop.UIAutomationClient"
-            # Import-Library "FlaUI.Core"
-            # Import-Library "FlaUI.UIA3"
-            # Import-Library "System.Drawing.Common"
-            # Import-Library "System.Security.Permissions"
-            # $Handler = [FlaUI.UIA3.UIA3Automation]::New()
             $Handler = Deploy-Library Flaui
             $Started = [FlaUI.Core.Application]::Launch("$Using:Fetched")
             $Window1 = $Started.GetMainWindow($Handler)
@@ -1290,7 +1268,6 @@ Function Update-MicrosoftOpenjdk {
 
     $Starter = (Get-Item "$Env:ProgramFiles\Microsoft\jdk-*\bin\java.exe" -EA SI).FullName
     $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
-    # $Present = $Current -Ne "0.0.0.0"
     $Address = "https://learn.microsoft.com/en-us/java/openjdk/download"
     $Version = [Regex]::Matches((Invoke-Scraper "Html" "$Address"), "OpenJDK ([\d.]+) LTS").Groups[1].Value
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
@@ -1354,7 +1331,10 @@ Function Update-Nanazip {
         $Results = (Invoke-Scraper "Json" "$Address").assets
         $Address = $Results.Where( { $_.browser_download_url -Like "*.msixbundle" } ).browser_download_url
         $Fetched = Invoke-Fetcher "Webclient" "$Address"
-        Add-AppxPackage -Path "$Fetched" -DeferRegistrationWhenPackagesAreInUse -ForceUpdateFromAnyVersion
+        Invoke-Gsudo {
+            $ProgressPreference = "SilentlyContinue"
+            Add-AppxPackage -Path "$Using:Fetched" -DeferRegistrationWhenPackagesAreInUse -ForceUpdateFromAnyVersion
+        }
     }
 
 }
@@ -1407,6 +1387,7 @@ Function Update-Nvidia {
             $Address = "https://raw.githubusercontent.com/scoopinstaller/main/master/bucket/cuda.json"
             $Version = [Regex]::Match((Invoke-Scraper "Json" "$Address").version, "[\d.]+").Value
             $Updated = [Version] "$Current" -Ge [Version] $Version.SubString(0, 4)
+
             If (-Not $Updated) {
                 $Address = (Invoke-Scraper "Json" "$Address").architecture."64bit".url.Replace("#/dl.7z", "")
                 $Fetched = Invoke-Fetcher "Webclient" "$Address"
@@ -1421,6 +1402,7 @@ Function Update-Nvidia {
             $Address = "https://community.chocolatey.org/packages/geforce-game-ready-driver"
             $Version = [Regex]::Matches((Invoke-WebRequest "$Address"), "Geforce Game Ready Driver ([\d.]+)</title>").Groups[1].Value
             $Updated = [Version] "$Current" -Ge [Version] "$Version"
+
             If (-Not $Updated) {
                 $Address = "https://us.download.nvidia.com/Windows/$Version/$Version-desktop-win10-win11-64bit-international-dch-whql.exe"
                 $Fetched = Invoke-Fetcher "Webclient" "$Address"
@@ -1430,7 +1412,6 @@ Function Update-Nvidia {
         }
     }
 
-    # Change output range
     If (-Not $Present) {
         $Deposit = Get-AppxPackage "*NVIDIAControlPanel*" | Select-Object -ExpandProperty InstallLocation
         $Starter = "$Deposit\nvcplui.exe"
@@ -1513,22 +1494,16 @@ Function Update-Pycharm {
     }
 
     If (-Not $Present) {
-        # Gather activation code
         $License = Invoke-Scraper "Jetbra" "PyCharm"
-        # $License = $License.Substring(0, 1) + "$License"
-        # Launch pycharm application
         $Handler = Deploy-Library Flaui
         $Started = [FlaUI.Core.Application]::Launch("$Starter")
         $Window1 = $Started.GetMainWindow($Handler)
         $Window1.Focus()
-        # Handle first dialog
         Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB)
         Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE)
         Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE)
-        # Handle second dialog
         Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB)
         Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE)
-        # Select activation code
         Start-Sleep 4 ; $Desktop = $Handler.GetDesktop()
         $Window1 = $Desktop.FindFirstDescendant($Handler.ConditionFactory.ByName("Licenses"))
         $Scraped = $Window1.BoundingRectangle
@@ -1536,12 +1511,10 @@ Function Update-Pycharm {
         $FactorY = $Scraped.Y + ($Scraped.Height / 2)
         Start-Sleep 4 ; [FlaUI.Core.Input.Mouse]::LeftClick([Drawing.Point]::New($FactorX, $FactorY - 105))
         Start-Sleep 2 ; [FlaUI.Core.Input.Mouse]::LeftClick([Drawing.Point]::New($FactorX, $FactorY))
-        # Insert activation code
         Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type("$License")
         Start-Sleep 8 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB)
         Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE)
         Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE)
-        # Handle windows security alert dialog
         Try {
             Start-Sleep 8 ; $Desktop = $Handler.GetDesktop()
             $Window1 = $Desktop.FindFirstDescendant($Handler.ConditionFactory.ByName("Windows Security Alert"))
@@ -1549,11 +1522,9 @@ Function Update-Pycharm {
             $Button1.Click()
         }
         Catch {}
-        # Finish pycharm window
         $Factor1 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::ALT
         $Factor2 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::F4
         Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::TypeSimultaneously($Factor1, $Factor2)
-        # Finish pycharm process
         Start-Sleep 4 ; Stop-Process -Name "pycharm64" -EA SI
     }
 
@@ -1583,7 +1554,6 @@ Function Update-VisualStudioCode {
 
     $Starter = "$Env:LocalAppData\Programs\Microsoft VS Code\Code.exe"
     $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
-    # $Present = $Current -Ne "0.0.0.0"
     $Address = "https://code.visualstudio.com/sha?build=stable"
     $Version = [Regex]::Match((Invoke-Scraper "Json" "$Address").products[1].name , "[\d.]+").Value
     $Updated = [Version] "$Current" -Ge [Version] ($Version.SubString(0, 6))
@@ -1681,11 +1651,9 @@ Function Update-YtDlg {
 
 If ($MyInvocation.InvocationName -Ne ".") {
 
-    # Change headline
     $Current = $Script:MyInvocation.MyCommand.Path
     $Host.UI.RawUI.WindowTitle = (Get-Item "$Current").BaseName.ToUpper()
 
-    # Output greeting
     Clear-Host ; $ProgressPreference = "SilentlyContinue"
     Write-Output "+---------------------------------------------------------------+"
     Write-Output "|                                                               |"
@@ -1695,17 +1663,14 @@ If ($MyInvocation.InvocationName -Ne ".") {
     Write-Output "|                                                               |"
     Write-Output "+---------------------------------------------------------------+"
 
-    # Handle security
     $Loading = "`nTHE UPDATING DEPENDENCIES PROCESS HAS LAUNCHED"
     $Failure = "`rTHE UPDATING DEPENDENCIES PROCESS WAS CANCELED"
     Write-Host "$Loading" -FO DarkYellow -NoNewline ; Remove-Feature "Uac" ; Remove-Feature "Sleeping"
     $Correct = (Update-Gsudo) -And ! (gsudo cache on -d -1 2>&1).ToString().Contains("Error")
     If (-Not $Correct) { Write-Host "$Failure`n" -FO Red ; Exit } ; Update-Powershell
 
-    # Handle elements
     $Members = Export-Members -Variant "Development" -Machine "WINHOGEN"
 
-    # Output progress
     $Maximum = (65 - 20) * -1
     $Shaping = "`r{0,$Maximum}{1,-3}{2,-6}{3,-3}{4,-8}"
     $Heading = "$Shaping" -F "FUNCTION", " ", "STATUS", " ", "DURATION"
@@ -1731,10 +1696,7 @@ If ($MyInvocation.InvocationName -Ne ".") {
         }
     }
 
-    # Revert security
     Enable-Feature "Uac" ; Enable-Feature "Sleeping" ; gsudo -k *> $Null
-
-    # Output new line
     Write-Host "`n"
 
 }
