@@ -975,8 +975,10 @@ Function Update-DbeaverUltimate {
             $Current = $Script:MyInvocation.MyCommand.Path
             Invoke-Gsudo {
                 . $Using:Current ; Start-Sleep 4
-                $Handler = Deploy-Library Flaui
+                # Remove volume
                 Update-Element "Volume" 0
+                # Launch application
+                $Handler = Deploy-Library Flaui
                 Start-Process "java" "-jar `"$Using:JarFile`"" 
                 Start-Sleep 8 ; $Desktop = $Handler.GetDesktop()
                 $Window1 = $Desktop.FindFirstDescendant($Handler.ConditionFactory.ByClassName("SunAwtFrame"))
@@ -1027,6 +1029,8 @@ Function Update-DbeaverUltimate {
                 Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::ENTER)
                 # Invoke exit
                 Start-Sleep 2 ; Stop-Process -Name "java" -EA SI ; Start-Sleep 2
+                # Revert volume
+                Update-Element "Volume" 40
                 # Handle windows security alert dialog
                 Try {
                     Start-Process "$Using:BaseDir\dbeaver.exe" ; Start-Sleep 20
