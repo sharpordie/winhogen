@@ -177,7 +177,7 @@ Function Export-Members {
                 "Update-Pycharm"
                 "Update-VisualStudioCode"
                 "Update-Antidote"
-                # "Update-DbeaverUltimate"
+                "Update-DbeaverUltimate"
                 "Update-DockerDesktop"
                 "Update-Mpv"
                 # "Update-Noxplayer"
@@ -450,7 +450,7 @@ Function Remove-Feature {
 Function Update-Element {
 
     Param(
-        [ValidateSet("Computer", "Plan", "Timezone")] [String] $Element,
+        [ValidateSet("Computer", "Plan", "Timezone", "Volume")] [String] $Element,
         [String] $Payload
     )
 
@@ -482,6 +482,11 @@ Function Update-Element {
                 Start-Process "net" "start w32time" -WindowStyle Hidden -Wait
                 Start-Process "w32tm" "/resync /force" -WindowStyle Hidden -Wait
             }
+        }
+        "Volume" {
+            $Wscript = New-Object -ComObject WScript.Shell
+            1..50 | ForEach-Object { $Wscript.SendKeys([Char]174) }
+            If ($Payload -Ne 0) { 1..$($Payload / 2) | ForEach-Object { $Wscript.SendKeys([Char]175) } }
         }
     }
 
@@ -970,13 +975,8 @@ Function Update-DbeaverUltimate {
             $Current = $Script:MyInvocation.MyCommand.Path
             Invoke-Gsudo {
                 . $Using:Current ; Start-Sleep 4
-                # Import-Library "Interop.UIAutomationClient"
-                # Import-Library "FlaUI.Core"
-                # Import-Library "FlaUI.UIA3"
-                # Import-Library "System.Drawing.Common"
-                # Import-Library "System.Security.Permissions"
-                # $Handler = [FlaUI.UIA3.UIA3Automation]::New()
                 $Handler = Deploy-Library Flaui
+                Update-Element "Volume" 0
                 Start-Process "java" "-jar `"$Using:JarFile`"" 
                 Start-Sleep 8 ; $Desktop = $Handler.GetDesktop()
                 $Window1 = $Desktop.FindFirstDescendant($Handler.ConditionFactory.ByClassName("SunAwtFrame"))
@@ -1626,10 +1626,11 @@ Function Update-Windows {
         [String] $Machine
     )
 
-    Update-Element Timezone "$Country"
-    Update-Element Computer "$Machine"
-    Enable-Feature RemoteDesktop
-    Enable-Feature NightLight
+    Enable-Feature "NightLight"
+    Enable-Feature "RemoteDesktop"
+    Update-Element "Computer" "$Machine"
+    Update-Element "Timezone" "$Country"
+    Update-Element "Volume" 40
 
 }
 
