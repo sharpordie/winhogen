@@ -173,14 +173,14 @@ Function Export-Members {
                 "Update-Nvidia 'Cuda'"
                 "Update-AndroidStudio"
                 "Update-Chromium"
+                "Update-DockerDesktop"
                 "Update-Git 'main' '72373746+sharpordie@users.noreply.github.com' 'sharpordie'"
                 "Update-Pycharm"
                 "Update-VisualStudioCode"
                 "Update-Antidote"
+                "Update-Bluestacks '7'"
                 "Update-DbeaverUltimate"
-                "Update-DockerDesktop"
                 "Update-Mpv"
-                # "Update-Noxplayer"
                 "Update-Flutter"
                 "Update-Scrcpy"
                 "Update-YtDlg"
@@ -698,12 +698,12 @@ Function Update-Bluestacks {
     )
 
     $Starter = (Get-Item "$Env:ProgramFiles\BlueStacks*\HD-Player.exe" -EA SI).FullName
-    $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
+    $Current = Try { (Get-Item "$Starter" -EA SI).VersionInfo.FileVersion.ToString() } Catch { "0.0.0.0" }
     $Address = "https://support.bluestacks.com/hc/en-us/articles/4402611273485-BlueStacks-5-offline-installer"
     $Results = [Regex]::Matches((Invoke-Scraper "Html" "$Address"), "windows/nxt/([\d.]+)/(?<sha>[0-9a-f]+)/")
     $Version = $Results.Groups[1].Value
     $Hashing = $Results.Groups[2].Value
-    $Updated = [Version] "$Current" -Ge [Version] ($Version.SubString(0, 6))
+    $Updated = [Version] "$Current" -Ge [Version] $Version.SubString(0, 6)
 
     If (-Not $Updated) {
         $Address = "https://cdn3.bluestacks.com/downloads/windows/nxt/$Version/$Hashing/FullInstaller/x64/BlueStacksFullInstaller_${Version}_amd64_native.exe"
@@ -717,11 +717,12 @@ Function Update-Bluestacks {
 
     $Content = Invoke-Gsudo { (Get-WindowsOptionalFeature -FE "Microsoft-Hyper-V-All" -Online).State }
     If ($Content.Value -Eq "Enabled" -And $Android -Eq "7") {
-        $Altered = (Get-Item "$Env:ProgramData\Microsoft\Windows\Start Menu\Programs\BlueStacks*.lnk" -EA SI).FullName
+        $Maximum = $Version.SubString(0, 1)
+        $Altered = (Get-Item "$Env:ProgramData\Microsoft\Windows\Start Menu\Programs\BlueStacks $Maximum.lnk" -EA SI).FullName
         If ($Null -Ne $Altered) {
             $Content = [IO.File]::ReadAllBytes("$Altered")
             $Content[0x15] = $Content[0x15] -Bor 0x20
-            Invoke-Gsudo { [IO.File]::WriteAllBytes("$Using:Altered", $Using:Content) }
+            Invoke-Gsudo { [IO.File]::WriteAllBytes("$Using:Altered", $Using:Content) | Out-Null }
         }
     }
 
