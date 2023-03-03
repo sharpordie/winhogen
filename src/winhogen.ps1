@@ -46,6 +46,35 @@ Function Deploy-Browser {
 
 }
 
+Function Deploy-Library {
+
+    Param(
+        [ValidateSet("Flaui", "Playwright")] [String] $Library
+    )
+
+    Switch ($Library) {
+        "Flaui" {
+            Import-Library "Interop.UIAutomationClient"
+            Import-Library "FlaUI.Core"
+            Import-Library "FlaUI.UIA3"
+            Import-Library "System.Drawing.Common"
+            Import-Library "System.Security.Permissions"
+            Return [FlaUI.UIA3.UIA3Automation]::New()
+        }
+        "Playwright" {
+            $Current = $Script:MyInvocation.MyCommand.Path
+            If (Test-Path "$Current") { Invoke-Gsudo { . $Using:Current ; Deploy-Library Playwright | Out-Null } }
+            Import-Library "System.Text.Json"
+            Import-Library "Microsoft.Bcl.AsyncInterfaces"
+            Import-Library "Microsoft.CodeAnalysis"
+            Import-Library "Microsoft.Playwright"
+            [Microsoft.Playwright.Program]::Main(@("install", "chromium"))
+            Return [Microsoft.Playwright.Playwright]::CreateAsync().GetAwaiter().GetResult()
+        }
+    }
+
+}
+
 Function Enable-Feature {
 
     Param(
@@ -125,17 +154,17 @@ Function Export-Members {
         "Development" {
             Return @(
                 "Update-Windows '$Country' '$Machine'"
-                # "Update-NvidiaGameDriver"
+                "Update-Nvidia 'Cuda'"
                 "Update-AndroidStudio"
                 "Update-Chromium"
                 "Update-Git 'main' '72373746+sharpordie@users.noreply.github.com' 'sharpordie'"
-                "Update-Pycharm"
+                # "Update-Pycharm"
                 "Update-VisualStudioCode"
                 "Update-Antidote"
-                "Update-DbeaverUltimate"
+                # "Update-DbeaverUltimate"
                 "Update-DockerDesktop"
                 "Update-Mpv"
-                "Update-Noxplayer"
+                # "Update-Noxplayer"
                 "Update-Flutter"
                 "Update-Scrcpy"
                 "Update-YtDlg"
@@ -1328,40 +1357,71 @@ Function Update-Noxplayer {
 
 }
 
-Function Update-NvidiaCudaDriver {
+Function Update-Nvidia {
 
-    # TODO: Verify nvidia card presence
-    $Current = (Get-Package "*cuda*runtime*" -EA SI).Version
-    If ($Null -Eq $Current) { $Current = "0.0.0.0" }
-    # $Present = $Current -Ne "0.0.0.0"
-    $Address = "https://raw.githubusercontent.com/scoopinstaller/main/master/bucket/cuda.json"
-    $Version = [Regex]::Match((Invoke-Scraper "Json" "$Address").version, "[\d.]+").Value
-    $Updated = [Version] "$Current" -Ge [Version] $Version.SubString(0, 4)
+    Param(
+        [ValidateSet("Cuda", "Game")] [String] $Release
+    )
 
-    If (-Not $Updated) {
-        $Address = (Invoke-Scraper "Json" "$Address").architecture."64bit".url.Replace("#/dl.7z", "")
-        $Fetched = Invoke-Fetcher "Webclient" "$Address"
-        Invoke-Gsudo { Start-Process "$Using:Fetched" "/s /noreboot" -Wait }
-        Remove-Desktop "GeForce*.lnk"
+    Switch ($Release) {
+        "Cuda" {
+            $Current = $(powershell -Command '(Get-Package "*cuda*runtime*" -EA SI).Version')
+            If ($Null -Eq $Current) { $Current = "0.0.0.0" }
+            $Present = $Current -Ne "0.0.0.0"
+            $Address = "https://raw.githubusercontent.com/scoopinstaller/main/master/bucket/cuda.json"
+            $Version = [Regex]::Match((Invoke-Scraper "Json" "$Address").version, "[\d.]+").Value
+            $Updated = [Version] "$Current" -Ge [Version] $Version.SubString(0, 4)
+            If (-Not $Updated) {
+                $Address = (Invoke-Scraper "Json" "$Address").architecture."64bit".url.Replace("#/dl.7z", "")
+                $Fetched = Invoke-Fetcher "Webclient" "$Address"
+                Invoke-Gsudo { Start-Process "$Using:Fetched" "/s /noreboot" -Wait }
+                Remove-Desktop "GeForce*.lnk"
+            }
+        }
+        "Game" {
+            $Current = $(powershell -Command '(Get-Package "*nvidia*graphics*driver*" -EA SI).Version')
+            If ($Null -Eq $Current) { $Current = "0.0.0.0" }
+            $Present = $Current -Ne "0.0.0.0"
+            $Address = "https://community.chocolatey.org/packages/geforce-game-ready-driver"
+            $Version = [Regex]::Matches((Invoke-WebRequest "$Address"), "Geforce Game Ready Driver ([\d.]+)</title>").Groups[1].Value
+            $Updated = [Version] "$Current" -Ge [Version] "$Version"
+            If (-Not $Updated) {
+                $Address = "https://us.download.nvidia.com/Windows/$Version/$Version-desktop-win10-win11-64bit-international-dch-whql.exe"
+                $Fetched = Invoke-Fetcher "Webclient" "$Address"
+                $Extract = Invoke-Extract "$Fetched"
+                Invoke-Gsudo { Start-Process "$Using:Extract\setup.exe" "Display.Driver HDAudio.Driver -clean -s -noreboot" -Wait }
+            }
+        }
     }
 
-}
-
-Function Update-NvidiaGameDriver {
-
-    # TODO: Verify nvidia card presence
-    $Current = (Get-Package "*nvidia*graphics*driver*" -EA SI).Version
-    If ($Null -Eq $Current) { $Current = "0.0.0.0" }
-    # $Present = $Current -Ne "0.0.0.0"
-    $Address = "https://community.chocolatey.org/packages/geforce-game-ready-driver"
-    $Version = [Regex]::Matches((Invoke-WebRequest "$Address"), "Geforce Game Ready Driver ([\d.]+)</title>").Groups[1].Value
-    $Updated = [Version] "$Current" -Ge [Version] "$Version"
-
-    If (-Not $Updated) {
-        $Address = "https://us.download.nvidia.com/Windows/$Version/$Version-desktop-win10-win11-64bit-international-dch-whql.exe"
-        $Fetched = Invoke-Fetcher "Webclient" "$Address"
-        $Extract = Invoke-Extract "$Fetched"
-        Invoke-Gsudo { Start-Process "$Using:Extract\setup.exe" "Display.Driver HDAudio.Driver -clean -s -noreboot" -Wait }
+    # Change output range
+    If (-Not $Present) {
+        $Deposit = Get-AppxPackage "*NVIDIAControlPanel*" | Select-Object -ExpandProperty InstallLocation
+        $Starter = "$Deposit\nvcplui.exe"
+        If (Test-Path "$Starter") {
+            $Handler = Deploy-Library Flaui
+            Stop-Process -Name "nvcplui" -EA SI ; Start-Sleep 2
+            $Started = [FlaUI.Core.Application]::Launch("$Starter")
+            $Window1 = $Started.GetMainWindow($Handler) ; Start-Sleep 4 ; $Window1.Focus() ; Start-Sleep 2
+            Try { $Element = $Window1.FindFirstDescendant($Handler.ConditionFactory.ByName("Agree and Continue")) ; $Element.Click() ; Start-Sleep 8 ; $Window1.Close() } Catch {}
+            Stop-Process -Name "nvcplui" -EA SI ; Start-Sleep 2
+            $Started = [FlaUI.Core.Application]::Launch("$Starter")
+            $Window1 = $Started.GetMainWindow($Handler) ; Start-Sleep 4 ; $Window1.Focus() ; Start-Sleep 2
+            Try { $Element = $Window1.FindFirstDescendant($Handler.ConditionFactory.ByName("Maximize")) ; $Element.Click() } Catch {}
+            Start-Sleep 2 ; $Element = $Window1.FindFirstDescendant($Handler.ConditionFactory.ByName("Change resolution"))
+            $Element.Click()
+            Start-Sleep 2 ; $Element = $Window1.FindFirstDescendant($Handler.ConditionFactory.ByName("Use NVIDIA color settings"))
+            $Element.Click()
+            $Factor1 = $Handler.ConditionFactory.ByName("Output dynamic range:")
+            $Factor2 = $Handler.ConditionFactory.ByControlType("ComboBox")
+            Start-Sleep 2 ; $Element = $Window1.FindFirstDescendant($Factor1.And($Factor2))
+            $Element.Click()
+            Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type("F")
+            Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::ENTER)
+            Start-Sleep 2 ; $Element = $Window1.FindFirstDescendant($Handler.ConditionFactory.ByName("Apply"))
+            $Element.Click()
+            Start-Sleep 5 ; $Window1.Close()
+        }
     }
 
 }
@@ -1533,13 +1593,8 @@ Function Update-Windows {
         [String] $Machine
     )
 
-    # Update timezone
     Update-Element "Timezone" "$Country"
-
-    # Update computer
     Update-Element "Computer" "$Machine"
-
-    # Enable remote desktop
     Enable-Feature "RemoteDesktop"
 
 }
