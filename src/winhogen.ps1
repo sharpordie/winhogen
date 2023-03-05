@@ -1527,7 +1527,7 @@ Function Update-Powershell {
     If (-Not $Updated) {
         Invoke-Gsudo {
             $ProgressPreference = "SilentlyContinue"
-            Invoke-Expression "& { $(Invoke-RestMethod https://aka.ms/install-powershell.ps1) } -UseMSI -Quiet"
+            Invoke-Expression "& { $(Invoke-RestMethod https://aka.ms/install-powershell.ps1) } -UseMSI -Quiet" *> $Null
         }
     }
 
