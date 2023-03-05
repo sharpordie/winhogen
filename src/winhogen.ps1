@@ -102,8 +102,8 @@ Function Enable-Feature {
             }
         }
         "NightLight" {
-            Start-Process "ms-settings:display"
             $Handler = Deploy-Library Flaui
+            Start-Process "ms-settings:display"
             Start-Sleep 2 ; $Desktop = $Handler.GetDesktop()
             Start-Sleep 2 ; $Window1 = $Desktop.FindFirstDescendant($Handler.ConditionFactory.ByName("Settings"))
             $Window1.Focus()
@@ -200,6 +200,7 @@ Function Export-Members {
                 "Update-Mpv"
                 "Update-Flutter"
                 "Update-Scrcpy"
+                "Update-VmwareWorkstation"
                 "Update-YtDlg"
             )
         }
@@ -440,8 +441,8 @@ Function Remove-Feature {
             }
         }
         "NightLight" {
-            Start-Process "ms-settings:display"
             $Handler = Deploy-Library Flaui
+            Start-Process "ms-settings:display"
             Start-Sleep 2 ; $Desktop = $Handler.GetDesktop()
             Start-Sleep 2 ; $Window1 = $Desktop.FindFirstDescendant($Handler.ConditionFactory.ByName("Settings"))
             $Window1.Focus()
@@ -766,11 +767,11 @@ Function Update-Chromium {
     )
 
     $Starter = "$Env:ProgramFiles\Chromium\Application\chrome.exe"
-    $Current = Expand-Version "$Starter"
-    $Present = Test-Path "$Starter"
+    $Current = Expand-Version "*chromium*"
+    $Present = $Current -Ne "0.0.0.0"
     $Address = "https://api.github.com/repos/macchrome/winchrome/releases/latest"
     $Version = [Regex]::Match((Invoke-Scraper "Json" "$Address").tag_name, "[\d.]+").Value
-    $Updated = [Version] "$Current" -Ge [Version] "$Version"
+    $Updated = [Version] $Current.Replace(".0", "") -Ge [Version] "$Version"
 	
     If (-Not $Updated) {
         $Results = (Invoke-Scraper "Json" "$Address").assets
@@ -1619,6 +1620,55 @@ Function Update-VisualStudioCodeExtension {
 
 }
 
+Function Update-VmwareWorkstation {
+
+    Param (
+        [String] $Leading = "17",
+        [String] $Deposit = "$Env:UserProfile\Machines",
+        [String] $Serials = "MC60H-DWHD5-H80U9-6V85M-8280D"
+    )
+
+    $Starter = "${Env:ProgramFiles(x86)}\VMware\VMware Workstation\vmware.exe"
+    $Current = Expand-Version "$Starter"
+    $Present = Test-Path "$Starter"
+    $Address = "https://softwareupdate.vmware.com/cds/vmw-desktop/ws-windows.xml"
+    $Version = [Regex]::Matches((Invoke-WebRequest "$Address"), "url>ws/($Leading.[\d.]+)/(\d+)/windows/core").Groups[1].Value
+    $Updated = [Version] "$Current" -Ge [Version] $Version.SubString(0, 4)
+
+    If (-Not $Updated) {
+        If (Assert-Pending -Eq $True) { Invoke-Restart }
+        $Address = "https://www.vmware.com/go/getworkstation-win"
+        $Fetched = Invoke-Fetcher "Webclient" "$Address" "$Env:Temp\vmware-workstation-full.exe"
+        $ArgList = "/s /v/qn EULAS_AGREED=1 AUTOSOFTWAREUPDATE=0 DATACOLLECTION=0 ADDLOCAL=ALL REBOOT=ReallySuppress SERIALNUMBER=$Serials"
+        Invoke-Gsudo { Start-Process "$Using:Fetched" "$Using:ArgList" -Wait } ; Start-Sleep 4
+        Start-Process "$Starter" -WindowStyle Hidden ; Start-Sleep 10 ; Stop-Process -Name "vmware" -EA SI ; Start-Sleep 2
+        Set-ItemProperty -Path "HKCU:\Software\VMware, Inc.\VMware Tray" -Name "TrayBehavior" -Type DWord -Value 2
+        Remove-Desktop "VMware*.lnk"
+    }
+
+    If (-Not $Present) {
+        $Address = "https://api.github.com/repos/DrDonk/unlocker/releases/latest"
+        $Results = (Invoke-Scraper "Json" "$Address").assets
+        $Address = $Results.Where( { $_.browser_download_url -Like "*.zip" } ).browser_download_url
+        $Fetched = Invoke-Fetcher "Webclient" "$Address"
+        $Extract = Invoke-Extract "$Fetched"
+        # Update-Nanazip ; $Extract = [IO.Directory]::CreateDirectory("$Env:Temp\$([Guid]::NewGuid().Guid)").FullName
+        # Start-Process "7z.exe" "x `"$Fetched`" -o`"$Extract`" -y -bso0 -bsp0" -WindowStyle Hidden -Wait
+        Start-Sleep 4 ; $Program = Join-Path "$Extract" "windows\unlock.exe"
+        Invoke-Gsudo {
+            [Environment]::SetEnvironmentVariable("UNLOCK_QUIET", "1", "Process")
+            Start-Process "$Using:Program" -WindowStyle Hidden
+        }
+    }
+
+    If ($Deposit) {
+        New-Item -Path "$Deposit" -ItemType Directory -EA SI
+        $Configs = "$Env:AppData\VMware\preferences.ini"
+        If (-Not ((Get-Content "$Configs") -Match "prefvmx.defaultVMPath")) { Add-Content -Path "$Configs" -Value "prefvmx.defaultVMPath = `"$Deposit`"" }
+    }
+
+}
+
 Function Update-Windows {
 
     Param (
@@ -1694,7 +1744,7 @@ If ($MyInvocation.InvocationName -Ne ".") {
     $Correct = (Update-Gsudo) -And ! (gsudo cache on -d -1 2>&1).ToString().Contains("Error")
     If (-Not $Correct) { Write-Host "$Failure`n" -FO Red ; Exit } ; Update-Powershell
 
-    $Members = Export-Members -Variant "Virtual" -Machine "WINHOGEN"
+    $Members = Export-Members -Variant "Development" -Machine "WINHOGEN"
 
     $Maximum = (65 - 20) * -1
     $Shaping = "`r{0,$Maximum}{1,-3}{2,-6}{3,-3}{4,-8}"
