@@ -62,11 +62,16 @@ Function Enable-Feature {
         "Activation" {
             $Content = (Write-Output ((cscript /nologo "C:\Windows\System32\slmgr.vbs" /xpr) -Join ""))
             If (-Not $Content.Contains("permanently activated")) {
-                $Fetched = Invoke-Fetcher "Webclient" "https://massgrave.dev/get.ps1"
-                Start-Process "powershell" "-f `"$Fetched`"" -WindowStyle Hidden
-                Add-Type -AssemblyName System.Windows.Forms
-                Start-Sleep 4 ; [Windows.Forms.SendKeys]::SendWait("4")
-                Start-Sleep 12 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+                $Current = $Script:MyInvocation.MyCommand.Path
+                Invoke-Gsudo {
+                    . $Using:Current ; Start-Sleep 4
+                    $Fetched = Invoke-Fetcher "Webclient" "https://massgrave.dev/get.ps1"
+                    Start-Process "powershell" "-ep bypass -f `"$Fetched`"" -WindowStyle Hidden
+                    Add-Type -AssemblyName System.Windows.Forms
+                    Start-Sleep 8 ; [Windows.Forms.SendKeys]::SendWait("1")
+                    Start-Sleep 30 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+                    Start-Sleep 6 ; [Windows.Forms.SendKeys]::SendWait("1")
+                }
             }
         }
         "HyperV" {
@@ -81,18 +86,22 @@ Function Enable-Feature {
         "NightLight" {
             $Handler = Deploy-Library Flaui
             Start-Process "ms-settings:display"
-            Start-Sleep 2 ; $Desktop = $Handler.GetDesktop()
-            Start-Sleep 2 ; $Window1 = $Desktop.FindFirstDescendant($Handler.ConditionFactory.ByName("Settings"))
-            $Window1.Focus()
-            Start-Sleep 2
-            $Element = $Window1.FindFirstDescendant($Handler.ConditionFactory.ByAutomationId("SystemSettings_Display_BlueLight_AutomaticOnScheduleWithTime_ButtonEntityItem"))
-            $Element.Click()
-            Start-Sleep 2
-            $Element = $Window1.FindFirstDescendant($Handler.ConditionFactory.ByAutomationId("SystemSettings_Display_BlueLight_ManualToggleOn_Button"))
-            If ($Null -Ne $Element) { $Element.Click() }
-            $Factor1 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::ALT
-            $Factor2 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::F4
-            Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::TypeSimultaneously($Factor1, $Factor2)
+            Try {
+                Start-Sleep 4 ; $Desktop = $Handler.GetDesktop()
+                Start-Sleep 2 ; $Window1 = $Desktop.FindFirstDescendant($Handler.ConditionFactory.ByName("Settings"))
+                $Window1.Focus() ; Start-Sleep 2
+                $Element = $Window1.FindFirstDescendant($Handler.ConditionFactory.ByAutomationId("SystemSettings_Display_BlueLight_AutomaticOnScheduleWithTime_ButtonEntityItem"))
+                $Element.Click()
+                Start-Sleep 2
+                $Element = $Window1.FindFirstDescendant($Handler.ConditionFactory.ByAutomationId("SystemSettings_Display_BlueLight_ManualToggleOn_Button"))
+                If ($Null -Ne $Element) { $Element.Click() }
+                $Factor1 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::ALT
+                $Factor2 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::F4
+                Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::TypeSimultaneously($Factor1, $Factor2)
+            }
+            Catch {
+                Stop-Process -Name "SystemSettings" -EA SI
+            }
         }
         "RemoteDesktop" {
             Invoke-Gsudo {
@@ -209,25 +218,25 @@ Function Export-Members {
             "Update-AndroidStudio"
             "Update-Chromium"
             "Update-Git 'main' '72373746+sharpordie@users.noreply.github.com' 'sharpordie'"
-            # "Update-Pycharm"
+            "Update-Pycharm"
             "Update-VisualStudio2022"
             "Update-VisualStudioCode"
             # "Update-Antidote"
             # "Update-DbeaverUltimate"
             "Update-Figma"
             "Update-Flutter"
-            "Update-Jdownloader"
-            "Update-JoalDesktop"
+            # "Update-Jdownloader"
+            # "Update-JoalDesktop"
             "Update-Keepassxc"
             "Update-Mambaforge"
             "Update-Maui"
-            "Update-Mpv"
+            # "Update-Mpv"
             "Update-Python"
             "Update-Qbittorrent"
-            "Update-Scrcpy"
+            # "Update-Scrcpy"
             "Update-Steam"
             # "Update-VmwareWorkstation"
-            "Update-YtDlg"
+            # "Update-YtDlg"
         }
     }
 
@@ -353,7 +362,7 @@ Function Invoke-Restart {
     $RegPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\RunOnce"
     New-ItemProperty "$RegPath" "$Heading" -Value "$Command" | Out-Null
     Invoke-Gsudo { Get-LocalUser -Name "$Env:Username" | Set-LocalUser -Password ([SecureString]::New()) }
-    Start-Sleep 4 ; Restart-Computer -Force
+    Start-Sleep 4 ; Restart-Computer -Force ; Start-Sleep 2
 
 }
 
@@ -443,18 +452,23 @@ Function Remove-Feature {
         "NightLight" {
             $Handler = Deploy-Library Flaui
             Start-Process "ms-settings:display"
-            Start-Sleep 2 ; $Desktop = $Handler.GetDesktop()
-            Start-Sleep 2 ; $Window1 = $Desktop.FindFirstDescendant($Handler.ConditionFactory.ByName("Settings"))
-            $Window1.Focus()
-            Start-Sleep 2
-            $Element = $Window1.FindFirstDescendant($Handler.ConditionFactory.ByAutomationId("SystemSettings_Display_BlueLight_AutomaticOnScheduleWithTime_ButtonEntityItem"))
-            $Element.Click()
-            Start-Sleep 2
-            $Element = $Window1.FindFirstDescendant($Handler.ConditionFactory.ByAutomationId("SystemSettings_Display_BlueLight_ManualToggleOff_Button"))
-            If ($Null -Ne $Element) { $Element.Click() }
-            $Factor1 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::ALT
-            $Factor2 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::F4
-            Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::TypeSimultaneously($Factor1, $Factor2)
+            Try {
+                Start-Sleep 2 ; $Desktop = $Handler.GetDesktop()
+                Start-Sleep 2 ; $Window1 = $Desktop.FindFirstDescendant($Handler.ConditionFactory.ByName("Settings"))
+                $Window1.Focus()
+                Start-Sleep 2
+                $Element = $Window1.FindFirstDescendant($Handler.ConditionFactory.ByAutomationId("SystemSettings_Display_BlueLight_AutomaticOnScheduleWithTime_ButtonEntityItem"))
+                $Element.Click()
+                Start-Sleep 2
+                $Element = $Window1.FindFirstDescendant($Handler.ConditionFactory.ByAutomationId("SystemSettings_Display_BlueLight_ManualToggleOff_Button"))
+                If ($Null -Ne $Element) { $Element.Click() }
+                $Factor1 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::ALT
+                $Factor2 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::F4
+                Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::TypeSimultaneously($Factor1, $Factor2)
+            }
+            Catch {
+                Stop-Process -Name "SystemSettings" -EA SI
+            }
         }
         "Sleeping" {
             $Content = @()
@@ -552,21 +566,20 @@ Function Update-LnkFile {
 }
 
 Function Update-SysPath {
-
+    
     Param (
-        [String] $Payload,
-        [ValidateSet("Machine", "Process", "User")] [String] $Section
+        [String] $Deposit,
+        [ValidateSet("Machine", "Process", "User")] [String] $Section,
+        [Switch] $Prepend
     )
 
-    If (-Not (Test-Path "$Payload")) { Return }
-    If ($Section -Ne "Process" ) {
-        $OldPath = [Environment]::GetEnvironmentVariable("PATH", "$Section")
-        $OldPath = $OldPath -Split ";" | Where-Object { $_ -NotMatch "^$([Regex]::Escape($Payload))\\?" }
-        $NewPath = ($OldPath + $Payload) -Join ";"
-        Invoke-Gsudo { [Environment]::SetEnvironmentVariable("PATH", "$Using:NewPath", "$Using:Section") }
-    }
-    $OldPath = $Env:Path -Split ";" | Where-Object { $_ -NotMatch "^$([Regex]::Escape($Payload))\\?" }
-    $NewPath = ($OldPath + $Payload) -Join ";" ; $Env:Path = $NewPath -Join ";"
+    $Changed = [Environment]::GetEnvironmentVariable("PATH", "$Section")
+    $Changed = If ($Changed.Contains(";;")) { $Changed.Replace(";;", ";") } Else { $Changed }
+    $Changed = If ($Changed.EndsWith(";")) { $Changed } Else { "${Changed};" }
+    $Changed = If ($Changed.Contains($Deposit)) { $Changed } Else { If ($Prepend) { "${Deposit};${Changed}" } Else { "${Changed}${Deposit};" } }
+    If ($Section -Eq "Machine") { Invoke-Gsudo { [Environment]::SetEnvironmentVariable("PATH", "$Using:Changed", "$Using:Section") } }
+    Else { [Environment]::SetEnvironmentVariable("PATH", "$Changed", "$Section") }
+    [Environment]::SetEnvironmentVariable("PATH", "$Changed", "Process")
 
 }
 
@@ -1395,11 +1408,11 @@ Function Update-Mambaforge {
     If (-Not $Present) {
         $Address = "https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-Windows-x86_64.exe"
         $Fetched = Invoke-Fetcher "Webclient" "$Address"
-        $ArgList = "/S /InstallationType=JustMe /RegisterPython=0 /AddToPath=1 /NoRegistry=1 /D=$Deposit"
-        Start-Process "$Fetched" "$ArgList" -Wait
+        $ArgList = "/S /InstallationType=AllUsers /RegisterPython=0 /D=$Deposit"
+        Invoke-Gsudo { Start-Process "$Using:Fetched" "$Using:ArgList" -NoNewWindow -Wait }
     }
 
-    Update-SysPath "$Deposit\Scripts" "User"
+    Update-SysPath "$Deposit\Scripts" "Machine"
     conda config --set auto_activate_base false
     conda update --all -y
 
@@ -1706,7 +1719,6 @@ Function Update-Python {
     )
 
     $Current = Expand-Version "*python*evelopment*"
-    # $Present = $Current -Ne "0.0.0.0"
     $Address = "https://www.python.org/downloads/windows/"
     $Version = [Regex]::Matches((Invoke-Scraper "Html" "$Address"), "python-($Leading\.$Backing\.[\d.]+)-").Groups[1].Value
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
@@ -1719,9 +1731,9 @@ Function Update-Python {
         $Fetched = Invoke-Fetcher "Webclient" "$Address"
         $ArgList = "/quiet InstallAllUsers=1 AssociateFiles=0 PrependPath=1 Shortcuts=0 Include_launcher=0 InstallLauncherAllUsers=0"
         Invoke-Gsudo { Start-Process "$Using:Fetched" "$Using:ArgList" -Wait } ; Start-Sleep 4
-        Update-SysPath "$Env:ProgramFiles\Python$Leading$Backing\" "Machine"
-        Update-SysPath "$Env:ProgramFiles\Python$Leading$Backing\Scripts\" "Machine"
-        Invoke-Gsudo { Start-Process "python" "-m pip install --upgrade pip" -WindowStyle Hidden -Wait }
+        Update-SysPath "$Env:ProgramFiles\Python$Leading$Backing" "Machine"
+        Update-SysPath "$Env:ProgramFiles\Python$Leading$Backing\Scripts" "Machine"
+        Invoke-Gsudo { python -m pip install --upgrade pip }
         Invoke-Gsudo { [Environment]::SetEnvironmentVariable("PYTHONDONTWRITEBYTECODE", "1", "Machine") }
     }
 
@@ -1729,11 +1741,11 @@ Function Update-Python {
         New-Item "$Env:AppData\Python\Scripts" -ItemType Directory -EA SI
         $Address = "https://install.python-poetry.org/"
         $Fetched = Invoke-Fetcher "Webclient" "$Address" "$Env:Temp\install-poetry.py"
-        Start-Process "python" "`"$Fetched`" --uninstall" -WindowStyle Hidden -Wait
-        Start-Process "python" "$Fetched" -WindowStyle Hidden -Wait
+        python "$Fetched" --uninstall
+        python "$Fetched"
         Update-SysPath "$Env:AppData\Python\Scripts" "Machine"
-        Start-Process "poetry" "config virtualenvs.in-project true" -WindowStyle Hidden -Wait
-        Start-Process "poetry" "self update" -WindowStyle Hidden -Wait
+        poetry config virtualenvs.in-project true
+        poetry self update
     }
 
 }
@@ -1828,7 +1840,7 @@ Function Update-VisualStudio2022 {
         Start-Sleep 15 ; [Windows.Forms.SendKeys]::SendWait("{TAB}" * 4)
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{TAB}") ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
-        Start-Sleep 20 ; [Windows.Forms.SendKeys]::SendWait("%{F4}") ; Start-Sleep 2
+        Start-Sleep 20 ; [Windows.Forms.SendKeys]::SendWait("%{F4}") ; Start-Sleep 8
     }
 
     $Program = "$Storage\Common7\IDE\StorePID.exe"
@@ -1837,26 +1849,26 @@ Function Update-VisualStudio2022 {
     $Config1 = "$Env:LocalAppData\Microsoft\VisualStudio\17*\Settings\CurrentSettings.vssettings"
     $Config2 = "$Env:LocalAppData\Microsoft\VisualStudio\17*\Settings\CurrentSettings-*.vssettings"
     If (Test-Path "$Config1") {
-        $Configs = Get-Item "$Config1"
+        $Configs = (Get-Item "$Config1").FullName
         [Xml] $Content = Get-Content "$Configs"
         $Content.SelectSingleNode("//*[@name='HighlightCurrentLine']").InnerText = "false"
         $Content.Save("$Configs")
     }
     If (Test-Path "$Config2") {
-        $Configs = Get-Item "$Config2"
+        $Configs = (Get-Item "$Config2").FullName
         [Xml] $Content = Get-Content "$Configs"
         $Content.SelectSingleNode("//*[@name='HighlightCurrentLine']").InnerText = "false"
         $Content.Save("$Configs")
     }
 
     If (Test-Path "$Config1") {
-        $Configs = Get-Item "$Config1"
+        $Configs = (Get-Item "$Config1").FullName
         [Xml] $Content = Get-Content "$Configs"
         $Content.SelectSingleNode("//*[@name='LineSpacing']").InnerText = "1.5"
         $Content.Save($Configs)
     }
     If (Test-Path "$Config2") {
-        $Configs = Get-Item "$Config2"
+        $Configs = (Get-Item "$Config2").FullName
         [Xml] $Content = Get-Content "$Configs"
         $Content.SelectSingleNode("//*[@name='LineSpacing']").InnerText = "1.5"
         $Content.Save($Configs)
@@ -1866,14 +1878,14 @@ Function Update-VisualStudio2022 {
     New-Item "$Deposit" -ItemType Directory -EA SI | Out-Null
     Invoke-Gsudo { Add-MpPreference -ExclusionPath "$Using:Deposit" *> $Null }
     If (Test-Path "$Config1") {
-        $Configs = Get-Item "$Config1"
+        $Configs = (Get-Item "$Config1").FullName
         [Xml] $Content = Get-Content "$Configs"
         $Payload = $Deposit.Replace("${Env:UserProfile}", '%vsspv_user_appdata%') + "\"
         $Content.SelectSingleNode("//*[@name='ProjectsLocation']").InnerText = "$Payload"
         $Content.Save($Configs)
     }
     If (Test-Path "$Config2") {
-        $Configs = Get-Item "$Config2"
+        $Configs = (Get-Item "$Config2").FullName
         [Xml] $Content = Get-Content "$Configs"
         $Payload = $Deposit.Replace("${Env:UserProfile}", '%vsspv_user_appdata%') + "\"
         $Content.SelectSingleNode("//*[@name='ProjectsLocation']").InnerText = "$Payload"
@@ -2019,11 +2031,13 @@ Function Update-Windows {
         [String] $Machine
     )
 
-    Enable-Feature "NightLight"
-    Enable-Feature "RemoteDesktop"
     Update-Element "Computer" "$Machine"
     Update-Element "Timezone" "$Country"
     Update-Element "Volume" 40
+    
+    Enable-Feature "Activation"
+    Enable-Feature "NightLight"
+    Enable-Feature "RemoteDesktop"
 
 }
 
@@ -2081,8 +2095,10 @@ If ($MyInvocation.InvocationName -Ne ".") {
     Write-Output "|                                                               |"
     Write-Output "+---------------------------------------------------------------+"
 
-    $Loading = "`nTHE UPDATING DEPENDENCIES PROCESS HAS LAUNCHED"
-    $Failure = "`rTHE UPDATING DEPENDENCIES PROCESS WAS CANCELED"
+    # $Loading = "`nTHE UPDATING DEPENDENCIES PROCESS HAS LAUNCHED"
+    # $Failure = "`rTHE UPDATING DEPENDENCIES PROCESS WAS CANCELED"
+    $Loading = "`nUPDATING DEPENDENCIES..."
+    $Failure = "`rUPDATING DEPENDENCIES WAS CANCELED"
     Write-Host "$Loading" -FO DarkYellow -NoNewline ; Remove-Feature "Uac" ; Remove-Feature "Sleeping"
     $Correct = (Update-Gsudo) -And ! (gsudo cache on -d -1 2>&1).ToString().Contains("Error")
     If (-Not $Correct) { Write-Host "$Failure`n" -FO Red ; Exit } ; Update-Powershell

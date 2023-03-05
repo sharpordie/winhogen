@@ -1120,8 +1120,8 @@ Function Update-Python {
 		(New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
         $ArgList = "/quiet InstallAllUsers=1 AssociateFiles=0 PrependPath=1 Shortcuts=0 Include_launcher=0 InstallLauncherAllUsers=0"
         Invoke-Gsudo { Start-Process "$Using:Fetched" "$Using:ArgList" -Wait } ; Start-Sleep 4
-        Update-SysPath "$Env:ProgramFiles\Python$Leading$Backing\" "Machine"
-        Update-SysPath "$Env:ProgramFiles\Python$Leading$Backing\Scripts\" "Machine"
+        Update-SysPath "$Env:ProgramFiles\Python$Leading$Backing" "Machine"
+        Update-SysPath "$Env:ProgramFiles\Python$Leading$Backing\Scripts" "Machine"
         Invoke-Gsudo { Start-Process "python" "-m pip install --upgrade pip" -WindowStyle Hidden -Wait }
         Invoke-Gsudo { [Environment]::SetEnvironmentVariable("PYTHONDONTWRITEBYTECODE", "1", "Machine") }
     }
