@@ -23,29 +23,6 @@ Function Assert-Pending {
 
 }
 
-# Function Deploy-Browser {
-
-#     Param(
-#         [ValidateSet("Chromium", "Firefox")] [String] $Browser = "Chromium"
-#     )
-
-#     Import-Library "System.Text.Json"
-#     Import-Library "Microsoft.Bcl.AsyncInterfaces"
-#     Import-Library "Microsoft.CodeAnalysis"
-#     Import-Library "Microsoft.Playwright"
-#     $Current = $Script:MyInvocation.MyCommand.Path
-#     Invoke-Gsudo {
-#         . $Using:Current ; Start-Sleep 4
-#         Import-Library "System.Text.Json"
-#         Import-Library "Microsoft.Bcl.AsyncInterfaces"
-#         Import-Library "Microsoft.CodeAnalysis"
-#         Import-Library "Microsoft.Playwright"
-#         [Microsoft.Playwright.Program]::Main(@("install", "$Using:Browser".ToLower()))
-#     }
-#     Return [Microsoft.Playwright.Playwright]::CreateAsync().GetAwaiter().GetResult()
-
-# }
-
 Function Deploy-Library {
 
     Param(
@@ -167,10 +144,10 @@ Function Expand-Version {
     If ([String]::IsNullOrWhiteSpace($Payload)) { Return "0.0.0.0" }
     $Version = $(powershell -Command "(Get-Package `"$Payload`" -EA SI).Version")
     If ([String]::IsNullOrWhiteSpace($Version)) { $Version = (Get-AppxPackage "$Payload" -EA SI).Version }
+    If ([String]::IsNullOrWhiteSpace($Version)) { $Version = Try { (Get-Command "$Payload" -EA SI).Version } Catch { $Null } }
+    If ([String]::IsNullOrWhiteSpace($Version)) { $Version = Try { (Get-Item "$Payload" -EA SI).VersionInfo.FileVersion } Catch { $Null } }
+    If ([String]::IsNullOrWhiteSpace($Version)) { $Version = Try { Invoke-Expression "& `"$Payload`" --version" -EA SI } Catch { $Null } }
     If ([String]::IsNullOrWhiteSpace($Version)) { $Version = "0.0.0.0" }
-    If ($Version -Eq "0.0.0.0") { $Version = Try { (Get-Command "$Payload" -EA SI).Version.ToString() } Catch { $Version } }
-    If ($Version -Eq "0.0.0.0") { $Version = Try { (Get-Item "$Payload" -EA SI).VersionInfo.FileVersion.ToString() } Catch { $Version } }
-    If ($Version -Eq "0.0.0.0") { $Version = Try { Invoke-Expression "& `"$Payload`" --version" -EA SI } Catch { $Version } }
     Return [Regex]::Matches($Version, "([\d.]+)").Groups[1].Value
 
 }
@@ -178,7 +155,7 @@ Function Expand-Version {
 Function Export-Members {
 
     Param(
-        [ValidateSet("Development", "GameStreaming", "Gaming")] [String] $Variant,
+        [ValidateSet("Development", "GameStreaming", "Gaming", "Virtual")] [String] $Variant,
         [String] $Country = "Romance Standard Time",
         [String] $Machine = "WINHOGEN"
     )
@@ -193,12 +170,15 @@ Function Export-Members {
                 "Update-DockerDesktop"
                 "Update-Git 'main' '72373746+sharpordie@users.noreply.github.com' 'sharpordie'"
                 "Update-Pycharm"
+                "Update-VisualStudio2022"
                 "Update-VisualStudioCode"
                 "Update-Antidote"
                 "Update-Bluestacks '7'"
                 "Update-DbeaverUltimate"
+                "Update-Jdownloader"
                 "Update-Mpv"
                 "Update-Flutter"
+                "Update-Maui"
                 "Update-Scrcpy"
                 "Update-VmwareWorkstation"
                 "Update-YtDlg"
@@ -221,12 +201,17 @@ Function Export-Members {
             "Update-AndroidStudio"
             "Update-Chromium"
             "Update-Git 'main' '72373746+sharpordie@users.noreply.github.com' 'sharpordie'"
-            "Update-Pycharm"
+            # "Update-Pycharm"
+            "Update-VisualStudio2022"
             "Update-VisualStudioCode"
-            "Update-Antidote"
-            "Update-DbeaverUltimate"
+            # "Update-Antidote"
+            # "Update-DbeaverUltimate"
+            "Update-Flutter"
+            "Update-Jdownloader"
+            "Update-Maui"
             "Update-Mpv"
             "Update-Scrcpy"
+            # "Update-VmwareWorkstation"
             "Update-YtDlg"
         }
     }
@@ -624,6 +609,7 @@ Function Update-AndroidStudio {
         Write-Output $("y`n" * 10) | sdkmanager "sources;android-33"
         Write-Output $("y`n" * 10) | sdkmanager "system-images;android-33;google_apis;x86_64"
         Write-Output $("y`n" * 10) | sdkmanager --licenses
+        Write-Output $("y`n" * 10) | sdkmanager --update
         avdmanager create avd -n "Pixel_3_API_33" -d "pixel_3" -k "system-images;android-33;google_apis;x86_64"
     }
 
@@ -771,19 +757,21 @@ Function Update-Chromium {
     $Present = $Current -Ne "0.0.0.0"
     $Address = "https://api.github.com/repos/macchrome/winchrome/releases/latest"
     $Version = [Regex]::Match((Invoke-Scraper "Json" "$Address").tag_name, "[\d.]+").Value
-    $Updated = [Version] $Current.Replace(".0", "") -Ge [Version] "$Version"
+    $Updated = $Present -And [Version] $Current.Replace(".0", "") -Ge [Version] "$Version"
 	
     If (-Not $Updated) {
         $Results = (Invoke-Scraper "Json" "$Address").assets
         $Address = $Results.Where( { $_.browser_download_url -Like "*installer.exe" } ).browser_download_url
         $Fetched = Invoke-Fetcher "Webclient" "$Address"
         Invoke-Gsudo { Start-Process "$Using:Fetched" "--system-level --do-not-launch-chrome" -Wait }
+        Remove-Desktop "Chromium*.lnk"
     }
 
     If (-Not $Present) {
         Add-Type -AssemblyName System.Windows.Forms
         New-Item "$Deposit" -ItemType Directory -EA SI
         Start-Process "$Starter" "--lang=en --start-maximized"
+        Start-Sleep 2 ; Remove-Desktop "Chromium*.lnk"
         Start-Sleep 4 ; [Windows.Forms.SendKeys]::SendWait("^l")
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("chrome://settings/")
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
@@ -796,9 +784,7 @@ Function Update-Chromium {
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{TAB}")
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
-        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("%{F4}") ; Start-Sleep 2
 
-        Start-Process "$Starter" "--lang=en --start-maximized"
         Start-Sleep 4 ; [Windows.Forms.SendKeys]::SendWait("^l")
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("chrome://flags/")
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
@@ -811,9 +797,7 @@ Function Update-Chromium {
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{DOWN}")
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
-        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("%{F4}") ; Start-Sleep 2
 
-        Start-Process "$Starter" "--lang=en --start-maximized"
         Start-Sleep 4 ; [Windows.Forms.SendKeys]::SendWait("^l")
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("chrome://settings/")
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
@@ -823,9 +807,7 @@ Function Update-Chromium {
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("duckduckgo")
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
-        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("%{F4}") ; Start-Sleep 2
 
-        Start-Process "$Starter" "--lang=en --start-maximized"
         Start-Sleep 4 ; [Windows.Forms.SendKeys]::SendWait("^l")
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("chrome://flags/")
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
@@ -835,9 +817,7 @@ Function Update-Chromium {
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{DOWN}" * 2)
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
-        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("%{F4}") ; Start-Sleep 2
 
-        Start-Process "$Starter" "--lang=en --start-maximized"
         Start-Sleep 4 ; [Windows.Forms.SendKeys]::SendWait("^l")
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("chrome://flags/")
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
@@ -847,9 +827,7 @@ Function Update-Chromium {
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{DOWN}")
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
-        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("%{F4}") ; Start-Sleep 2
 
-        Start-Process "$Starter" "--lang=en --start-maximized"
         Start-Sleep 4 ; [Windows.Forms.SendKeys]::SendWait("^l")
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("chrome://flags/")
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
@@ -859,9 +837,7 @@ Function Update-Chromium {
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{DOWN}")
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
-        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("%{F4}") ; Start-Sleep 2
 
-        Start-Process "$Starter" "--lang=en --start-maximized"
         Start-Sleep 4 ; [Windows.Forms.SendKeys]::SendWait("^l")
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("chrome://flags/")
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
@@ -871,9 +847,7 @@ Function Update-Chromium {
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{DOWN}" * 2)
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
-        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("%{F4}") ; Start-Sleep 2
 
-        Start-Process "$Starter" "--lang=en --start-maximized"
         Start-Sleep 4 ; [Windows.Forms.SendKeys]::SendWait("^l")
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("chrome://flags/")
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
@@ -883,9 +857,7 @@ Function Update-Chromium {
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{DOWN}" * 3)
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
-        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("%{F4}") ; Start-Sleep 2
 
-        Start-Process "$Starter" "--lang=en --start-maximized"
         Start-Sleep 4 ; [Windows.Forms.SendKeys]::SendWait("^l")
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("^+b")
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("%{F4}") ; Start-Sleep 2
@@ -902,7 +874,6 @@ Function Update-Chromium {
         Update-ChromiumExtension "cjpalhdlnbpafiamejdnhcphjbkeiagm" # ublock-origin
     }
 
-    Remove-Desktop "Chromium*.lnk"
     Update-ChromiumExtension "https://github.com/iamadamdev/bypass-paywalls-chrome/archive/master.zip"
 
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
@@ -1139,9 +1110,8 @@ Function Update-Flutter {
     Update-VisualStudioCodeExtension "robert-brunhage.flutter-riverpod-snippets"
     Update-VisualStudioCodeExtension "usernamehw.errorlens"
 
-    If (Test-Path "$Env:ProgramFiles\Microsoft Visual Studio\2022\Professional\Common7\IDE\devenv.exe") {
-        Update-VisualStudio2022Workload "Microsoft.VisualStudio.Workload.NativeDesktop"
-    }
+    $Program = "$Env:ProgramFiles\Microsoft Visual Studio\2022\Professional\Common7\IDE\devenv.exe"
+    If (Test-Path "$Program") { Update-VisualStudio2022Workload "Microsoft.VisualStudio.Workload.NativeDesktop" }
 
 }
 
@@ -1177,9 +1147,8 @@ Function Update-Git {
 
 Function Update-Gsudo {
 
-    $Starter = "${Env:ProgramFiles(x86)}\gsudo\gsudo.exe"
-    $Current = Expand-Version "$Starter"
-    $Present = Test-Path "$Starter"
+    $Current = Expand-Version "*gsudo*"
+    $Present = $Current -Ne "0.0.0.0"
     $Address = "https://api.github.com/repos/gerardog/gsudo/releases/latest"
     $Version = [Regex]::Match((Invoke-Scraper "Json" "$Address").tag_name , "[\d.]+").Value
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
@@ -1198,6 +1167,54 @@ Function Update-Gsudo {
     }
     Catch { 
         Return $False
+    }
+
+}
+
+Function Update-Jdownloader {
+
+    Param (
+        [String] $Deposit = "$Env:UserProfile\Downloads\JD2"
+    )
+
+    $Starter = "$Env:ProgramFiles\JDownloader\JDownloader2.exe"
+    $Present = Test-Path "$Starter"
+
+    If (-Not $Present) {
+        $Address = "http://installer.jdownloader.org/clean/JD2SilentSetup_x64.exe"
+        $Fetched = Invoke-Fetcher "Webclient" "$Address"
+        Invoke-Gsudo { Start-Process "$Using:Fetched" "-q" -Wait }
+        Remove-Desktop "JDownloader*.lnk"
+    }
+
+    If (-Not $Present) {
+        New-Item "$Deposit" -ItemType Directory -EA SI
+        $AppData = "$Env:ProgramFiles\JDownloader\cfg"
+        $Config1 = "$AppData\org.jdownloader.settings.GeneralSettings.json"
+        $Config2 = "$AppData\org.jdownloader.settings.GraphicalUserInterfaceSettings.json"
+        $Config3 = "$AppData\org.jdownloader.extensions.extraction.ExtractionExtension.json"
+        Start-Process "$Starter" ; While (-Not (Test-Path "$Config1")) { Start-Sleep 2 }
+        Stop-Process -Name "JDownloader2" -EA SI ; Start-Sleep 2
+        $Configs = Get-Content "$Config1" | ConvertFrom-Json
+        Try { $Configs.defaultdownloadfolder = "$Deposit" } Catch { $Configs | Add-Member -Type NoteProperty -Name "defaultdownloadfolder" -Value "$Deposit" }
+        Invoke-Gsudo { $Using:Configs | ConvertTo-Json | Set-Content "$Using:Config1" }
+        $Configs = Get-Content "$Config2" | ConvertFrom-Json
+        Try { $Configs.bannerenabled = $False } Catch { $Configs | Add-Member -Type NoteProperty -Name "bannerenabled" -Value $False }
+        Try { $Configs.clipboardmonitored = $False } Catch { $Configs | Add-Member -Type NoteProperty -Name "clipboardmonitored" -Value $False }
+        Try { $Configs.donatebuttonlatestautochange = 4102444800000 } Catch { $Configs | Add-Member -Type NoteProperty -Name "donatebuttonlatestautochange" -Value 4102444800000 }
+        Try { $Configs.donatebuttonstate = "AUTO_HIDDEN" } Catch { $Configs | Add-Member -Type NoteProperty -Name "donatebuttonstate" -Value "AUTO_HIDDEN" }
+        Try { $Configs.myjdownloaderviewvisible = $False } Catch { $Configs | Add-Member -Type NoteProperty -Name "myjdownloaderviewvisible" -Value $False }
+        Try { $Configs.premiumalertetacolumnenabled = $False } Catch { $Configs | Add-Member -Type NoteProperty -Name "premiumalertetacolumnenabled" -Value $False }
+        Try { $Configs.premiumalertspeedcolumnenabled = $False } Catch { $Configs | Add-Member -Type NoteProperty -Name "premiumalertspeedcolumnenabled" -Value $False }
+        Try { $Configs.premiumalerttaskcolumnenabled = $False } Catch { $Configs | Add-Member -Type NoteProperty -Name "premiumalerttaskcolumnenabled" -Value $False }
+        Try { $Configs.specialdealoboomdialogvisibleonstartup = $False } Catch { $Configs | Add-Member -Type NoteProperty -Name "specialdealoboomdialogvisibleonstartup" -Value $False }
+        Try { $Configs.specialdealsenabled = $False } Catch { $Configs | Add-Member -Type NoteProperty -Name "specialdealsenabled" -Value $False }
+        Try { $Configs.speedmetervisible = $False } Catch { $Configs | Add-Member -Type NoteProperty -Name "speedmetervisible" -Value $False }
+        Invoke-Gsudo { $Using:Configs | ConvertTo-Json | Set-Content "$Using:Config2" }
+        $Configs = Get-Content "$Config3" | ConvertFrom-Json
+        Try { $Configs.enabled = $False } Catch { $Configs | Add-Member -Type NoteProperty -Name "enabled" -Value $False }
+        Invoke-Gsudo { $Using:Configs | ConvertTo-Json | Set-Content "$Using:Config3" }
+        Update-ChromiumExtension "fbcohnmimjicjdomonkcbcpbpnhggkip" # myjdownloader-browser-ext
     }
 
 }
@@ -1291,6 +1308,35 @@ Function Update-Ldplayer {
         }
         Remove-Desktop "LDM*.lnk" ; Remove-Desktop "LDP*.lnk"
     }
+
+}
+
+Function Update-Maui {
+
+    Update-VisualStudio2022
+    Update-VisualStudio2022Workload "Microsoft.VisualStudio.Workload.NetCrossPlat"
+    Invoke-Gsudo { [Environment]::SetEnvironmentVariable("DOTNET_CLI_TELEMETRY_OPTOUT", "1", "Machine") }
+    Invoke-Gsudo { [Environment]::SetEnvironmentVariable("DOTNET_NOLOGO", "1", "Machine") }
+    Enable-Feature "HyperV"
+	
+    $SdkHome = "${Env:ProgramFiles(x86)}\Android\android-sdk"
+    $Deposit = (Get-Item "$SdkHome\cmdline-tools\*\bin" -EA SI).FullName
+    If ($Null -Ne $Deposit) {
+        $Creator = "$Deposit\avdmanager.bat"
+        $Starter = "$Deposit\sdkmanager.bat"
+        Invoke-Gsudo { Write-Output $("y`n" * 10) | & "$Using:Starter" --sdk_root="$Using:SdkHome" "build-tools;31.0.0" }
+        Invoke-Gsudo { Write-Output $("y`n" * 10) | & "$Using:Starter" --sdk_root="$Using:SdkHome" "emulator" }
+        Invoke-Gsudo { Write-Output $("y`n" * 10) | & "$Using:Starter" --sdk_root="$Using:SdkHome" "extras;intel;Hardware_Accelerated_Execution_Manager" }
+        Invoke-Gsudo { Write-Output $("y`n" * 10) | & "$Using:Starter" --sdk_root="$Using:SdkHome" "platform-tools" }
+        Invoke-Gsudo { Write-Output $("y`n" * 10) | & "$Using:Starter" --sdk_root="$Using:SdkHome" "platforms;android-31" }
+        Invoke-Gsudo { Write-Output $("y`n" * 10) | & "$Using:Starter" --sdk_root="$Using:SdkHome" "system-images;android-31;google_apis;x86_64" }
+        Invoke-Gsudo { Write-Output $("y`n" * 10) | & "$Using:Starter" --sdk_root="$Using:SdkHome" --licenses }
+        Invoke-Gsudo { Write-Output $("y`n" * 10) | & "$Using:Starter" --sdk_root="$Using:SdkHome" --update }
+        & "$Creator" create avd -n "Pixel_3_API_31" -d "pixel_3" -k "system-images;android-31;google_apis;x86_64"
+    }
+
+    Update-VisualStudio2022Extension "MattLaceyLtd.MauiAppAccelerator"
+    Update-VisualStudio2022Extension "TeamXavalon.XAMLStyler2022"
 
 }
 
@@ -1464,6 +1510,7 @@ Function Update-Nvidia {
             Start-Sleep 2 ; $Element = $Window1.FindFirstDescendant($Handler.ConditionFactory.ByName("Apply"))
             $Element.Click()
             Start-Sleep 5 ; $Window1.Close()
+            Start-Sleep 4 ; $Started.Dispose() | Out-Null ; $Handler.Dispose() | Out-Null
         }
     }
 
@@ -1480,7 +1527,7 @@ Function Update-Powershell {
     If (-Not $Updated) {
         Invoke-Gsudo {
             $ProgressPreference = "SilentlyContinue"
-            Invoke-Expression "& { $(Invoke-RestMethod https://aka.ms/install-powershell.ps1) } -UseMSI -Quiet" *> $Null
+            Invoke-Expression "& { $(Invoke-RestMethod https://aka.ms/install-powershell.ps1) } -UseMSI -Quiet"
         }
     }
 
@@ -1552,6 +1599,7 @@ Function Update-Pycharm {
         $Factor2 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::F4
         Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::TypeSimultaneously($Factor1, $Factor2)
         Start-Sleep 4 ; Stop-Process -Name "pycharm64" -EA SI
+        Start-Sleep 4 ; $Started.Dispose() | Out-Null ; $Handler.Dispose() | Out-Null
     }
 
 }
@@ -1576,13 +1624,124 @@ Function Update-Scrcpy {
 
 }
 
+Function Update-VisualStudio2022 {
+
+    Param(
+        [String] $Deposit = "$Env:UserProfile\Projects",
+        [String] $Serials = "TD244-P4NB7-YQ6XK-Y8MMM-YWV2J",
+        [Switch] $Preview
+    )
+
+    $Adjunct = If ($Preview) { "Preview" } Else { "Professional" }
+    $Storage = "$Env:ProgramFiles\Microsoft Visual Studio\2022\$Adjunct"
+    $Starter = "$Storage\Common7\IDE\devenv.exe"
+    $Present = Test-Path "$Starter"
+    Update-VisualStudio2022Workload "Microsoft.VisualStudio.Workload.CoreEditor" -Preview:$Preview
+
+    If (-Not $Present) {
+        Invoke-Gsudo { Start-Process "$Using:Starter" "/ResetUserData" -Wait }
+        Add-Type -AssemblyName "System.Windows.Forms" ; Start-Process "$Starter"
+        Start-Sleep 15 ; [Windows.Forms.SendKeys]::SendWait("{TAB}" * 4)
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{TAB}") ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+        Start-Sleep 20 ; [Windows.Forms.SendKeys]::SendWait("%{F4}") ; Start-Sleep 2
+    }
+
+    $Program = "$Storage\Common7\IDE\StorePID.exe"
+    Invoke-Gsudo { Start-Process "$Using:Program" "$Using:Serials 09662" -WindowStyle Hidden -Wait }
+
+    $Config1 = "$Env:LocalAppData\Microsoft\VisualStudio\17*\Settings\CurrentSettings.vssettings"
+    $Config2 = "$Env:LocalAppData\Microsoft\VisualStudio\17*\Settings\CurrentSettings-*.vssettings"
+    If (Test-Path "$Config1") {
+        $Configs = Get-Item "$Config1"
+        [Xml] $Content = Get-Content "$Configs"
+        $Content.SelectSingleNode("//*[@name='HighlightCurrentLine']").InnerText = "false"
+        $Content.Save("$Configs")
+    }
+    If (Test-Path "$Config2") {
+        $Configs = Get-Item "$Config2"
+        [Xml] $Content = Get-Content "$Configs"
+        $Content.SelectSingleNode("//*[@name='HighlightCurrentLine']").InnerText = "false"
+        $Content.Save("$Configs")
+    }
+
+    If (Test-Path "$Config1") {
+        $Configs = Get-Item "$Config1"
+        [Xml] $Content = Get-Content "$Configs"
+        $Content.SelectSingleNode("//*[@name='LineSpacing']").InnerText = "1.5"
+        $Content.Save($Configs)
+    }
+    If (Test-Path "$Config2") {
+        $Configs = Get-Item "$Config2"
+        [Xml] $Content = Get-Content "$Configs"
+        $Content.SelectSingleNode("//*[@name='LineSpacing']").InnerText = "1.5"
+        $Content.Save($Configs)
+    }
+
+    Remove-Item "$Env:UserProfile\source" -Recurse -EA SI
+    New-Item "$Deposit" -ItemType Directory -EA SI | Out-Null
+    Invoke-Gsudo { Add-MpPreference -ExclusionPath "$Using:Deposit" *> $Null }
+    If (Test-Path "$Config1") {
+        $Configs = Get-Item "$Config1"
+        [Xml] $Content = Get-Content "$Configs"
+        $Payload = $Deposit.Replace("${Env:UserProfile}", '%vsspv_user_appdata%') + "\"
+        $Content.SelectSingleNode("//*[@name='ProjectsLocation']").InnerText = "$Payload"
+        $Content.Save($Configs)
+    }
+    If (Test-Path "$Config2") {
+        $Configs = Get-Item "$Config2"
+        [Xml] $Content = Get-Content "$Configs"
+        $Payload = $Deposit.Replace("${Env:UserProfile}", '%vsspv_user_appdata%') + "\"
+        $Content.SelectSingleNode("//*[@name='ProjectsLocation']").InnerText = "$Payload"
+        $Content.Save($Configs)
+    }
+
+}
+
+Function Update-VisualStudio2022Extension {
+
+    Param (
+        [String] $Payload,
+        [Switch] $Preview
+    )
+
+    $Website = "https://marketplace.visualstudio.com/items?itemName=$Payload"
+    $Content = Invoke-WebRequest -Uri $Website -UseBasicParsing -SessionVariable Session
+    $Address = $Content.Links | Where-Object { $_.class -Eq "install-button-container" } | Select-Object -ExpandProperty href
+    $Address = "https://marketplace.visualstudio.com" + "$Address"
+    $Package = "$Env:Temp\$([Guid]::NewGuid()).vsix"
+    Invoke-WebRequest "$Address" -OutFile "$Package" -WebSession $Session
+    $Adjunct = If ($Preview) { "Preview" } Else { "Professional" }
+    $Updater = "$Env:ProgramFiles\Microsoft Visual Studio\2022\$Adjunct\Common7\IDE\VSIXInstaller.exe"
+    Invoke-Gsudo { Start-Process "$Using:Updater" "/q /a `"$Using:Package`"" -WindowStyle Hidden -Wait }
+
+}
+
+Function Update-VisualStudio2022Workload {
+
+    Param (
+        [String] $Payload,
+        [Switch] $Preview
+    )
+
+    $Address = "https://aka.ms/vs/17/release/vs_professional.exe"
+    If ($Preview) { $Address = "https://c2rsetup.officeapps.live.com/c2r/downloadVS.aspx?sku=professional&channel=Preview&version=VS2022" }
+    $Fetched = Invoke-Fetcher "Webclient" "$Address" "$Env:Temp\VisualStudioSetup.exe"
+    Invoke-Gsudo {
+        Start-Process "$Using:Fetched" "update --wait --quiet --norestart" -WindowStyle Hidden -Wait
+        Start-Process "$Using:Fetched" "install --wait --quiet --norestart --add $Using:Payload" -WindowStyle Hidden -Wait
+        Start-Sleep 2 ; Start-Process "cmd" "/c taskkill /f /im devenv.exe /t 2>nul 1>nul" -WindowStyle Hidden -Wait
+    }
+    
+}
+
 Function Update-VisualStudioCode {
 
     $Starter = "$Env:LocalAppData\Programs\Microsoft VS Code\Code.exe"
     $Current = Expand-Version "$Starter"
     $Address = "https://code.visualstudio.com/sha?build=stable"
     $Version = [Regex]::Match((Invoke-Scraper "Json" "$Address").products[1].name , "[\d.]+").Value
-    $Updated = [Version] "$Current" -Ge [Version] ($Version.SubString(0, 6))
+    $Updated = [Version] "$Current" -Ge [Version] $Version.SubString(0, 6)
 
     If (-Not $Updated -And "$Env:TERM_PROGRAM" -Ne "Vscode") {
         $Address = "https://aka.ms/win32-x64-user-stable"
@@ -1744,7 +1903,7 @@ If ($MyInvocation.InvocationName -Ne ".") {
     $Correct = (Update-Gsudo) -And ! (gsudo cache on -d -1 2>&1).ToString().Contains("Error")
     If (-Not $Correct) { Write-Host "$Failure`n" -FO Red ; Exit } ; Update-Powershell
 
-    $Members = Export-Members -Variant "Development" -Machine "WINHOGEN"
+    $Members = Export-Members -Variant "Virtual" -Machine "WINHOGEN"
 
     $Maximum = (65 - 20) * -1
     $Shaping = "`r{0,$Maximum}{1,-3}{2,-6}{3,-3}{4,-8}"
