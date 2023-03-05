@@ -175,10 +175,16 @@ Function Export-Members {
                 "Update-Antidote"
                 "Update-Bluestacks '7'"
                 "Update-DbeaverUltimate"
+                "Update-Figma"
                 "Update-Jdownloader"
+                "Update-JoalDesktop"
+                "Update-Keepassxc"
+                "Update-Mambaforge"
                 "Update-Mpv"
                 "Update-Flutter"
                 "Update-Maui"
+                "Update-Python"
+                "Update-Qbittorrent"
                 "Update-Scrcpy"
                 "Update-VmwareWorkstation"
                 "Update-YtDlg"
@@ -206,10 +212,16 @@ Function Export-Members {
             "Update-VisualStudioCode"
             # "Update-Antidote"
             # "Update-DbeaverUltimate"
+            "Update-Figma"
             "Update-Flutter"
             "Update-Jdownloader"
+            "Update-JoalDesktop"
+            "Update-Keepassxc"
+            "Update-Mambaforge"
             "Update-Maui"
             "Update-Mpv"
+            "Update-Python"
+            "Update-Qbittorrent"
             "Update-Scrcpy"
             # "Update-VmwareWorkstation"
             "Update-YtDlg"
@@ -764,14 +776,12 @@ Function Update-Chromium {
         $Address = $Results.Where( { $_.browser_download_url -Like "*installer.exe" } ).browser_download_url
         $Fetched = Invoke-Fetcher "Webclient" "$Address"
         Invoke-Gsudo { Start-Process "$Using:Fetched" "--system-level --do-not-launch-chrome" -Wait }
-        Remove-Desktop "Chromium*.lnk"
     }
 
     If (-Not $Present) {
         Add-Type -AssemblyName System.Windows.Forms
         New-Item "$Deposit" -ItemType Directory -EA SI
         Start-Process "$Starter" "--lang=en --start-maximized"
-        Start-Sleep 2 ; Remove-Desktop "Chromium*.lnk"
         Start-Sleep 4 ; [Windows.Forms.SendKeys]::SendWait("^l")
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("chrome://settings/")
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
@@ -874,6 +884,7 @@ Function Update-Chromium {
         Update-ChromiumExtension "cjpalhdlnbpafiamejdnhcphjbkeiagm" # ublock-origin
     }
 
+    Remove-Desktop "Chromium*.lnk"
     Update-ChromiumExtension "https://github.com/iamadamdev/bypass-paywalls-chrome/archive/master.zip"
 
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
@@ -1081,6 +1092,32 @@ Function Update-DockerDesktop {
 
 }
 
+Function Update-Figma {
+
+    $Starter = "$Env:LocalAppData\Figma\Figma.exe"
+    $Current = Expand-Version "$Starter"
+    $Present = $Current -Ne "0.0.0.0"
+    $Address = "https://desktop.figma.com/win/RELEASE.json"
+    $Version = [Regex]::Match((Invoke-Scraper "Json" "$Address").version, "[\d.]+").Value
+    $Updated = [Version] "$Current" -Ge [Version] "$Version"
+
+    If (-Not $Updated) {
+        $Address = "https://desktop.figma.com/win/FigmaSetup.exe"
+        $Fetched = Invoke-Fetcher "Webclient" "$Address"
+        $ArgList = "/s /S /q /Q /quiet /silent /SILENT /VERYSILENT"
+        Invoke-Gsudo { Start-Process "$Using:Fetched" "$Using:ArgList" -Wait }
+    }
+
+    If (-Not $Present) {
+        Start-Sleep 8 ; Start-Process "$Starter" ; Start-Sleep 8
+        Stop-Process -Name "Figma" -EA SI ; Stop-Process -Name "figma_agent" -EA SI ; Start-Sleep 4
+        $Configs = Get-Content "$Env:AppData\Figma\settings.json" | ConvertFrom-Json
+        Try { $Configs.showFigmaInMenuBar = $False } Catch { $Configs | Add-Member -Type NoteProperty -Name "showFigmaInMenuBar" -Value $False }
+        $Configs | ConvertTo-Json | Set-Content "$Env:AppData\Figma\settings.json"
+    }
+
+}
+
 Function Update-Flutter {
 
     Update-Git
@@ -1219,6 +1256,24 @@ Function Update-Jdownloader {
 
 }
 
+Function Update-JoalDesktop {
+
+    $Starter = "$Env:LocalAppData\Programs\joal-desktop\JoalDesktop.exe"
+    $Current = Expand-Version "$Starter"
+    $Address = "https://api.github.com/repos/anthonyraymond/joal-desktop/releases/latest"
+    $Version = [Regex]::Match((Invoke-Scraper "Json" "$Address").tag_name, "[\d.]+").Value
+    $Updated = [Version] "$Current" -Ge [Version] "$Version"
+
+    If (-Not $Updated) {
+        $Results = (Invoke-Scraper "Json" "$Address").assets
+        $Address = $Results.Where( { $_.browser_download_url -Like "*win-x64.exe" } ).browser_download_url
+        $Fetched = Invoke-Fetcher "Webclient" "$Address"
+        Invoke-Gsudo { Start-Process "$Using:Fetched" "/S" -Wait }
+        Remove-Desktop "Joal*.lnk"
+    }
+
+}
+
 Function Update-Jetbra {
 
     $Deposit = "$Env:UserProfile\.jetbra"
@@ -1277,6 +1332,24 @@ Function Update-JetbrainsPlugin {
 
 }
 
+Function Update-Keepassxc {
+
+    $Starter = "$Env:ProgramFiles\KeePassXC\KeePassXC.exe"
+    $Current = Expand-Version "$Starter"
+    $Address = "https://api.github.com/repos/keepassxreboot/keepassxc/releases/latest"
+    $Version = [Regex]::Match((Invoke-Scraper "Json" "$Address").tag_name, "[\d.]+").Value
+    $Updated = [Version] "$Current" -Ge [Version] "$Version"
+
+    If (-Not $Updated) {
+        $Results = (Invoke-Scraper "Json" "$Address").assets
+        $Address = $Results.Where( { $_.browser_download_url -Like "*Win64.msi" } ).browser_download_url
+        $Fetched = Invoke-Fetcher "Webclient" "$Address"
+        Invoke-Gsudo { Start-Process "msiexec" "/i `"$Using:Fetched`" /qn" -Wait }
+        Start-Sleep 2 ; Remove-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Name "KeePassXC" -EA SI
+    }
+
+}
+
 Function Update-Ldplayer {
 
     $Starter = (Get-Item "C:\LDPlayer\LDPlayer*\dnplayer.exe" -EA SI).FullName
@@ -1308,6 +1381,24 @@ Function Update-Ldplayer {
         }
         Remove-Desktop "LDM*.lnk" ; Remove-Desktop "LDP*.lnk"
     }
+
+}
+
+Function Update-Mambaforge {
+
+    $Deposit = "$Env:LocalAppData\Programs\Mambaforge"
+    $Present = Test-Path "$Deposit\Scripts\mamba.exe"
+
+    If (-Not $Present) {
+        $Address = "https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-Windows-x86_64.exe"
+        $Fetched = Invoke-Fetcher "Webclient" "$Address"
+        $ArgList = "/S /InstallationType=JustMe /RegisterPython=0 /AddToPath=1 /NoRegistry=1 /D=$Deposit"
+        Start-Process "$Fetched" "$ArgList" -Wait
+    }
+
+    Update-SysPath "$Deposit\Scripts" "User"
+    conda config --set auto_activate_base false
+    conda update --all -y
 
 }
 
@@ -1601,6 +1692,79 @@ Function Update-Pycharm {
         Start-Sleep 4 ; Stop-Process -Name "pycharm64" -EA SI
         Start-Sleep 4 ; $Started.Dispose() | Out-Null ; $Handler.Dispose() | Out-Null
     }
+
+}
+
+Function Update-Python {
+
+    Param (
+        [Int] $Leading = 3,
+        [Int] $Backing = 11
+    )
+
+    $Current = Expand-Version "*python*evelopment*"
+    # $Present = $Current -Ne "0.0.0.0"
+    $Address = "https://www.python.org/downloads/windows/"
+    $Version = [Regex]::Matches((Invoke-Scraper "Html" "$Address"), "python-($Leading\.$Backing\.[\d.]+)-").Groups[1].Value
+    $Updated = [Version] "$Current" -Ge [Version] "$Version"
+
+    If (-Not $Updated) {
+        $Ongoing = Invoke-Gsudo { [Environment]::GetEnvironmentVariable("PATH", "Machine") }
+        $Changed = "$Ongoing" -Replace "C:\\Program Files\\Python[\d]+\\Scripts\\;" -Replace "C:\\Program Files\\Python[\d]+\\;"
+        Invoke-Gsudo { [Environment]::SetEnvironmentVariable("PATH", "$Using:Changed", "Machine") }
+        $Address = "https://www.python.org/ftp/python/$Version/python-$Version-amd64.exe"
+        $Fetched = Invoke-Fetcher "Webclient" "$Address"
+        $ArgList = "/quiet InstallAllUsers=1 AssociateFiles=0 PrependPath=1 Shortcuts=0 Include_launcher=0 InstallLauncherAllUsers=0"
+        Invoke-Gsudo { Start-Process "$Using:Fetched" "$Using:ArgList" -Wait } ; Start-Sleep 4
+        Update-SysPath "$Env:ProgramFiles\Python$Leading$Backing\" "Machine"
+        Update-SysPath "$Env:ProgramFiles\Python$Leading$Backing\Scripts\" "Machine"
+        Invoke-Gsudo { Start-Process "python" "-m pip install --upgrade pip" -WindowStyle Hidden -Wait }
+        Invoke-Gsudo { [Environment]::SetEnvironmentVariable("PYTHONDONTWRITEBYTECODE", "1", "Machine") }
+    }
+
+    If (-Not $Updated) {
+        New-Item "$Env:AppData\Python\Scripts" -ItemType Directory -EA SI
+        $Address = "https://install.python-poetry.org/"
+        $Fetched = Invoke-Fetcher "Webclient" "$Address" "$Env:Temp\install-poetry.py"
+        Start-Process "python" "`"$Fetched`" --uninstall" -WindowStyle Hidden -Wait
+        Start-Process "python" "$Fetched" -WindowStyle Hidden -Wait
+        Update-SysPath "$Env:AppData\Python\Scripts" "Machine"
+        Start-Process "poetry" "config virtualenvs.in-project true" -WindowStyle Hidden -Wait
+        Start-Process "poetry" "self update" -WindowStyle Hidden -Wait
+    }
+
+}
+
+Function Update-Qbittorrent {
+
+    Param (
+        [String] $Deposit = "$Env:UserProfile\Downloads\P2P",
+        [String] $Loading = "$Env:UserProfile\Downloads\P2P\Incompleted"
+    )
+
+    $Starter = "$Env:ProgramFiles\qBittorrent\qbittorrent.exe"
+    $Current = Expand-Version "$Starter"
+    $Address = "https://www.qbittorrent.org/download.php"
+    $Version = [Regex]::Matches((Invoke-Scraper "Html" "$Address"), "Latest:\s+v([\d.]+)").Groups[1].Value
+    $Updated = [Version] "$Current" -Ge [Version] "$Version"
+
+    If (-Not $Updated) {
+        $Address = "https://downloads.sourceforge.net/project/qbittorrent/qbittorrent-win32/qbittorrent-$Version/qbittorrent_${Version}_x64_setup.exe"
+        $Fetched = Invoke-Fetcher "Webclient" "$Address"
+        Invoke-Gsudo { Start-Process "$Using:Fetched" "/S" -Wait }
+    }
+
+    $Configs = "$Env:AppData\qBittorrent\qBittorrent.ini"
+    New-Item "$Deposit" -ItemType Directory -EA SI
+    New-Item "$Loading" -ItemType Directory -EA SI
+    New-Item "$(Split-Path "$Configs")" -ItemType Directory -EA SI
+    Set-Content -Path "$Configs" -Value "[LegalNotice]"
+    Add-Content -Path "$Configs" -Value "Accepted=true"
+    Add-Content -Path "$Configs" -Value "[Preferences]"
+    Add-Content -Path "$Configs" -Value "Bittorrent\MaxRatio=0"
+    Add-Content -Path "$Configs" -Value "Downloads\SavePath=$($Deposit.Replace("\", "/"))"
+    Add-Content -Path "$Configs" -Value "Downloads\TempPath=$($Loading.Replace("\", "/"))"
+    Add-Content -Path "$Configs" -Value "Downloads\TempPathEnabled=true"
 
 }
 
