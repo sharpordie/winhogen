@@ -215,6 +215,19 @@ Function Export-Members {
                 "Update-Bluestacks"
             )
         }
+        "Virtual" {
+            "Update-Windows '$Country' '$Machine'"
+            "Update-AndroidStudio"
+            "Update-Chromium"
+            "Update-Git 'main' '72373746+sharpordie@users.noreply.github.com' 'sharpordie'"
+            "Update-Pycharm"
+            "Update-VisualStudioCode"
+            "Update-Antidote"
+            "Update-DbeaverUltimate"
+            "Update-Mpv"
+            "Update-Scrcpy"
+            "Update-YtDlg"
+        }
     }
 
 }
@@ -1681,7 +1694,7 @@ If ($MyInvocation.InvocationName -Ne ".") {
     $Correct = (Update-Gsudo) -And ! (gsudo cache on -d -1 2>&1).ToString().Contains("Error")
     If (-Not $Correct) { Write-Host "$Failure`n" -FO Red ; Exit } ; Update-Powershell
 
-    $Members = Export-Members -Variant "Development" -Machine "WINHOGEN"
+    $Members = Export-Members -Variant "Virtual" -Machine "WINHOGEN"
 
     $Maximum = (65 - 20) * -1
     $Shaping = "`r{0,$Maximum}{1,-3}{2,-6}{3,-3}{4,-8}"
