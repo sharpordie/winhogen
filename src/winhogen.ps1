@@ -158,6 +158,23 @@ Function Enable-Feature {
 
 }
 
+Function Expand-Version {
+
+    Param (
+        [String] $Payload
+    )
+
+    If ([String]::IsNullOrWhiteSpace($Payload)) { Return "0.0.0.0" }
+    $Version = $(powershell -Command "(Get-Package `"$Payload`" -EA SI).Version")
+    If ([String]::IsNullOrWhiteSpace($Version)) { $Version = (Get-AppxPackage "$Payload" -EA SI).Version }
+    If ([String]::IsNullOrWhiteSpace($Version)) { $Version = "0.0.0.0" }
+    If ($Version -Eq "0.0.0.0") { $Version = Try { (Get-Command "$Payload" -EA SI).Version.ToString() } Catch { $Version } }
+    If ($Version -Eq "0.0.0.0") { $Version = Try { (Get-Item "$Payload" -EA SI).VersionInfo.FileVersion.ToString() } Catch { $Version } }
+    If ($Version -Eq "0.0.0.0") { $Version = Try { Invoke-Expression "& `"$Payload`" --version" -EA SI } Catch { $Version } }
+    Return [Regex]::Matches($Version, "([\d.]+)").Groups[1].Value
+
+}
+
 Function Export-Members {
 
     Param(
@@ -571,8 +588,8 @@ Function Update-AndroidStudio {
 
     Update-AndroidCmdline
     $Starter = "$Env:ProgramFiles\Android\Android Studio\bin\studio64.exe"
-    $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
-    $Present = $Current -Ne "0.0.0.0"
+    $Current = Expand-Version "$Starter"
+    $Present = Test-Path "$Starter"
     $Address = "https://raw.githubusercontent.com/scoopinstaller/extras/master/bucket/android-studio.json"
     $Version = [Regex]::Match((Invoke-Scraper "Json" "$Address").version , "[\d.]+").Value
     $Updated = [Version] "$Current" -Ge [Version] $Version.SubString(0, 6)
@@ -617,8 +634,8 @@ Function Update-Antidote {
     )
 
     $Starter = (Get-Item "$Env:ProgramFiles\Drui*\Anti*\Appl*\Bin6*\Antidote.exe" -EA SI).FullName
-    $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
-    $Present = $Current -Ne "0.0.0.0"
+    $Current = Expand-Version "$Starter"
+    $Present = Test-Path "$Starter"
     $Address = "https://filecr.com/windows/antidote"
     # $Results = [Regex]::Matches((Invoke-Scraper "Html" "$Address"), "<title>Antidote ([\d]+) v([\d.]+) .*</title>")
     # $Version = "$($Results.Groups[1].Value).$($Results.Groups[2].Value)"
@@ -698,7 +715,7 @@ Function Update-Bluestacks {
     )
 
     $Starter = (Get-Item "$Env:ProgramFiles\BlueStacks*\HD-Player.exe" -EA SI).FullName
-    $Current = Try { (Get-Item "$Starter" -EA SI).VersionInfo.FileVersion.ToString() } Catch { "0.0.0.0" }
+    $Current = Expand-Version "$Starter"
     $Address = "https://support.bluestacks.com/hc/en-us/articles/4402611273485-BlueStacks-5-offline-installer"
     $Results = [Regex]::Matches((Invoke-Scraper "Html" "$Address"), "windows/nxt/([\d.]+)/(?<sha>[0-9a-f]+)/")
     $Version = $Results.Groups[1].Value
@@ -736,8 +753,8 @@ Function Update-Chromium {
     )
 
     $Starter = "$Env:ProgramFiles\Chromium\Application\chrome.exe"
-    $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString().Replace(".0", "") } Catch { "0.0.0.0" }
-    $Present = $Current -Ne "0.0.0.0"
+    $Current = Expand-Version "$Starter"
+    $Present = Test-Path "$Starter"
     $Address = "https://api.github.com/repos/macchrome/winchrome/releases/latest"
     $Version = [Regex]::Match((Invoke-Scraper "Json" "$Address").tag_name, "[\d.]+").Value
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
@@ -859,8 +876,6 @@ Function Update-Chromium {
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("^+b")
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("%{F4}") ; Start-Sleep 2
 
-        Remove-Desktop "Chromium*.lnk"
-
         $Address = "https://api.github.com/repos/NeverDecaf/chromium-web-store/releases/latest"
         $Results = (Invoke-WebRequest "$Address" | ConvertFrom-Json).assets
         $Address = $Results.Where( { $_.browser_download_url -Like "*.crx" } ).browser_download_url
@@ -873,6 +888,7 @@ Function Update-Chromium {
         Update-ChromiumExtension "cjpalhdlnbpafiamejdnhcphjbkeiagm" # ublock-origin
     }
 
+    Remove-Desktop "Chromium*.lnk"
     Update-ChromiumExtension "https://github.com/iamadamdev/bypass-paywalls-chrome/archive/master.zip"
 
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
@@ -953,8 +969,8 @@ Function Update-DbeaverUltimate {
     Update-MicrosoftOpenjdk
     $BaseDir = "$Env:ProgramFiles\DBeaverUltimate"
     $Starter = (Get-Item "$BaseDir\Uninstall.exe" -EA SI).FullName
-    $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
-    $Present = $Current -Ne "0.0.0.0"
+    $Current = Expand-Version "$Starter"
+    $Present = Test-Path "$Starter"
     $Address = "https://filecr.com/windows/dbeaver-ultimate"
     $Version = [Regex]::Matches((Invoke-Scraper "Html" "$Address"), "<title>DBeaver ([\d.]+) .*</title>").Groups[1].Value
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
@@ -1050,8 +1066,8 @@ Function Update-DbeaverUltimate {
 Function Update-DockerDesktop {
 
     $Starter = "$Env:ProgramFiles\Docker\Docker\Docker Desktop.exe"
-    $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
-    $Present = $Current -Ne "0.0.0.0"
+    $Current = Expand-Version "$Starter"
+    $Present = Test-Path "$Starter"
     $Address = "https://community.chocolatey.org/packages/docker-desktop"
     $Version = [Regex]::Matches((Invoke-Scraper "Html" "$Address"), "Docker Desktop ([\d.]+)</title>").Groups[1].Value
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
@@ -1124,7 +1140,7 @@ Function Update-Git {
     )
 
     $Starter = "$Env:ProgramFiles\Git\git-bash.exe"
-    $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
+    $Current = Expand-Version "$Starter"
     $Address = "https://api.github.com/repos/git-for-windows/git/releases/latest"
     $Version = [Regex]::Match((Invoke-Scraper "Json" "$Address").tag_name.Replace("windows.", "") , "[\d.]+").Value
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
@@ -1148,8 +1164,8 @@ Function Update-Git {
 Function Update-Gsudo {
 
     $Starter = "${Env:ProgramFiles(x86)}\gsudo\gsudo.exe"
-    $Current = Try { (Get-Item "$Starter" -EA SI).VersionInfo.FileVersion.ToString() } Catch { "0.0.0.0" }
-    $Present = $Current -Ne "0.0.0.0"
+    $Current = Expand-Version "$Starter"
+    $Present = Test-Path "$Starter"
     $Address = "https://api.github.com/repos/gerardog/gsudo/releases/latest"
     $Version = [Regex]::Match((Invoke-Scraper "Json" "$Address").tag_name , "[\d.]+").Value
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
@@ -1233,7 +1249,7 @@ Function Update-JetbrainsPlugin {
 Function Update-Ldplayer {
 
     $Starter = (Get-Item "C:\LDPlayer\LDPlayer*\dnplayer.exe" -EA SI).FullName
-    $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
+    $Current = Expand-Version "$Starter"
     $Address = "https://www.ldplayer.net/other/version-history-and-release-notes.html"
     $Version = [Regex]::Matches((Invoke-Scraper "Html" "$Address"), "LDPlayer_([\d.]+).exe").Groups[1].Value
     $Updated = [Version] "$Current" -Ge [Version] $Version.SubString(0, 6)
@@ -1266,8 +1282,7 @@ Function Update-Ldplayer {
 
 Function Update-MicrosoftOpenjdk {
 
-    $Starter = (Get-Item "$Env:ProgramFiles\Microsoft\jdk-*\bin\java.exe" -EA SI).FullName
-    $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
+    $Current = Expand-Version "*microsoft*openjdk*"
     $Address = "https://learn.microsoft.com/en-us/java/openjdk/download"
     $Version = [Regex]::Matches((Invoke-Scraper "Html" "$Address"), "OpenJDK ([\d.]+) LTS").Groups[1].Value
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
@@ -1321,8 +1336,7 @@ Function Update-Mpv {
 
 Function Update-Nanazip {
 
-    $Starter = "$Env:LocalAppData\Microsoft\WindowsApps\7z.exe"
-    $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
+    $Current = Expand-Version "*nanazip*"
     $Address = "https://api.github.com/repos/m2team/nanazip/releases/latest"
     $Version = [Regex]::Match((Invoke-Scraper "Json" "$Address").tag_name , "[\d.]+").Value
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
@@ -1342,7 +1356,7 @@ Function Update-Nanazip {
 Function Update-Noxplayer {
 
     $Starter = "${Env:ProgramFiles(x86)}\Nox\bin\Nox.exe"
-    $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
+    $Current = Expand-Version "$Starter"
     $Address = "https://support.bignox.com/en/win-release"
     $Version = [Regex]::Matches((Invoke-Scraper "BrowserHtml" "$Address"), ".*V([\d.]+) Release Note").Groups[1].Value
     $Updated = [Version] "$Current" -Ge [Version] $Version.SubString(0, 5)
@@ -1381,8 +1395,7 @@ Function Update-Nvidia {
 
     Switch ($Release) {
         "Cuda" {
-            $Current = $(powershell -Command '(Get-Package "*cuda*runtime*" -EA SI).Version')
-            If ($Null -Eq $Current) { $Current = "0.0.0.0" }
+            $Current = Expand-Version "*cuda*runtime*"
             $Present = $Current -Ne "0.0.0.0"
             $Address = "https://raw.githubusercontent.com/scoopinstaller/main/master/bucket/cuda.json"
             $Version = [Regex]::Match((Invoke-Scraper "Json" "$Address").version, "[\d.]+").Value
@@ -1396,8 +1409,7 @@ Function Update-Nvidia {
             }
         }
         "Game" {
-            $Current = $(powershell -Command '(Get-Package "*nvidia*graphics*driver*" -EA SI).Version')
-            If ($Null -Eq $Current) { $Current = "0.0.0.0" }
+            $Current = Expand-Version "*nvidia*graphics*driver*"
             $Present = $Current -Ne "0.0.0.0"
             $Address = "https://community.chocolatey.org/packages/geforce-game-ready-driver"
             $Version = [Regex]::Matches((Invoke-WebRequest "$Address"), "Geforce Game Ready Driver ([\d.]+)</title>").Groups[1].Value
@@ -1446,7 +1458,7 @@ Function Update-Nvidia {
 Function Update-Powershell {
 
     $Starter = (Get-Item "$Env:ProgramFiles\PowerShell\*\pwsh.exe" -EA SI).FullName
-    $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
+    $Current = Expand-Version "$Starter"
     $Address = "https://api.github.com/repos/powershell/powershell/releases/latest"
     $Version = [Regex]::Match((Invoke-Scraper "Json" "$Address").tag_name , "[\d.]+").Value
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
@@ -1471,8 +1483,8 @@ Function Update-Pycharm {
 
     Update-Jetbra
     $Starter = "$Env:ProgramFiles\JetBrains\PyCharm\bin\pycharm64.exe"
-    $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
-    $Present = $Current -Ne "0.0.0.0"
+    $Current = Expand-Version "$Starter"
+    $Present = Test-Path "$Starter"
     $Address = "https://data.services.jetbrains.com/products/releases?code=PCP&latest=true&type=release"
     $Version = [Regex]::Match((Invoke-Scraper "Json" "$Address").PCP[0].version , "[\d.]+").Value
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
@@ -1553,7 +1565,7 @@ Function Update-Scrcpy {
 Function Update-VisualStudioCode {
 
     $Starter = "$Env:LocalAppData\Programs\Microsoft VS Code\Code.exe"
-    $Current = Try { (Get-Command "$Starter" -EA SI).Version.ToString() } Catch { "0.0.0.0" }
+    $Current = Expand-Version "$Starter"
     $Address = "https://code.visualstudio.com/sha?build=stable"
     $Version = [Regex]::Match((Invoke-Scraper "Json" "$Address").products[1].name , "[\d.]+").Value
     $Updated = [Version] "$Current" -Ge [Version] ($Version.SubString(0, 6))
@@ -1657,9 +1669,9 @@ If ($MyInvocation.InvocationName -Ne ".") {
     Clear-Host ; $ProgressPreference = "SilentlyContinue"
     Write-Output "+---------------------------------------------------------------+"
     Write-Output "|                                                               |"
-    Write-Output "|   WINHOGEN                                                    |"
+    Write-Output "|  > WINHOGEN                                                   |"
     Write-Output "|                                                               |"
-    Write-Output "|   CONFIGURATION SCRIPT FOR WINDOWS 11                         |"
+    Write-Output "|  > CONFIGURATION SCRIPT FOR WINDOWS 11                        |"
     Write-Output "|                                                               |"
     Write-Output "+---------------------------------------------------------------+"
 
