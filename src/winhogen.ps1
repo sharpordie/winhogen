@@ -23,28 +23,28 @@ Function Assert-Pending {
 
 }
 
-Function Deploy-Browser {
+# Function Deploy-Browser {
 
-    Param(
-        [ValidateSet("Chromium", "Firefox")] [String] $Browser = "Chromium"
-    )
+#     Param(
+#         [ValidateSet("Chromium", "Firefox")] [String] $Browser = "Chromium"
+#     )
 
-    Import-Library "System.Text.Json"
-    Import-Library "Microsoft.Bcl.AsyncInterfaces"
-    Import-Library "Microsoft.CodeAnalysis"
-    Import-Library "Microsoft.Playwright"
-    $Current = $Script:MyInvocation.MyCommand.Path
-    Invoke-Gsudo {
-        . $Using:Current ; Start-Sleep 4
-        Import-Library "System.Text.Json"
-        Import-Library "Microsoft.Bcl.AsyncInterfaces"
-        Import-Library "Microsoft.CodeAnalysis"
-        Import-Library "Microsoft.Playwright"
-        [Microsoft.Playwright.Program]::Main(@("install", "$Using:Browser".ToLower()))
-    }
-    Return [Microsoft.Playwright.Playwright]::CreateAsync().GetAwaiter().GetResult()
+#     Import-Library "System.Text.Json"
+#     Import-Library "Microsoft.Bcl.AsyncInterfaces"
+#     Import-Library "Microsoft.CodeAnalysis"
+#     Import-Library "Microsoft.Playwright"
+#     $Current = $Script:MyInvocation.MyCommand.Path
+#     Invoke-Gsudo {
+#         . $Using:Current ; Start-Sleep 4
+#         Import-Library "System.Text.Json"
+#         Import-Library "Microsoft.Bcl.AsyncInterfaces"
+#         Import-Library "Microsoft.CodeAnalysis"
+#         Import-Library "Microsoft.Playwright"
+#         [Microsoft.Playwright.Program]::Main(@("install", "$Using:Browser".ToLower()))
+#     }
+#     Return [Microsoft.Playwright.Playwright]::CreateAsync().GetAwaiter().GetResult()
 
-}
+# }
 
 Function Deploy-Library {
 
@@ -262,7 +262,7 @@ Function Invoke-Fetcher {
 
     Switch ($Fetcher) {
         "Browser" {
-            $Handler = Deploy-Browser
+            $Handler = Deploy-Library "Playwright"
             $Browser = $Handler.Chromium.LaunchAsync(@{ "Headless" = $False }).GetAwaiter().GetResult()
             $WebPage = $Browser.NewPageAsync().GetAwaiter().GetResult()
             $WebPage.GoToAsync("about:blank").GetAwaiter().GetResult() | Out-Null
@@ -278,7 +278,7 @@ Function Invoke-Fetcher {
             Return "$Fetched"
         }
         "Filecr" {
-            $Handler = Deploy-Browser
+            $Handler = Deploy-Library "Playwright"
             $Browser = $Handler.Chromium.LaunchAsync(@{ "Headless" = $False }).GetAwaiter().GetResult()
             $WebPage = $Browser.NewPageAsync().GetAwaiter().GetResult()
             $Waiting = $WebPage.WaitForDownloadAsync()
@@ -303,7 +303,7 @@ Function Invoke-Fetcher {
         }
         "Jetbra" {
             # TODO: Handle host is unavailable exception
-            $Handler = Deploy-Browser
+            $Handler = Deploy-Library "Playwright"
             $Browser = $Handler.Chromium.LaunchAsync(@{ "Headless" = $False }).GetAwaiter().GetResult()
             $WebPage = $Browser.NewPageAsync().GetAwaiter().GetResult()
             $Waiting = $WebPage.WaitForDownloadAsync()
@@ -358,7 +358,7 @@ Function Invoke-Scraper {
             Return Invoke-WebRequest "$Payload" | ConvertFrom-Json
         }
         "BrowserHtml" {
-            $Handler = Deploy-Browser
+            $Handler = Deploy-Library "Playwright"
             $Browser = $Handler.Chromium.LaunchAsync(@{ "Headless" = $False }).GetAwaiter().GetResult()
             $WebPage = $Browser.NewPageAsync().GetAwaiter().GetResult()
             $WebPage.GoToAsync("$Payload").GetAwaiter().GetResult() | Out-Null
@@ -369,7 +369,7 @@ Function Invoke-Scraper {
             Return $Scraped.ToString()
         }
         "BrowserJson" {
-            $Handler = Deploy-Browser
+            $Handler = Deploy-Library "Playwright"
             $Browser = $Handler.Chromium.LaunchAsync(@{ "Headless" = $False }).GetAwaiter().GetResult()
             $WebPage = $Browser.NewPageAsync().GetAwaiter().GetResult()
             $WebPage.GoToAsync("$Payload").GetAwaiter().GetResult() | Out-Null
@@ -380,7 +380,7 @@ Function Invoke-Scraper {
             Return $Scraped.ToString() | ConvertFrom-Json
         }
         "Jetbra" {
-            $Handler = Deploy-Browser
+            $Handler = Deploy-Library "Playwright"
             $Browser = $Handler.Chromium.LaunchAsync(@{ "Headless" = $False }).GetAwaiter().GetResult()
             $WebPage = $Browser.NewPageAsync().GetAwaiter().GetResult()
             $WebPage.GoToAsync("https://jetbra.in/s").GetAwaiter().GetResult() | Out-Null
