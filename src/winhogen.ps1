@@ -193,6 +193,7 @@ Function Export-Members {
         "GameStreaming" {
             Return @(
                 "Update-Windows '$Country' '$Machine'"
+                "Update-Steam"
                 "Update-Sunshine"
             )
         }
@@ -200,6 +201,7 @@ Function Export-Members {
             Return @(
                 "Update-Windows '$Country' '$Machine'"
                 "Update-Bluestacks"
+                "Update-Steam"
             )
         }
         "Virtual" {
@@ -223,6 +225,7 @@ Function Export-Members {
             "Update-Python"
             "Update-Qbittorrent"
             "Update-Scrcpy"
+            "Update-Steam"
             # "Update-VmwareWorkstation"
             "Update-YtDlg"
         }
@@ -1785,6 +1788,23 @@ Function Update-Scrcpy {
     }
 
     Update-SysPath "$Deposit" "Machine"
+
+}
+
+Function Update-Steam {
+
+    $Current = Expand-Version "*steam*"
+    $Address = "https://community.chocolatey.org/packages/steam"
+    $Version = [Regex]::Matches((Invoke-Scraper "Html" "$Address"), "Steam ([\d.]+)</title>").Groups[1].Value
+    $Updated = [Version] "$Current" -Ge [Version] "$Version"
+
+    If (-Not $Updated) {
+        $Address = "http://cdn.akamai.steamstatic.com/client/installer/SteamSetup.exe"
+        $Fetched = Invoke-Fetcher "Webclient" "$Address"
+        Invoke-Gsudo { Start-Process "$Using:Fetched" "/S" -Wait }
+        Remove-Desktop "Steam*.lnk"
+        Start-Sleep 2 ; Remove-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Name "Steam" -EA SI
+    }
 
 }
 
