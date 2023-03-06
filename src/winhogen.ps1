@@ -62,16 +62,17 @@ Function Enable-Feature {
         "Activation" {
             $Content = (Write-Output ((cscript /nologo "C:\Windows\System32\slmgr.vbs" /xpr) -Join ""))
             If (-Not $Content.Contains("permanently activated")) {
-                $Current = $Script:MyInvocation.MyCommand.Path
-                Invoke-Gsudo {
-                    . $Using:Current ; Start-Sleep 4
-                    $Fetched = Invoke-Fetcher "Webclient" "https://massgrave.dev/get.ps1"
-                    Start-Process "powershell" "-ep bypass -f `"$Fetched`"" -WindowStyle Hidden
-                    Add-Type -AssemblyName System.Windows.Forms
-                    Start-Sleep 8 ; [Windows.Forms.SendKeys]::SendWait("1")
-                    Start-Sleep 30 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
-                    Start-Sleep 6 ; [Windows.Forms.SendKeys]::SendWait("1")
-                }
+                Invoke-Gsudo { & ([ScriptBlock]::Create((Invoke-RestMethod "https://massgrave.dev/get"))) /HWID /S }
+                # $Current = $Script:MyInvocation.MyCommand.Path
+                # Invoke-Gsudo {
+                #     . $Using:Current ; Start-Sleep 4
+                #     $Fetched = Invoke-Fetcher "Webclient" "https://massgrave.dev/get.ps1"
+                #     Start-Process "powershell" "-ep bypass -f `"$Fetched`"" -WindowStyle Hidden
+                #     Add-Type -AssemblyName System.Windows.Forms
+                #     Start-Sleep 8 ; [Windows.Forms.SendKeys]::SendWait("1")
+                #     Start-Sleep 30 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+                #     Start-Sleep 6 ; [Windows.Forms.SendKeys]::SendWait("1")
+                # }
             }
         }
         "HyperV" {
@@ -164,77 +165,71 @@ Function Expand-Version {
 Function Export-Members {
 
     Param(
-        [ValidateSet("Development", "GameStreaming", "Gaming", "Virtual")] [String] $Variant,
+        [ValidateSet("Coding", "Gaming", "Stream", "Tester")] [String] $Variant,
         [String] $Country = "Romance Standard Time",
         [String] $Machine = "WINHOGEN"
     )
 
     Switch ($Variant) {
-        "Development" {
-            Return @(
-                "Update-Windows '$Country' '$Machine'"
-                "Update-Nvidia 'Cuda'"
-                "Update-AndroidStudio"
-                "Update-Chromium"
-                "Update-DockerDesktop"
-                "Update-Git 'main' '72373746+sharpordie@users.noreply.github.com' 'sharpordie'"
-                "Update-Pycharm"
-                "Update-VisualStudio2022"
-                "Update-VisualStudioCode"
-                "Update-Antidote"
-                "Update-Bluestacks '7'"
-                "Update-DbeaverUltimate"
-                "Update-Figma"
-                "Update-Jdownloader"
-                "Update-JoalDesktop"
-                "Update-Keepassxc"
-                "Update-Mambaforge"
-                "Update-Mpv"
-                "Update-Flutter"
-                "Update-Maui"
-                "Update-Python"
-                "Update-Qbittorrent"
-                "Update-Scrcpy"
-                "Update-VmwareWorkstation"
-                "Update-YtDlg"
-            )
-        }
-        "GameStreaming" {
-            Return @(
-                "Update-Windows '$Country' '$Machine'"
-                "Update-Steam"
-                "Update-Sunshine"
-            )
-        }
-        "Gaming" {
-            Return @(
-                "Update-Windows '$Country' '$Machine'"
-                "Update-Bluestacks"
-                "Update-Steam"
-            )
-        }
-        "Virtual" {
+        "Coding" {
             "Update-Windows '$Country' '$Machine'"
+            "Update-Nvidia 'Cuda'"
             "Update-AndroidStudio"
             "Update-Chromium"
+            "Update-DockerDesktop"
             "Update-Git 'main' '72373746+sharpordie@users.noreply.github.com' 'sharpordie'"
             "Update-Pycharm"
             "Update-VisualStudio2022"
             "Update-VisualStudioCode"
-            # "Update-Antidote"
-            # "Update-DbeaverUltimate"
+            "Update-Antidote"
+            "Update-Bluestacks '7'"
+            "Update-DbeaverUltimate"
             "Update-Figma"
-            "Update-Flutter"
-            # "Update-Jdownloader"
-            # "Update-JoalDesktop"
+            "Update-Jdownloader"
+            "Update-JoalDesktop"
             "Update-Keepassxc"
             "Update-Mambaforge"
+            "Update-Mpv"
+            "Update-Flutter"
             "Update-Maui"
-            # "Update-Mpv"
             "Update-Python"
             "Update-Qbittorrent"
-            # "Update-Scrcpy"
+            "Update-Scrcpy"
+            "Update-VmwareWorkstation"
+            "Update-YtDlg"
+        }
+        "Gaming" {
+            "Update-Windows '$Country' '$Machine'"
+            "Update-Bluestacks"
             "Update-Steam"
+        }
+        "Stream" {
+            "Update-Windows '$Country' '$Machine'"
+            "Update-Steam"
+            "Update-Sunshine"
+        }
+        "Tester" {
+            "Update-Windows '$Country' '$Machine'"
+            # "Update-AndroidStudio"
+            # "Update-Chromium"
+            # "Update-Git 'main' '72373746+sharpordie@users.noreply.github.com' 'sharpordie'"
+            # "Update-Pycharm"
+            # "Update-VisualStudio2022"
+            # "Update-VisualStudioCode"
+            # "Update-Antidote"
+            # "Update-DbeaverUltimate"
+            # "Update-Figma"
+            # "Update-Flutter"
+            "Update-Jdownloader"
+            # "Update-JoalDesktop"
+            # "Update-Keepassxc"
+            # "Update-Mambaforge"
+            # "Update-Maui"
+            # "Update-Mpv"
+            # "Update-Python"
+            # "Update-Qbittorrent"
+            # "Update-Scrcpy"
+            # "Update-Steam"
             # "Update-VmwareWorkstation"
             # "Update-YtDlg"
         }
@@ -2095,15 +2090,13 @@ If ($MyInvocation.InvocationName -Ne ".") {
     Write-Output "|                                                               |"
     Write-Output "+---------------------------------------------------------------+"
 
-    # $Loading = "`nTHE UPDATING DEPENDENCIES PROCESS HAS LAUNCHED"
-    # $Failure = "`rTHE UPDATING DEPENDENCIES PROCESS WAS CANCELED"
-    $Loading = "`nUPDATING DEPENDENCIES..."
-    $Failure = "`rUPDATING DEPENDENCIES WAS CANCELED"
+    $Loading = "`nTHE UPDATING DEPENDENCIES PROCESS HAS LAUNCHED"
+    $Failure = "`rTHE UPDATING DEPENDENCIES PROCESS WAS CANCELED"
     Write-Host "$Loading" -FO DarkYellow -NoNewline ; Remove-Feature "Uac" ; Remove-Feature "Sleeping"
     $Correct = (Update-Gsudo) -And ! (gsudo cache on -d -1 2>&1).ToString().Contains("Error")
     If (-Not $Correct) { Write-Host "$Failure`n" -FO Red ; Exit } ; Update-Powershell
 
-    $Members = Export-Members -Variant "Virtual" -Machine "WINHOGEN"
+    $Members = Export-Members -Variant "Tester" -Machine "WINHOGEN"
 
     $Maximum = (65 - 20) * -1
     $Shaping = "`r{0,$Maximum}{1,-3}{2,-6}{3,-3}{4,-8}"
