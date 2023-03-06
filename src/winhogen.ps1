@@ -175,16 +175,16 @@ Function Export-Members {
         "Coding" {
             @(
                 "Update-Windows '$Country' '$Machine'"
-                "Update-Nvidia 'Cuda'"
+                "Update-Nvidia 'Game'"
                 "Update-AndroidStudio"
                 "Update-Chromium"
-                "Update-DockerDesktop"
+                # "Update-DockerDesktop"
                 "Update-Git 'main' '72373746+sharpordie@users.noreply.github.com' 'sharpordie'"
                 "Update-Pycharm"
-                "Update-VisualStudio2022"
+                # "Update-VisualStudio2022"
                 "Update-VisualStudioCode"
-                "Update-Antidote"
-                "Update-Bluestacks '7'"
+                # "Update-Antidote"
+                # "Update-Bluestacks '7'"
                 "Update-DbeaverUltimate"
                 "Update-Figma"
                 "Update-Jdownloader"
@@ -193,7 +193,7 @@ Function Export-Members {
                 "Update-Mambaforge"
                 "Update-Mpv"
                 "Update-Flutter"
-                "Update-Maui"
+                # "Update-Maui"
                 "Update-Python"
                 "Update-Qbittorrent"
                 "Update-Scrcpy"
@@ -218,23 +218,23 @@ Function Export-Members {
         }
         "Tester" {
             @(
-                # "Update-Windows '$Country' '$Machine'"
+                "Update-Windows '$Country' '$Machine'"
                 # "Update-AndroidStudio"
                 # "Update-Chromium"
                 # "Update-Git 'main' '72373746+sharpordie@users.noreply.github.com' 'sharpordie'"
-                # "Update-Pycharm"
+                "Update-Pycharm"
                 # "Update-VisualStudio2022"
                 # "Update-VisualStudioCode"
                 # "Update-Antidote"
                 # "Update-DbeaverUltimate"
-                "Update-Figma"
+                # "Update-Figma"
                 # "Update-Flutter"
                 # "Update-Jdownloader"
-                "Update-JoalDesktop"
-                "Update-Keepassxc"
+                # "Update-JoalDesktop"
+                # "Update-Keepassxc"
                 # "Update-Mambaforge"
                 # "Update-Maui"
-                "Update-Mpv"
+                # "Update-Mpv"
                 # "Update-Python"
                 # "Update-Qbittorrent"
                 # "Update-Scrcpy"
@@ -2125,7 +2125,7 @@ If ($MyInvocation.InvocationName -Ne ".") {
     $Correct = (Update-Gsudo) -And ! (gsudo cache on -d -1 2>&1).ToString().Contains("Error")
     If (-Not $Correct) { Write-Host "$Failure`n" -FO Red ; Exit } ; Update-Powershell
 
-    $Members = Export-Members -Variant "Tester" -Machine "WINHOGEN"
+    $Members = Export-Members -Variant "Coding" -Machine "WINHOGEN"
 
     $Maximum = (65 - 20) * -1
     $Shaping = "`r{0,$Maximum}{1,-3}{2,-6}{3,-3}{4,-8}"
