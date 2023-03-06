@@ -159,7 +159,7 @@ Function Expand-Version {
     If ([String]::IsNullOrWhiteSpace($Version)) { $Version = Try { Invoke-Expression "& `"$Payload`" --version" -EA SI } Catch { $Null } }
     If ([String]::IsNullOrWhiteSpace($Version)) { $Version = "0.0.0.0" }
     # Return [Regex]::Matches($Version, "([\d.]+)").Groups[1].Value
-    Return [Regex]::Match($Version, "[\d.]+(?=\.)").Value
+    Return [Regex]::Match($Version, "[\d.]+").Value.Trim(".")
 
 }
 
