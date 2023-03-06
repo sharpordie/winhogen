@@ -158,7 +158,8 @@ Function Expand-Version {
     If ([String]::IsNullOrWhiteSpace($Version)) { $Version = Try { (Get-Item "$Payload" -EA SI).VersionInfo.FileVersion } Catch { $Null } }
     If ([String]::IsNullOrWhiteSpace($Version)) { $Version = Try { Invoke-Expression "& `"$Payload`" --version" -EA SI } Catch { $Null } }
     If ([String]::IsNullOrWhiteSpace($Version)) { $Version = "0.0.0.0" }
-    Return [Regex]::Matches($Version, "([\d.]+)").Groups[1].Value
+    # Return [Regex]::Matches($Version, "([\d.]+)").Groups[1].Value
+    Return [Regex]::Match($Version, "[\d.]+(?=\.)").Value
 
 }
 
@@ -172,66 +173,76 @@ Function Export-Members {
 
     Switch ($Variant) {
         "Coding" {
-            "Update-Windows '$Country' '$Machine'"
-            "Update-Nvidia 'Cuda'"
-            "Update-AndroidStudio"
-            "Update-Chromium"
-            "Update-DockerDesktop"
-            "Update-Git 'main' '72373746+sharpordie@users.noreply.github.com' 'sharpordie'"
-            "Update-Pycharm"
-            "Update-VisualStudio2022"
-            "Update-VisualStudioCode"
-            "Update-Antidote"
-            "Update-Bluestacks '7'"
-            "Update-DbeaverUltimate"
-            "Update-Figma"
-            "Update-Jdownloader"
-            "Update-JoalDesktop"
-            "Update-Keepassxc"
-            "Update-Mambaforge"
-            "Update-Mpv"
-            "Update-Flutter"
-            "Update-Maui"
-            "Update-Python"
-            "Update-Qbittorrent"
-            "Update-Scrcpy"
-            "Update-VmwareWorkstation"
-            "Update-YtDlg"
+            @(
+                "Update-Windows '$Country' '$Machine'"
+                "Update-Nvidia 'Cuda'"
+                "Update-AndroidStudio"
+                "Update-Chromium"
+                "Update-DockerDesktop"
+                "Update-Git 'main' '72373746+sharpordie@users.noreply.github.com' 'sharpordie'"
+                "Update-Pycharm"
+                "Update-VisualStudio2022"
+                "Update-VisualStudioCode"
+                "Update-Antidote"
+                "Update-Bluestacks '7'"
+                "Update-DbeaverUltimate"
+                "Update-Figma"
+                "Update-Jdownloader"
+                "Update-JoalDesktop"
+                "Update-Keepassxc"
+                "Update-Mambaforge"
+                "Update-Mpv"
+                "Update-Flutter"
+                "Update-Maui"
+                "Update-Python"
+                "Update-Qbittorrent"
+                "Update-Scrcpy"
+                "Update-Spotify"
+                "Update-VmwareWorkstation"
+                "Update-YtDlg"
+            )
         }
         "Gaming" {
-            "Update-Windows '$Country' '$Machine'"
-            "Update-Bluestacks"
-            "Update-Steam"
+            @(
+                "Update-Windows '$Country' '$Machine'"
+                "Update-Bluestacks"
+                "Update-Steam"
+            )
         }
         "Stream" {
-            "Update-Windows '$Country' '$Machine'"
-            "Update-Steam"
-            "Update-Sunshine"
+            @(
+                "Update-Windows '$Country' '$Machine'"
+                "Update-Steam"
+                "Update-Sunshine"
+            )
         }
         "Tester" {
-            "Update-Windows '$Country' '$Machine'"
-            # "Update-AndroidStudio"
-            # "Update-Chromium"
-            # "Update-Git 'main' '72373746+sharpordie@users.noreply.github.com' 'sharpordie'"
-            # "Update-Pycharm"
-            # "Update-VisualStudio2022"
-            # "Update-VisualStudioCode"
-            # "Update-Antidote"
-            # "Update-DbeaverUltimate"
-            # "Update-Figma"
-            # "Update-Flutter"
-            "Update-Jdownloader"
-            # "Update-JoalDesktop"
-            # "Update-Keepassxc"
-            # "Update-Mambaforge"
-            # "Update-Maui"
-            # "Update-Mpv"
-            # "Update-Python"
-            # "Update-Qbittorrent"
-            # "Update-Scrcpy"
-            # "Update-Steam"
-            # "Update-VmwareWorkstation"
-            # "Update-YtDlg"
+            @(
+                # "Update-Windows '$Country' '$Machine'"
+                # "Update-AndroidStudio"
+                # "Update-Chromium"
+                # "Update-Git 'main' '72373746+sharpordie@users.noreply.github.com' 'sharpordie'"
+                # "Update-Pycharm"
+                # "Update-VisualStudio2022"
+                # "Update-VisualStudioCode"
+                # "Update-Antidote"
+                # "Update-DbeaverUltimate"
+                "Update-Figma"
+                # "Update-Flutter"
+                # "Update-Jdownloader"
+                "Update-JoalDesktop"
+                "Update-Keepassxc"
+                # "Update-Mambaforge"
+                # "Update-Maui"
+                "Update-Mpv"
+                # "Update-Python"
+                # "Update-Qbittorrent"
+                # "Update-Scrcpy"
+                "Update-Spotify"
+                # "Update-Steam"
+                # "Update-VmwareWorkstation"
+                # "Update-YtDlg"
+            )
         }
     }
 
@@ -781,7 +792,7 @@ Function Update-Chromium {
     $Address = "https://api.github.com/repos/macchrome/winchrome/releases/latest"
     $Version = [Regex]::Match((Invoke-Scraper "Json" "$Address").tag_name, "[\d.]+").Value
     $Updated = $Present -And [Version] $Current.Replace(".0", "") -Ge [Version] "$Version"
-	
+    
     If (-Not $Updated) {
         $Results = (Invoke-Scraper "Json" "$Address").assets
         $Address = $Results.Where( { $_.browser_download_url -Like "*installer.exe" } ).browser_download_url
@@ -1190,7 +1201,7 @@ Function Update-Git {
     If (-Not [String]::IsNullOrWhiteSpace($GitUser)) { git config --global user.name "$GitUser" }
     git config --global http.postBuffer 1048576000
     git config --global init.defaultBranch "$Default"
-	
+    
 }
 
 Function Update-Gsudo {
@@ -1420,7 +1431,7 @@ Function Update-Maui {
     Invoke-Gsudo { [Environment]::SetEnvironmentVariable("DOTNET_CLI_TELEMETRY_OPTOUT", "1", "Machine") }
     Invoke-Gsudo { [Environment]::SetEnvironmentVariable("DOTNET_NOLOGO", "1", "Machine") }
     Enable-Feature "HyperV"
-	
+    
     $SdkHome = "${Env:ProgramFiles(x86)}\Android\android-sdk"
     $Deposit = (Get-Item "$SdkHome\cmdline-tools\*\bin" -EA SI).FullName
     If ($Null -Ne $Deposit) {
@@ -1795,6 +1806,24 @@ Function Update-Scrcpy {
     }
 
     Update-SysPath "$Deposit" "Machine"
+
+}
+
+Function Update-Spotify {
+
+    $Current = Expand-Version "*spotify*"
+    $Address = "https://raw.githack.com/scoopinstaller/extras/master/bucket/spotify.json"
+    $Version = [Regex]::Match((Invoke-Scraper "Json" "$Address").version , "[\d.]+(?=\.)").Value
+    $Updated = [Version] "$Current" -Ge [Version] "$Version"
+
+    If (-Not $Updated) {
+        $Address = "https://raw.githack.com/amd64fox/SpotX/main/scripts/Install_Auto.bat"
+        $Fetched = Invoke-Fetcher "Webclient" "$Address"
+        Invoke-Gsudo { Invoke-Expression "echo ``n | cmd /c '$Using:Fetched'" }
+        Invoke-Gsudo { Start-Sleep 2 ; Stop-Process -Name "Spotify" }
+        Remove-Desktop "Spotify*.lnk"
+        Remove-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Name "Spotify" -EA SI
+    }
 
 }
 
