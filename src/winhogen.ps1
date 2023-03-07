@@ -31,22 +31,22 @@ Function Deploy-Library {
 
     Switch ($Library) {
         "Flaui" {
-            Import-Library "Interop.UIAutomationClient"
-            Import-Library "FlaUI.Core"
-            Import-Library "FlaUI.UIA3"
-            Import-Library "System.Drawing.Common"
-            Import-Library "System.Security.Permissions"
-            Return [FlaUI.UIA3.UIA3Automation]::New()
+            Import-Library "Interop.UIAutomationClient" | Out-Null
+            Import-Library "FlaUI.Core" | Out-Null
+            Import-Library "FlaUI.UIA3" | Out-Null
+            Import-Library "System.Drawing.Common" | Out-Null
+            Import-Library "System.Security.Permissions" | Out-Null
+            [FlaUI.UIA3.UIA3Automation]::New()
         }
         "Playwright" {
             $Current = $Script:MyInvocation.MyCommand.Path
             If (Test-Path "$Current") { Invoke-Gsudo { . $Using:Current ; Deploy-Library Playwright | Out-Null } }
-            Import-Library "System.Text.Json"
-            Import-Library "Microsoft.Bcl.AsyncInterfaces"
-            Import-Library "Microsoft.CodeAnalysis"
-            Import-Library "Microsoft.Playwright"
-            [Microsoft.Playwright.Program]::Main(@("install", "chromium"))
-            Return [Microsoft.Playwright.Playwright]::CreateAsync().GetAwaiter().GetResult()
+            Import-Library "System.Text.Json" | Out-Null
+            Import-Library "Microsoft.Bcl.AsyncInterfaces" | Out-Null
+            Import-Library "Microsoft.CodeAnalysis" | Out-Null
+            Import-Library "Microsoft.Playwright" | Out-Null
+            [Microsoft.Playwright.Program]::Main(@("install", "chromium")) | Out-Null
+            [Microsoft.Playwright.Playwright]::CreateAsync().GetAwaiter().GetResult()
         }
     }
 
@@ -256,11 +256,11 @@ Function Import-Library {
     )
 
     If (-Not ([Management.Automation.PSTypeName]"$Library").Type ) {
-        If (-Not (Get-Package "$Library" -EA SI)) { Install-Package "$Library" -Scope "CurrentUser" -Source "https://www.nuget.org/api/v2" -Force -SkipDependencies }
+        If (-Not (Get-Package "$Library" -EA SI)) { Install-Package "$Library" -Scope "CurrentUser" -Source "https://www.nuget.org/api/v2" -Force -SkipDependencies | Out-Null }
         $Results = (Get-ChildItem -Filter "*.dll" -Recurse (Split-Path (Get-Package -Name "$Library").Source)).FullName
         $Content = $Results | Where-Object { $_ -Like "*standard2.0*" } | Select-Object -Last 1
-        If ($Testing) { Try { Add-Type -Path "$Content" -EA SI } Catch { $_.Exception.LoaderExceptions } }
-        Else { Try { Add-Type -Path "$Content" -EA SI } Catch {} }
+        If ($Testing) { Try { Add-Type -Path "$Content" -EA SI | Out-Null } Catch { $_.Exception.LoaderExceptions } }
+        Else { Try { Add-Type -Path "$Content" -EA SI | Out-Null } Catch {} }
     }
 
 }
@@ -1789,6 +1789,136 @@ Function Update-Qbittorrent {
 
 }
 
+Function Update-Rider {
+
+    Param (
+        [String] $Deposit = "$Env:userProfile\Projects",
+        [String] $Margins = 160
+    )
+
+    Update-Jetbra
+    $Starter = "$Env:ProgramFiles\JetBrains\Rider\bin\rider64.exe"
+    $Current = Expand-Version "$Starter"
+    $Present = Test-Path "$Starter"
+    $Address = "https://data.services.jetbrains.com/products/releases?code=RD&latest=true&type=release"
+    $Version = [Regex]::Match((Invoke-Scraper "Json" "$Address").RD[0].version , "[\d.]+").Value
+    $Updated = [Version] "$Current" -Ge [Version] "$Version"
+
+    If (-Not $Updated) {
+        If ($Present) {
+            Invoke-Gsudo { Start-Process "$Env:ProgramFiles\JetBrains\Rider\bin\Uninstall.exe" "/S" -Wait }
+            Remove-Item -Path "$Env:ProgramFiles\JetBrains\Rider" -Recurse -Force
+            Remove-Item -Path "HKCU:\SOFTWARE\JetBrains\Rider" -Recurse -Force
+        }
+        $Address = (Invoke-Scraper "Json" "$Address").RD[0].downloads.windows.link
+        # $Fetched = Invoke-Fetcher "Webclient" "$Address"
+        $Fetched = "$Env:UserProfile\Desktop\JetBrains.Rider-2022.3.2.exe" # TODO: Remove dummies
+        $ArgList = "/S /D=$Env:ProgramFiles\JetBrains\Rider"
+        Invoke-Gsudo { Start-Process "$Using:Fetched" "$Using:ArgList" -Wait }
+        $Created = "$([Environment]::GetFolderPath("CommonStartMenu"))\Programs\JetBrains\Rider.lnk"
+        Remove-Item "$Created" -EA SI
+        $Forward = Get-Item "$([Environment]::GetFolderPath("CommonStartMenu"))\Programs\JetBrains\*Rider*.lnk"
+        Invoke-Gsudo { Rename-Item -Path "$Using:Forward" -NewName "$Using:Created" }
+    }
+
+    If (-Not $Present) {
+        Remove-Item "$Env:AppData\JetBrains\consentOptions" -Recurse -EA SI
+        
+        $License = Invoke-Scraper "Jetbra" "Rider"
+        $Library = Deploy-Library "Flaui"
+        $Started = [FlaUI.Core.Application]::Launch("$Starter")
+        $Factory = $Library.ConditionFactory
+        $Matcher = [FlaUI.Core.Definitions.PropertyConditionFlags]::MatchSubstring
+
+        Start-Sleep 6 ; $Desktop = $Library.GetDesktop()
+        Start-Sleep 2 ; $Window1 = $Desktop.FindFirstDescendant($Factory.ByName("Agreement", $Matcher))
+        Start-Sleep 2 ; $Window1.Focus()
+        Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB)
+        Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE)
+        Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE)
+
+        Start-Sleep 2 ; $Desktop = $Library.GetDesktop()
+        Start-Sleep 2 ; $Window1 = $Desktop.FindFirstDescendant($Factory.ByName("Data", $Matcher))
+        Start-Sleep 2 ; $Window1.Focus()
+        Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB)
+        Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE)
+
+        Start-Sleep 2 ; $Desktop = $Library.GetDesktop()
+        Start-Sleep 2 ; $Window1 = $Desktop.FindFirstDescendant($Factory.ByName("Import", $Matcher))
+        Start-Sleep 2 ; $Window1.Focus()
+        Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB)
+        Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE)
+
+        Start-Sleep 2 ; $Desktop = $Library.GetDesktop()
+        Start-Sleep 2 ; $Window1 = $Desktop.FindFirstDescendant($Factory.ByName("Customize", $Matcher))
+        Start-Sleep 2 ; $Window1.Focus()
+        Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB)
+        Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE)
+        Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE)
+        Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE)
+        Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE)
+        Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE)
+
+        Start-Sleep 4 ; $Desktop = $Library.GetDesktop()
+        Start-Sleep 2 ; $Window1 = $Desktop.FindFirstDescendant($Factory.ByName("Licenses"))
+        Start-Sleep 2 ; $Window1.Focus()
+        $Scraped = $Window1.BoundingRectangle
+        $FactorX = $Scraped.X + ($Scraped.Width / 2)
+        $FactorY = $Scraped.Y + ($Scraped.Height / 2)
+        Start-Sleep 4 ; [FlaUI.Core.Input.Mouse]::LeftClick([Drawing.Point]::New($FactorX, $FactorY - 105))
+        Start-Sleep 2 ; [FlaUI.Core.Input.Mouse]::LeftClick([Drawing.Point]::New($FactorX, $FactorY))
+        Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type("$License")
+        Start-Sleep 8 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB)
+        Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE)
+        Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE)
+
+        $Window1.Focus() ; Start-Sleep 2
+        $Factor1 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::ALT
+        $Factor2 = [FlaUI.Core.WindowsAPI.VirtualKeyShort]::F4
+        Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::TypeSimultaneously($Factor1, $Factor2)
+        Start-Sleep 4 ; Stop-Process -Name "rider64" -EA SI
+
+        Try {
+            Start-Sleep 8 ; $Desktop = $Library.GetDesktop()
+            Start-Sleep 2 ; $Window1 = $Desktop.FindFirstDescendant($Factory.ByName("Windows Security Alert"))
+            $Window1.Focus()
+            Start-Sleep 2 ; $Button1 = $Window1.FindFirstDescendant($Factory.ByName("Allow access"))
+            $Button1.Click()
+        }
+        Catch {}
+
+        Start-Sleep 4 ; $Started.Dispose() | Out-Null ; $Library.Dispose() | Out-Null
+    }
+
+    If ($Deposit) {
+        New-Item -Path "$Deposit" -ItemType Directory -EA SI
+        Invoke-Gsudo { Add-MpPreference -ExclusionPath "$Using:Deposit" *> $Null }
+        $BaseDir = Get-Item "$Env:AppData\JetBrains\Rider*"
+        $Configs = Get-Item "$BaseDir\options\ide.general.xml"
+        If ($Null -Eq $Configs) { 
+            New-Item -Path "$BaseDir\options" -ItemType Directory -EA SI
+            New-Item -Path "$BaseDir\options\ide.general.xml" -ItemType File -EA SI
+            Set-Content -Path "$BaseDir\options\ide.general.xml" -Value "<application><component name=`"GeneralSettings`"></component></application>" | Out-Null
+        }
+        $Configs = Get-Item "$BaseDir\options\ide.general.xml"
+        $General = [Xml] (Get-Content -Path "$Configs")
+        $Element = $General.SelectSingleNode("//*[@name=`"defaultProjectDirectory`"]")
+        If ($Null -Ne $Element) { 
+            $Element.SetAttribute("value", "$Deposit") 
+            $General.Save("$Configs")
+        }
+        Else {
+            $Subject = $General.SelectSingleNode('//*[@name="GeneralSettings"]')
+            $Element = $General.CreateElement("option")
+            $Element.SetAttribute("name", "defaultProjectDirectory")
+            $Element.SetAttribute("value", "$Deposit")
+            $Subject.AppendChild($Element)
+            $General.Save("$Configs")
+        }
+    }
+
+}
+
 Function Update-Scrcpy {
 
     $Deposit = "$Env:LocalAppData\Programs\Scrcpy"
@@ -1822,8 +1952,9 @@ Function Update-Spotify {
         Invoke-Gsudo { Invoke-Expression "echo ``n | cmd /c '$Using:Fetched'" }
         Invoke-Gsudo { Start-Sleep 2 ; Stop-Process -Name "Spotify" }
         Remove-Desktop "Spotify*.lnk"
-        Remove-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Name "Spotify" -EA SI
     }
+
+    Remove-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run" -Name "Spotify" -EA SI
 
 }
 
