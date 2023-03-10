@@ -1115,7 +1115,7 @@ Function Update-DockerDesktop {
 Function Update-Dotnet {
 
     Param (
-        [String] $Deposit = "$Env:UserProfile\Projects\_modules"
+        [String] $Deposit = "$Env:UserProfile\Projects\_packages"
     )
 
     $Current = Expand-Version "dotnet"
