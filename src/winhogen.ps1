@@ -80,7 +80,7 @@ Function Enable-Feature {
             If ($Content.Value -Ne "Enabled") {
                 $Address = "https://cdn3.bluestacks.com/support_files/HD-EnableHyperV.exe"
                 $Fetched = Invoke-Fetcher "Webclient" "$Address"
-                Invoke-Gsudo { Start-Process "$Using:Fetched" ; Start-Sleep 10 ; Stop-Process -Name "HD-EnableHyperV" }
+                Invoke-Gsudo { Start-Process "$Using:Fetched" ; Start-Sleep 20 ; Stop-Process -Name "HD-EnableHyperV" }
                 Invoke-Restart
             }
         }
@@ -218,12 +218,12 @@ Function Export-Members {
         }
         "Tester" {
             @(
-                "Update-Windows '$Country' '$Machine'"
+                # "Update-Windows '$Country' '$Machine'"
                 # "Update-AndroidStudio"
                 # "Update-Chromium"
-                # "Update-Git 'main' '72373746+sharpordie@users.noreply.github.com' 'sharpordie'"
-                "Update-Pycharm"
-                # "Update-VisualStudio2022"
+                "Update-Git 'main' '72373746+sharpordie@users.noreply.github.com' 'sharpordie'"
+                # "Update-Pycharm"
+                "Update-VisualStudio2022"
                 # "Update-VisualStudioCode"
                 # "Update-Antidote"
                 # "Update-DbeaverUltimate"
@@ -233,12 +233,12 @@ Function Export-Members {
                 # "Update-JoalDesktop"
                 # "Update-Keepassxc"
                 # "Update-Mambaforge"
-                # "Update-Maui"
+                "Update-Maui"
                 # "Update-Mpv"
                 # "Update-Python"
                 # "Update-Qbittorrent"
                 # "Update-Scrcpy"
-                "Update-Spotify"
+                # "Update-Spotify"
                 # "Update-Steam"
                 # "Update-VmwareWorkstation"
                 # "Update-YtDlg"
@@ -449,9 +449,7 @@ Function Remove-Feature {
             If ($Content.Value -Eq "Enabled") {
                 $Address = "https://cdn3.bluestacks.com/support_files/HD-DisableHyperV_native_v2.exe"
                 $Fetched = Invoke-Fetcher "Webclient" "$Address"
-                # $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)"
-                # (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched")
-                Invoke-Gsudo { Start-Process "$Using:Fetched" ; Start-Sleep 10 ; Stop-Process -Name "HD-DisableHyperV" }
+                Invoke-Gsudo { Start-Process "$Using:Fetched" ; Start-Sleep 20 ; Stop-Process -Name "HD-DisableHyperV" }
                 If (Assert-Pending -Eq $True) { Invoke-Restart }
             }
         }
@@ -1111,6 +1109,32 @@ Function Update-DockerDesktop {
         $Content.openUIOnStartupDisabled = $True
         $Content | ConvertTo-Json | Set-Content "$Configs"
     }
+
+}
+
+Function Update-Dotnet {
+
+    Param (
+        [String] $Deposit = "$Env:UserProfile\Projects\_modules"
+    )
+
+    $Current = Expand-Version "dotnet"
+    $Address = "https://raw.githubusercontent.com/scoopinstaller/main/master/bucket/dotnet-sdk.json"
+    $Version = [Regex]::Match((Invoke-Scraper "Json" "$Address").version, "[\d.]+").Value
+    $Updated = [Version] "$Current" -Ge [Version] "$Version"
+
+    If (-Not $Updated) {
+        $Address = "https://dotnetcli.blob.core.windows.net/dotnet/Sdk/$Version/dotnet-sdk-$Version-win-x64.exe"
+        $Fetched = Invoke-Fetcher "Webclient" "$Address"
+        Invoke-Gsudo { Start-Process "$Using:Fetched" "/install /quiet /norestart" -Wait }
+    }
+
+    Update-SysPath "$Env:ProgramFiles\dotnet\" "Machine"
+    New-Item -Path "$Deposit" -ItemType Directory -EA SI
+    dotnet nuget add source "https://api.nuget.org/v3/index.json" --name "nuget" | Out-Null
+    dotnet nuget add source "$Deposit" --name "local" | Out-Null
+    Invoke-Gsudo { [Environment]::SetEnvironmentVariable("DOTNET_CLI_TELEMETRY_OPTOUT", "1", "Machine") }
+    Invoke-Gsudo { [Environment]::SetEnvironmentVariable("DOTNET_NOLOGO", "1", "Machine") }
 
 }
 
@@ -1992,7 +2016,7 @@ Function Update-VisualStudio2022 {
     If (-Not $Present) {
         Invoke-Gsudo { Start-Process "$Using:Starter" "/ResetUserData" -Wait }
         Add-Type -AssemblyName "System.Windows.Forms" ; Start-Process "$Starter"
-        Start-Sleep 15 ; [Windows.Forms.SendKeys]::SendWait("{TAB}" * 4)
+        Start-Sleep 25 ; [Windows.Forms.SendKeys]::SendWait("{TAB}" * 4)
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
         Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{TAB}") ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
         Start-Sleep 20 ; [Windows.Forms.SendKeys]::SendWait("%{F4}") ; Start-Sleep 8
@@ -2256,7 +2280,7 @@ If ($MyInvocation.InvocationName -Ne ".") {
     $Correct = (Update-Gsudo) -And ! (gsudo cache on -d -1 2>&1).ToString().Contains("Error")
     If (-Not $Correct) { Write-Host "$Failure`n" -FO Red ; Exit } ; Update-Powershell
 
-    $Members = Export-Members -Variant "Coding" -Machine "WINHOGEN"
+    $Members = Export-Members -Variant "Tester" -Machine "WINHOGEN"
 
     $Maximum = (65 - 20) * -1
     $Shaping = "`r{0,$Maximum}{1,-3}{2,-6}{3,-3}{4,-8}"
