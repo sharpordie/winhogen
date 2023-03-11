@@ -183,12 +183,12 @@ Function Export-Members {
                 "Update-Pycharm"
                 # "Update-VisualStudio2022"
                 "Update-VisualStudioCode"
-                # "Update-Antidote"
+                "Update-Antidote"
                 # "Update-Bluestacks '7'"
-                "Update-DbeaverUltimate"
+                # "Update-DbeaverUltimate"
                 "Update-Figma"
                 "Update-Jdownloader"
-                "Update-JoalDesktop"
+                # "Update-JoalDesktop"
                 "Update-Keepassxc"
                 "Update-Mambaforge"
                 "Update-Mpv"
@@ -197,7 +197,7 @@ Function Export-Members {
                 "Update-Python"
                 "Update-Qbittorrent"
                 "Update-Scrcpy"
-                "Update-Spotify"
+                # "Update-Spotify"
                 "Update-VmwareWorkstation"
                 "Update-YtDlg"
             )
@@ -2280,7 +2280,7 @@ If ($MyInvocation.InvocationName -Ne ".") {
     $Correct = (Update-Gsudo) -And ! (gsudo cache on -d -1 2>&1).ToString().Contains("Error")
     If (-Not $Correct) { Write-Host "$Failure`n" -FO Red ; Exit } ; Update-Powershell
 
-    $Members = Export-Members -Variant "Tester" -Machine "WINHOGEN"
+    $Members = Export-Members -Variant "Coding" -Machine "WINHOGEN"
 
     $Maximum = (65 - 20) * -1
     $Shaping = "`r{0,$Maximum}{1,-3}{2,-6}{3,-3}{4,-8}"
