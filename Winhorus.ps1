@@ -16,14 +16,44 @@ Function Deploy-Library {
             [FlaUI.UIA3.UIA3Automation]::New()
         }
         "Playwright" {
+            $Current = $Script:MyInvocation.MyCommand.Path
+            $Command = "-ep bypass -c '. $Current ; Deploy-Library Playwright | Out-Null'"
+            If ($Null -Ne $Current) { Start-Process "powershell" "$Command" -WindowStyle Hidden -Wait }
             Import-Library "System.Text.Json" | Out-Null
             Import-Library "Microsoft.Bcl.AsyncInterfaces" | Out-Null
             Import-Library "Microsoft.CodeAnalysis" | Out-Null
             Import-Library "Microsoft.Playwright" | Out-Null
-            [Microsoft.Playwright.Program]::Main(@("install", "chromium")) | Out-Null
+            [Microsoft.Playwright.Program]::Main(@("install", "chromium"))
             [Microsoft.Playwright.Playwright]::CreateAsync().GetAwaiter().GetResult()
+            # $Current = $Script:MyInvocation.MyCommand.Path
+            # Invoke-Command {
+            #     . $Current
+            #     Import-Library "System.Text.Json" | Out-Null
+            #     Import-Library "Microsoft.Bcl.AsyncInterfaces" | Out-Null
+            #     Import-Library "Microsoft.CodeAnalysis" | Out-Null
+            #     Import-Library "Microsoft.Playwright" | Out-Null
+            #     Invoke-Expression '[Microsoft.Playwright.Program]::Main(@("install", "chromium"))' >$null 2>&1
+            # } -NoNewScope
+            # [Microsoft.Playwright.Playwright]::CreateAsync().GetAwaiter().GetResult()
         }
     }
+
+}
+
+Function Expand-Version {
+
+    Param (
+        [String] $Payload
+    )
+
+    If ([String]::IsNullOrWhiteSpace($Payload)) { Return "0.0.0.0" }
+    $Version = $(powershell -Command "(Get-Package `"$Payload`" -EA SI).Version")
+    If ([String]::IsNullOrWhiteSpace($Version)) { $Version = (Get-AppxPackage "$Payload" -EA SI).Version }
+    If ([String]::IsNullOrWhiteSpace($Version)) { $Version = Try { (Get-Command "$Payload" -EA SI).Version } Catch { $Null } }
+    If ([String]::IsNullOrWhiteSpace($Version)) { $Version = Try { (Get-Item "$Payload" -EA SI).VersionInfo.FileVersion } Catch { $Null } }
+    If ([String]::IsNullOrWhiteSpace($Version)) { $Version = Try { Invoke-Expression "& `"$Payload`" --version" -EA SI } Catch { $Null } }
+    If ([String]::IsNullOrWhiteSpace($Version)) { $Version = "0.0.0.0" }
+    Return [Regex]::Match($Version, "[\d.]+").Value.Trim(".")
 
 }
 
@@ -40,6 +70,41 @@ Function Import-Library {
         $Content = $Results | Where-Object { $_ -Like "*standard2.0*" } | Select-Object -Last 1
         If ($Testing) { Try { Add-Type -Path "$Content" -EA SI | Out-Null } Catch { $_.Exception.LoaderExceptions } }
         Else { Try { Add-Type -Path "$Content" -EA SI | Out-Null } Catch {} }
+    }
+
+}
+
+Function Invoke-Fetcher {
+
+    Param(
+        [String] $Variant,
+        [String] $Address,
+        [String] $Fetched
+    )
+
+    Switch ($Variant) {
+        Address {
+            If (-Not $Fetched) { $Fetched = Join-Path "$Env:Temp" "$(Split-Path "$Address" -Leaf)" }
+            (New-Object Net.WebClient).DownloadFile("$Address", "$Fetched") ; Return "$Fetched"
+        }
+        Browser {
+            $Handler = Deploy-Library "Playwright"
+            $Browser = $Handler.Chromium.LaunchAsync(@{ "Headless" = $False }).GetAwaiter().GetResult()
+            $WebPage = $Browser.NewPageAsync().GetAwaiter().GetResult()
+            $WebPage.GoToAsync("about:blank").GetAwaiter().GetResult() | Out-Null
+            $Waiting = $WebPage.WaitForDownloadAsync()
+            $WebPage.GoToAsync("$Address") | Out-Null
+            $Attempt = $Waiting.GetAwaiter().GetResult()
+            $Attempt.PathAsync().GetAwaiter().GetResult() | Out-Null
+            $Suggest = $Attempt.SuggestedFilename
+            $Fetched = Join-Path "$Env:Temp" "$Suggest"
+            $Attempt.SaveAsAsync("$Fetched").GetAwaiter().GetResult() | Out-Null
+            $WebPage.CloseAsync().GetAwaiter().GetResult() | Out-Null
+            $Browser.CloseAsync().GetAwaiter().GetResult() | Out-Null
+            Return "$Fetched"
+        }
+        Filecr { }
+        Torrent { }
     }
 
 }
@@ -189,6 +254,60 @@ Function Invoke-Restart {
 
 }
 
+Function Invoke-Scraper {
+
+    Param(
+        [ValidateSet("Html", "Json", "BrowserHtml", "BrowserJson", "Jetbra")] [String] $Scraper,
+        [String] $Payload
+    )
+
+    Switch ($Scraper) {
+        "Html" {
+            Return Invoke-WebRequest "$Payload"
+        }
+        "Json" {
+            Return Invoke-WebRequest "$Payload" | ConvertFrom-Json
+        }
+        "BrowserHtml" {
+            $Handler = Deploy-Library "Playwright"
+            $Browser = $Handler.Chromium.LaunchAsync(@{ "Headless" = $False }).GetAwaiter().GetResult()
+            $WebPage = $Browser.NewPageAsync().GetAwaiter().GetResult()
+            $WebPage.GoToAsync("$Payload").GetAwaiter().GetResult() | Out-Null
+            $Scraped = $WebPage.QuerySelectorAsync("body").GetAwaiter().GetResult()
+            $Scraped = $Scraped.InnerHtmlAsync().GetAwaiter().GetResult()
+            $WebPage.CloseAsync().GetAwaiter().GetResult() | Out-Null
+            $Browser.CloseAsync().GetAwaiter().GetResult() | Out-Null
+            Return $Scraped.ToString()
+        }
+        "BrowserJson" {
+            $Handler = Deploy-Library "Playwright"
+            $Browser = $Handler.Chromium.LaunchAsync(@{ "Headless" = $False }).GetAwaiter().GetResult()
+            $WebPage = $Browser.NewPageAsync().GetAwaiter().GetResult()
+            $WebPage.GoToAsync("$Payload").GetAwaiter().GetResult() | Out-Null
+            $Scraped = $WebPage.QuerySelectorAsync("body > :first-child").GetAwaiter().GetResult()
+            $Scraped = $Scraped.InnerHtmlAsync().GetAwaiter().GetResult()
+            $WebPage.CloseAsync().GetAwaiter().GetResult()
+            $Browser.CloseAsync().GetAwaiter().GetResult()
+            Return $Scraped.ToString() | ConvertFrom-Json
+        }
+        "Jetbra" {
+            $Handler = Deploy-Library "Playwright"
+            $Browser = $Handler.Chromium.LaunchAsync(@{ "Headless" = $False }).GetAwaiter().GetResult()
+            $WebPage = $Browser.NewPageAsync().GetAwaiter().GetResult()
+            $WebPage.GoToAsync("https://jetbra.in/s").GetAwaiter().GetResult() | Out-Null
+            $WebPage.WaitForTimeoutAsync(10000).GetAwaiter().GetResult() | Out-Null
+            $Address = $WebPage.EvaluateAsync("document.querySelectorAll('#checker\\.results a')[0].href", "").GetAwaiter().GetResult()
+            $WebPage.GoToAsync("$Address").GetAwaiter().GetResult() | Out-Null
+            $WebPage.WaitForTimeoutAsync(2000).GetAwaiter().GetResult() | Out-Null
+            $WebPage.Locator(":has-text('$Payload') ~ p").ClickAsync().GetAwaiter().GetResult() | Out-Null
+            $WebPage.CloseAsync().GetAwaiter().GetResult() | Out-Null
+            $Browser.CloseAsync().GetAwaiter().GetResult() | Out-Null
+            Return "$(Get-Clipboard)".Trim()
+        }
+    }
+
+}
+
 Function Update-Oneself {
     
     $Granted = [Security.Principal.WindowsIdentity]::GetCurrent().Groups -Contains "S-1-5-32-544"
@@ -214,22 +333,76 @@ Function Update-Oneself {
 
 }
 
-$Current = $Script:MyInvocation.MyCommand.Path
-$Host.UI.RawUI.WindowTitle = (Get-Item "$Current").BaseName.ToUpper()
+Function Update-SysPath {
+    
+    Param (
+        [String] $Deposit,
+        [ValidateSet("Machine", "Process", "User")] [String] $Section,
+        [Switch] $Prepend
+    )
 
-Clear-Host ; $ProgressPreference = "SilentlyContinue"
-Write-Output "+---------------------------------------------------------------+"
-Write-Output "|                                                               |"
-Write-Output "|  > WINHOGEN                                                   |"
-Write-Output "|                                                               |"
-Write-Output "|  > CONFIGURATION SCRIPT FOR WINDOWS 11                        |"
-Write-Output "|                                                               |"
-Write-Output "+---------------------------------------------------------------+"
+    $Changed = [Environment]::GetEnvironmentVariable("PATH", "$Section")
+    $Changed = If ($Changed.Contains(";;")) { $Changed.Replace(";;", ";") } Else { $Changed }
+    $Changed = If ($Changed.EndsWith(";")) { $Changed } Else { "${Changed};" }
+    $Changed = If ($Changed.Contains($Deposit)) { $Changed } Else { If ($Prepend) { "${Deposit};${Changed}" } Else { "${Changed}${Deposit};" } }
+    [Environment]::SetEnvironmentVariable("PATH", "$Changed", "$Section")
+    [Environment]::SetEnvironmentVariable("PATH", "$Changed", "Process")
 
-Update-Oneself
+}
 
-Invoke-NoAdmin "powershell" "-ep bypass -c md $Env:UserProfile\Desktop\TADAMNOADMIN"
-Start-Process "powershell" "-ep bypass -c md $Env:UserProfile\Desktop\TADAM" -Verb RunAs -WindowStyle Hidden
+Function Update-Git {
 
-$Granted = [Security.Principal.WindowsIdentity]::GetCurrent().Groups -Contains "S-1-5-32-544"
-Write-Output $Granted
+    Param (
+        [String] $Default = "main",
+        [String] $GitMail,
+        [String] $GitUser
+    )
+
+    $Starter = "$Env:ProgramFiles\Git\git-bash.exe"
+    $Current = Expand-Version "$Starter"
+    $Address = "https://api.github.com/repos/git-for-windows/git/releases/latest"
+    $Version = [Regex]::Match((Invoke-Scraper "Json" "$Address").tag_name.Replace("windows.", "") , "[\d.]+").Value
+    $Updated = [Version] "$Current" -Ge [Version] "$Version"
+
+    If (-Not $Updated) {
+        $Results = (Invoke-Scraper "Json" "$Address").assets
+        $Address = $Results.Where( { $_.browser_download_url -Like "*64-bit.exe" } ).browser_download_url
+        $Fetched = Invoke-Fetcher "Address" "$Address"
+        $ArgList = "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART, /NOCANCEL, /SP- /COMPONENTS=`"`""
+        Start-Process "$Fetched" "$ArgList" -Verb RunAs -Wait
+    }
+
+    Update-SysPath "$Env:ProgramFiles\Git\cmd" "Process"
+    If (-Not [String]::IsNullOrWhiteSpace($GitMail)) { git config --global user.email "$GitMail" }
+    If (-Not [String]::IsNullOrWhiteSpace($GitUser)) { git config --global user.name "$GitUser" }
+    git config --global http.postBuffer 1048576000
+    git config --global init.defaultBranch "$Default"
+    
+}
+
+If ($MyInvocation.InvocationName -Ne ".") {
+
+    $Current = $Script:MyInvocation.MyCommand.Path
+    $Host.UI.RawUI.WindowTitle = (Get-Item "$Current").BaseName.ToUpper()
+
+    Clear-Host ; $ProgressPreference = "SilentlyContinue"
+    Write-Output "+---------------------------------------------------------------+"
+    Write-Output "|                                                               |"
+    Write-Output "|  > WINHOGEN                                                   |"
+    Write-Output "|                                                               |"
+    Write-Output "|  > CONFIGURATION SCRIPT FOR WINDOWS 11                        |"
+    Write-Output "|                                                               |"
+    Write-Output "+---------------------------------------------------------------+"
+
+    Update-Oneself
+    # Update-Git 'main' '72373746+sharpordie@users.noreply.github.com' 'sharpordie'
+    # Try { Invoke-Expression '$ProgressPreference = "SilentlyContinue" ; Invoke-Fetcher "Browser" "https://www.bignox.com/en/download/fullPackage/win_64?beta"' *> $Null } Catch {}
+    Invoke-Fetcher "Browser" "https://www.bignox.com/en/download/fullPackage/win_64?beta"
+
+    # Invoke-NoAdmin "powershell" "-ep bypass -c md $Env:UserProfile\Desktop\TADAMNOADMIN"
+    # Start-Process "powershell" "-ep bypass -c md $Env:UserProfile\Desktop\TADAM" -Verb RunAs -WindowStyle Hidden
+
+    $Granted = [Security.Principal.WindowsIdentity]::GetCurrent().Groups -Contains "S-1-5-32-544"
+    Write-Output $Granted
+
+}

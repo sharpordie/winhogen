@@ -103,6 +103,7 @@ Function Enable-Feature {
             Catch {
                 Stop-Process -Name "SystemSettings" -EA SI
             }
+            $Handler.Dispose() | Out-Null
         }
         "RemoteDesktop" {
             Invoke-Gsudo {
@@ -473,6 +474,7 @@ Function Remove-Feature {
             Catch {
                 Stop-Process -Name "SystemSettings" -EA SI
             }
+            $Handler.Dispose() | Out-Null
         }
         "Sleeping" {
             $Content = @()
@@ -732,6 +734,7 @@ Function Update-Antidote {
         Stop-Process -Name "AgentConnectix" -EA SI
         Stop-Process -Name "Antidote" -EA SI
         Stop-Process -Name "Connectix" -EA SI
+        $Started.Dispose() | Out-Null ; $Handler.Dispose() | Out-Null
     }
 
     If (-Not $Autorun) {
@@ -1073,6 +1076,7 @@ Function Update-DbeaverUltimate {
                 Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::ENTER)
                 Start-Sleep 2 ; [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::ENTER)
                 Stop-Process -Name "dbeaver" -EA SI
+                $Handler.Dispose() | Out-Null
             }
         }
     }
