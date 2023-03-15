@@ -6,7 +6,7 @@ Opinionated post-installation script for Windows 11.
 
 # <samp>GUIDANCE</samp>
 
-### Launch script from terminal
+Blindly executing this is strongly discouraged.
 
 ```powershell
 $address = "https://raw.githubusercontent.com/sharpordie/winhogen/main/src/winhogen.ps1"
