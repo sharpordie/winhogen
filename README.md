@@ -13,3 +13,18 @@ $address = "https://raw.githubusercontent.com/sharpordie/winhogen/main/src/winho
 $fetched = ni $env:temp\winhogen.ps1 -f ; iwr $address -o $fetched
 try { pwsh -ep bypass $fetched } catch { powershell -ep bypass $fetched }
 ```
+
+# <samp>FUNDINGS</samp>
+
+You can support my work by sending me some crypto.
+
+```txt
+ADA: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+BAT: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+BCH: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+BTC: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+ETH: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+LTC: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+XMR: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+ZEC: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```
