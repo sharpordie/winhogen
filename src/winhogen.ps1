@@ -219,30 +219,30 @@ Function Export-Members {
         }
         "Tester" {
             @(
-                # "Update-Windows '$Country' '$Machine'"
-                # "Update-AndroidStudio"
+                "Update-Windows '$Country' '$Machine'"
+                "Update-AndroidStudio"
                 # "Update-Chromium"
                 "Update-Git 'main' '72373746+sharpordie@users.noreply.github.com' 'sharpordie'"
                 # "Update-Pycharm"
                 "Update-VisualStudio2022"
-                # "Update-VisualStudioCode"
+                "Update-VisualStudioCode"
                 # "Update-Antidote"
                 # "Update-DbeaverUltimate"
                 # "Update-Figma"
-                # "Update-Flutter"
+                "Update-Flutter"
                 # "Update-Jdownloader"
                 # "Update-JoalDesktop"
                 # "Update-Keepassxc"
-                # "Update-Mambaforge"
-                "Update-Maui"
+                "Update-Mambaforge"
+                # "Update-Maui"
                 # "Update-Mpv"
                 # "Update-Python"
                 # "Update-Qbittorrent"
-                # "Update-Scrcpy"
-                # "Update-Spotify"
+                "Update-Scrcpy"
+                "Update-Spotify"
                 # "Update-Steam"
                 # "Update-VmwareWorkstation"
-                # "Update-YtDlg"
+                "Update-YtDlg"
             )
         }
     }
@@ -639,7 +639,7 @@ Function Update-AndroidStudio {
         Write-Output $("y`n" * 10) | sdkmanager "extras;intel;Hardware_Accelerated_Execution_Manager"
         Write-Output $("y`n" * 10) | sdkmanager "platform-tools"
         Write-Output $("y`n" * 10) | sdkmanager "platforms;android-33"
-        Write-Output $("y`n" * 10) | sdkmanager "platforms;android-33-ext4"
+        Write-Output $("y`n" * 10) | sdkmanager "platforms;android-33-ext5"
         Write-Output $("y`n" * 10) | sdkmanager "sources;android-33"
         Write-Output $("y`n" * 10) | sdkmanager "system-images;android-33;google_apis;x86_64"
         Write-Output $("y`n" * 10) | sdkmanager --licenses
@@ -697,15 +697,9 @@ Function Update-Antidote {
     }
 
     If (-Not $Present) {
-        # Stop-Process -Name "AgentConnectix" -EA SI
-        # Stop-Process -Name "Antidote" -EA SI
-        # Stop-Process -Name "Connectix" -EA SI
-        # Import-Library "Interop.UIAutomationClient"
-        # Import-Library "FlaUI.Core"
-        # Import-Library "FlaUI.UIA3"
-        # Import-Library "System.Drawing.Common"
-        # Import-Library "System.Security.Permissions"
-        # $Handler = [FlaUI.UIA3.UIA3Automation]::New()
+        Stop-Process -Name "AgentConnectix" -EA SI
+        Stop-Process -Name "Antidote" -EA SI
+        Stop-Process -Name "Connectix" -EA SI
         $Handler = Deploy-Library Flaui
         $Starter = (Get-Item "$Env:ProgramFiles\Drui*\Anti*\Appl*\Bin6*\Antidote.exe" -EA SI).FullName
         $Started = [FlaUI.Core.Application]::Launch("$Starter")
@@ -2284,7 +2278,7 @@ If ($MyInvocation.InvocationName -Ne ".") {
     $Correct = (Update-Gsudo) -And ! (gsudo cache on -d -1 2>&1).ToString().Contains("Error")
     If (-Not $Correct) { Write-Host "$Failure`n" -FO Red ; Exit } ; Update-Powershell
 
-    $Members = Export-Members -Variant "Coding" -Machine "WINHOGEN"
+    $Members = Export-Members -Variant "Tester" -Machine "WINHOGEN"
 
     $Maximum = (65 - 20) * -1
     $Shaping = "`r{0,$Maximum}{1,-3}{2,-6}{3,-3}{4,-8}"
