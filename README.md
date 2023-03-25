@@ -14,7 +14,7 @@ $fetched = ni $env:temp\winhogen.ps1 -f ; iwr $address -o $fetched
 try { pwsh -ep bypass $fetched } catch { powershell -ep bypass $fetched }
 ```
 
-# <samp>FUNDINGS</samp>
+# <samp>DONATION</samp>
 
 You can support my work by sending me some crypto.
 
