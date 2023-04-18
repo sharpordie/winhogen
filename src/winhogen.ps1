@@ -167,82 +167,80 @@ Function Expand-Version {
 Function Export-Members {
 
     Param(
-        [ValidateSet("Coding", "Gaming", "Stream", "Tester")] [String] $Variant,
-        [String] $Country = "Romance Standard Time",
-        [String] $Machine = "WINHOGEN"
+        [ValidateSet("Coding", "Gaming", "Stream", "Tester")] [String] $Variant
     )
 
     Switch ($Variant) {
         "Coding" {
             @(
-                "Update-Windows '$Country' '$Machine'"
+                "Update-Windows"
                 "Update-Nvidia 'Game'"
                 "Update-AndroidStudio"
                 "Update-Chromium"
                 # "Update-DockerDesktop"
                 "Update-Git 'main' '72373746+sharpordie@users.noreply.github.com' 'sharpordie'"
                 "Update-Pycharm"
-                # "Update-VisualStudio2022"
+                "Update-VisualStudio2022"
                 "Update-VisualStudioCode"
-                "Update-Antidote"
+                # "Update-Antidote"
                 # "Update-Bluestacks '7'"
                 # "Update-DbeaverUltimate"
                 "Update-Figma"
                 "Update-Jdownloader"
                 # "Update-JoalDesktop"
                 "Update-Keepassxc"
-                "Update-Mambaforge"
+                # "Update-Mambaforge"
                 "Update-Mpv"
                 "Update-Flutter"
-                # "Update-Maui"
-                "Update-Python"
+                "Update-Maui"
+                # "Update-Python"
                 "Update-Qbittorrent"
                 "Update-Scrcpy"
-                # "Update-Spotify"
-                "Update-VmwareWorkstation"
+                "Update-Spotify"
+                # "Update-VmwareWorkstation"
                 "Update-YtDlg"
             )
         }
         "Gaming" {
             @(
-                "Update-Windows '$Country' '$Machine'"
+                "Update-Windows"
                 "Update-Bluestacks"
                 "Update-Steam"
             )
         }
         "Stream" {
             @(
-                "Update-Windows '$Country' '$Machine'"
+                "Update-Windows"
                 "Update-Steam"
                 "Update-Sunshine"
             )
         }
         "Tester" {
             @(
-                "Update-Windows '$Country' '$Machine'"
-                "Update-AndroidStudio"
+                "Update-Windows"
+                # "Update-AndroidStudio"
                 # "Update-Chromium"
                 "Update-Git 'main' '72373746+sharpordie@users.noreply.github.com' 'sharpordie'"
                 # "Update-Pycharm"
-                "Update-VisualStudio2022"
-                "Update-VisualStudioCode"
+                # "Update-VisualStudio2022"
+                # "Update-VisualStudioCode"
                 # "Update-Antidote"
                 # "Update-DbeaverUltimate"
-                # "Update-Figma"
-                "Update-Flutter"
+                "Update-Figma"
+                # "Update-Flutter"
                 # "Update-Jdownloader"
                 # "Update-JoalDesktop"
                 # "Update-Keepassxc"
-                "Update-Mambaforge"
+                # "Update-Mambaforge"
                 # "Update-Maui"
-                # "Update-Mpv"
+                "Update-Mpv"
                 # "Update-Python"
                 # "Update-Qbittorrent"
-                "Update-Scrcpy"
-                "Update-Spotify"
+                # "Update-Scrcpy"
+                # "Update-Spotify"
                 # "Update-Steam"
                 # "Update-VmwareWorkstation"
-                "Update-YtDlg"
+                # "Update-YtDlg"
             )
         }
     }
@@ -369,6 +367,7 @@ Function Invoke-Restart {
     $RegPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\RunOnce"
     New-ItemProperty "$RegPath" "$Heading" -Value "$Command" | Out-Null
     Invoke-Gsudo { Get-LocalUser -Name "$Env:Username" | Set-LocalUser -Password ([SecureString]::New()) }
+    Remove-Feature "Uac" # TODO: Remove maybe
     Start-Sleep 4 ; Restart-Computer -Force ; Start-Sleep 2
 
 }
@@ -491,7 +490,9 @@ Function Remove-Feature {
             ) -Join "`n"
             $Created = [IO.Path]::ChangeExtension([IO.Path]::GetTempFileName(), "ps1")
             [IO.File]::WriteAllText("$Created", $Content)
-            Try { Start-Process "powershell" "-ep bypass -file `"$Created`"" -Verb RunAs -WindowStyle Hidden -Wait } Catch { }
+            $Present = $(Expand-Version "*gsudo*") -Ne "0.0.0.0"
+            If (-Not $Present) { Try { Start-Process "powershell" "-ep bypass -file `"$Created`"" -Verb RunAs -WindowStyle Hidden -Wait } Catch { } }
+            Else { Invoke-Gsudo { Try { Start-Process "powershell" "-ep bypass -file `"$Using:Created`"" -WindowStyle Hidden -Wait } Catch { } } }
             Remove-Item "$Created" -Force
         }
     }
@@ -1237,13 +1238,14 @@ Function Update-Gsudo {
     Try {
         If (-Not $Updated) {
             $Results = (Invoke-Scraper "Json" "$Address").assets
-            $Address = $Results.Where( { $_.browser_download_url -Like "*.msi" } ).browser_download_url
+            $Address = $Results.Where( { $_.browser_download_url -Like "*x64*msi" } ).browser_download_url
+            echo $Address
             $Fetched = Invoke-Fetcher "Webclient" "$Address"
             If (-Not $Present) { Start-Process "msiexec" "/i `"$Fetched`" /qn" -Verb RunAs -Wait }
             Else { Invoke-Gsudo { msiexec /i "$Using:Fetched" /qn } }
             Start-Sleep 4
         }
-        Update-SysPath "${Env:ProgramFiles(x86)}\gsudo" "Process"
+        Update-SysPath "$Env:ProgramFiles\gsudo\Current" "Process"
         Return $True
     }
     Catch { 
@@ -1666,7 +1668,7 @@ Function Update-Powershell {
         }
     }
 
-    If ($PSVersionTable.PSVersion -Lt [Version] "7.0.0.0") { Invoke-Restart }
+    If ([Version] $PSVersionTable.PSVersion.ToString() -Lt [Version] "7.0.0.0") { Invoke-Restart }
 
 }
 
@@ -2205,13 +2207,13 @@ Function Update-Windows {
 
     Param (
         [String] $Country = "Romance Standard Time",
-        [String] $Machine
+        [String] $Machine = "WINHOGEN"
     )
 
     Update-Element "Computer" "$Machine"
     Update-Element "Timezone" "$Country"
     Update-Element "Volume" 40
-    
+
     Enable-Feature "Activation"
     Enable-Feature "NightLight"
     Enable-Feature "RemoteDesktop"
@@ -2276,36 +2278,42 @@ If ($MyInvocation.InvocationName -Ne ".") {
     $Failure = "`rTHE UPDATING DEPENDENCIES PROCESS WAS CANCELED"
     Write-Host "$Loading" -FO DarkYellow -NoNewline ; Remove-Feature "Uac" ; Remove-Feature "Sleeping"
     $Correct = (Update-Gsudo) -And ! (gsudo cache on -d -1 2>&1).ToString().Contains("Error")
-    If (-Not $Correct) { Write-Host "$Failure`n" -FO Red ; Exit } ; Update-Powershell
+    If (-Not $Correct) { Write-Host "$Failure`n" -FO Red ; Exit }
+    Update-Powershell ; Enable-Feature "Uac"
 
-    $Members = Export-Members -Variant "Tester" -Machine "WINHOGEN"
+    Update-Element "Timezone" "Romance Standard Time"
+    $Members = Export-Members -Variant "Coding"
 
-    $Maximum = (65 - 20) * -1
-    $Shaping = "`r{0,$Maximum}{1,-3}{2,-6}{3,-3}{4,-8}"
-    $Heading = "$Shaping" -F "FUNCTION", " ", "STATUS", " ", "DURATION"
+    $Bigness = (65 - 19) * -1
+    $Shaping = "`r{0,$Bigness}{1,-3}{2,-5}{3,-3}{4,-8}"
+    $Heading = "$Shaping" -F "FUNCTION", " ", "ITEMS", " ", "DURATION"
     Write-Host "$Heading"
+    $Minimum = 0 ; $Maximum = $Members.Count
     Foreach ($Element In $Members) {
-        $Started = Get-Date
+        $Minimum++ ; $Started = Get-Date
         $Running = $Element.Split(' ')[0].ToUpper()
-        $Shaping = "`n{0,$Maximum}{1,-3}{2,-6}{3,-3}{4,-8}"
-        $Loading = "$Shaping" -F "$Running", "", "ACTIVE", "", "--:--:--"
+        $Shaping = "`n{0,$Bigness}{1,-3}{2,-5}{3,-3}{4,-8}"
+        $Advance = "$("{0:d2}" -F [Int] $Minimum)/$("{0:d2}" -F [Int] $Maximum)"
+        $Secret1 = "{0:d2}" -F [Int] $Minimum
+        $Secret2 = "{0:d2}" -F [Int] $Maximum
+        $Loading = "$Shaping" -F "$Running", "", "$Advance", "", "--:--:--"
         Write-Host "$Loading" -ForegroundColor DarkYellow -NoNewline
         Try {
             Invoke-Expression $Element *> $Null
             $Elapsed = "{0:hh}:{0:mm}:{0:ss}" -F ($(Get-Date) - $Started)
-            $Shaping = "`r{0,$Maximum}{1,-3}{2,-6}{3,-3}{4,-8}"
-            $Success = "$Shaping" -F "$Running", "", "WORKED", "", "$Elapsed"
+            $Shaping = "`r{0,$Bigness}{1,-3}{2,-5}{3,-3}{4,-8}"
+            $Success = "$Shaping" -F "$Running", "", "$Advance", "", "$Elapsed"
             Write-Host "$Success" -ForegroundColor Green -NoNewLine
         }
         Catch {
             $Elapsed = "{0:hh}:{0:mm}:{0:ss}" -F ($(Get-Date) - $Started)
-            $Shaping = "`r{0,$Maximum}{1,-3}{2,-6}{3,-3}{4,-8}"
-            $Failure = "$Shaping" -F "$Running", "", "FAILED", "", "$Elapsed"
+            $Shaping = "`r{0,$Bigness}{1,-3}{2,-5}{3,-3}{4,-8}"
+            $Failure = "$Shaping" -F "$Running", "", "$Advance", "", "$Elapsed"
             Write-Host "$Failure" -ForegroundColor Red -NoNewLine
         }
     }
 
-    Enable-Feature "Uac" ; Enable-Feature "Sleeping" ; gsudo -k *> $Null
+    Enable-Feature "Sleeping" ; gsudo -k *> $Null
     Write-Host "`n"
 
 }
