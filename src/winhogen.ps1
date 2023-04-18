@@ -1239,7 +1239,6 @@ Function Update-Gsudo {
         If (-Not $Updated) {
             $Results = (Invoke-Scraper "Json" "$Address").assets
             $Address = $Results.Where( { $_.browser_download_url -Like "*x64*msi" } ).browser_download_url
-            echo $Address
             $Fetched = Invoke-Fetcher "Webclient" "$Address"
             If (-Not $Present) { Start-Process "msiexec" "/i `"$Fetched`" /qn" -Verb RunAs -Wait }
             Else { Invoke-Gsudo { msiexec /i "$Using:Fetched" /qn } }
@@ -2295,8 +2294,6 @@ If ($MyInvocation.InvocationName -Ne "." -Or "$Env:TERM_PROGRAM" -Eq "Vscode") {
         $Running = $Element.Split(' ')[0].ToUpper()
         $Shaping = "`n{0,$Bigness}{1,-3}{2,-5}{3,-3}{4,-8}"
         $Advance = "$("{0:d2}" -F [Int] $Minimum)/$("{0:d2}" -F [Int] $Maximum)"
-        $Secret1 = "{0:d2}" -F [Int] $Minimum
-        $Secret2 = "{0:d2}" -F [Int] $Maximum
         $Loading = "$Shaping" -F "$Running", "", "$Advance", "", "--:--:--"
         Write-Host "$Loading" -ForegroundColor DarkYellow -NoNewline
         Try {
