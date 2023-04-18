@@ -2023,7 +2023,8 @@ Function Update-VisualStudio2022 {
     }
 
     $Program = "$Storage\Common7\IDE\StorePID.exe"
-    Invoke-Gsudo { Start-Process "$Using:Program" "$Using:Serials 09662" -WindowStyle Hidden -Wait }
+    # Invoke-Gsudo { Start-Process "$Using:Program" "$Using:Serials 09662" -WindowStyle Hidden -Wait }
+    Invoke-Gsudo { & "$Using:Program" $Using:Serials 09662 }
 
     $Config1 = "$Env:LocalAppData\Microsoft\VisualStudio\17*\Settings\CurrentSettings.vssettings"
     $Config2 = "$Env:LocalAppData\Microsoft\VisualStudio\17*\Settings\CurrentSettings-*.vssettings"
@@ -2260,7 +2261,7 @@ Function Update-YtDlg {
 
 }
 
-If ($MyInvocation.InvocationName -Ne ".") {
+If ($MyInvocation.InvocationName -Ne "." -Or "$Env:TERM_PROGRAM" -Eq "Vscode") {
 
     $Current = $Script:MyInvocation.MyCommand.Path
     $Host.UI.RawUI.WindowTitle = (Get-Item "$Current").BaseName.ToUpper()
