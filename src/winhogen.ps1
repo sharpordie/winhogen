@@ -2151,7 +2151,7 @@ Function Update-Ventura {
     Start-Process "$Program" "run cd $Deposit && git clone $Address ventura" -WindowStyle Hidden -Wait
     Start-Process "$Program" "run cd $Deposit/ventura && git pull" -WindowStyle Hidden -Wait
 
-    $IconUrl = "https://raw.githubusercontent.com/sharpordie/machogen/master/assets/ventura.ico"
+    $IconUrl = "https://raw.githubusercontent.com/sharpordie/winhogen/main/assets/ventura.ico"
     Start-Process "$Program" "run cd $Deposit/ventura ; [[ ! -f ventura.ico ]] && curl '$IconUrl' -o ventura.ico" -WindowStyle Hidden -Wait
     $Address = "https://downloads.realvnc.com/download/file/viewer.files/VNC-Viewer-7.1.0-Windows-64bit.exe"
     Start-Process "$Program" "run cd $Deposit/ventura ; [[ ! -f vncviewer.exe ]] && curl '$Address' -o vncviewer.exe" -WindowStyle Hidden -Wait
