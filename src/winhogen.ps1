@@ -227,6 +227,7 @@ Function Export-Members {
                 "Update-Pycharm"
                 "Update-Qbittorrent"
                 "Update-Scrcpy"
+                "Update-Ventura"
                 "Update-YtDlg"
             )
         }
@@ -2150,23 +2151,16 @@ Function Update-Ventura {
     Start-Process "$Program" "run cd $Deposit && git clone $Address ventura" -WindowStyle Hidden -Wait
     Start-Process "$Program" "run cd $Deposit/ventura && git pull" -WindowStyle Hidden -Wait
 
-    $IconUrl = "https://raw.githubusercontent.com/sharpordie/poshense/master/assets/ventura.ico"
+    $IconUrl = "https://raw.githubusercontent.com/sharpordie/machogen/master/assets/ventura.ico"
     Start-Process "$Program" "run cd $Deposit/ventura ; [[ ! -f ventura.ico ]] && curl '$IconUrl' -o ventura.ico" -WindowStyle Hidden -Wait
-    
-    $Address = "https://www.realvnc.com/en/connect/download/viewer/"
-    $Pattern = "VNC-Viewer-([\d.]+)-Windows"
-    $Scraped = Invoke-Scraper "Html" "$Address"
-    $Results = [Regex]::Matches("$Scraped", "$Pattern")
-    $Version = $Results.Groups[1].Value
-    $Address = "https://www.realvnc.com/download/file/viewer.files/VNC-Viewer-$Version-Windows-64bit.exe"
+    $Address = "https://downloads.realvnc.com/download/file/viewer.files/VNC-Viewer-7.1.0-Windows-64bit.exe"
     Start-Process "$Program" "run cd $Deposit/ventura ; [[ ! -f vncviewer.exe ]] && curl '$Address' -o vncviewer.exe" -WindowStyle Hidden -Wait
 
     $Created = "$Deposit/ventura/launcher.sh"
-    Start-Process "$Program" "run echo '($Deposit/ventura/vncviewer.exe localhost:5900 -WarnUnencrypted=0 &) && HEADLESS=1 /$Deposit/ventura/basic.sh' > '$Created'" -WindowStyle Hidden -Wait
+    Start-Process "$Program" "run echo '($Deposit/ventura/vncviewer.exe localhost:5900 -WarnUnencrypted=0 &) && HEADLESS=1 $Deposit/ventura/basic.sh' > '$Created'" -WindowStyle Hidden -Wait
     Start-Process "$Program" "run chmod +x '$Created'" -WindowStyle Hidden -Wait
     Start-Process "$Program" "run wslusc --gui --icon '$Deposit/ventura/ventura.ico' --name 'Ventura' $Created" -WindowStyle Normal -Wait
     Move-Item "$Env:UserProfile\Desktop\Ventura.lnk" "$Env:AppData\Microsoft\Windows\Start Menu\Programs" -Force -EA SI
-
     Start-Process "$Program" "run cd $Deposit/ventura ; [[ ! -f BaseSystem.dmg ]] && HEADLESS=1 echo 6 | ./setup.sh || ./launcher.sh" -WindowStyle Hidden
 
 }
@@ -2453,8 +2447,6 @@ If ($MyInvocation.InvocationName -Ne "." -Or "$Env:TERM_PROGRAM" -Eq "Vscode") {
     $Correct = (Update-Gsudo) -And ! (gsudo cache on -d -1 2>&1).ToString().Contains("Error")
     If (-Not $Correct) { Write-Host "$Failure`n" -FO Red ; Exit }
     Update-Powershell ; Enable-Feature "Uac"
-
-    Update-Ventura ; Exit
 
     Update-Element "Timezone" "Romance Standard Time"
     $Members = Export-Members -Variant "Laptop"
