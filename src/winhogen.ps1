@@ -167,7 +167,7 @@ Function Expand-Version {
 Function Export-Members {
 
     Param(
-        [ValidateSet("Coding", "Gaming", "Stream", "Tester")] [String] $Variant
+        [ValidateSet("Coding", "Gaming", "Laptop", "Stream", "Tester")] [String] $Variant
     )
 
     Switch ($Variant) {
@@ -206,6 +206,26 @@ Function Export-Members {
                 "Update-Windows"
                 "Update-Bluestacks"
                 "Update-Steam"
+            )
+        }
+        "Laptop" {
+            @(
+                "Update-Appearance"
+                "Update-Windows"
+                "Update-Chromium"
+                "Update-Git 'main' '72373746+sharpordie@users.noreply.github.com' 'sharpordie'"
+                "Update-VisualStudio2022"
+                "Update-VisualStudioCode"
+                "Update-Figma"
+                "Update-Jdownloader"
+                "Update-Keepassxc"
+                "Update-Mambaforge"
+                "Update-Mpv"
+                "Update-Maui"
+                "Update-Pycharm"
+                "Update-Qbittorrent"
+                "Update-Scrcpy"
+                "Update-YtDlg"
             )
         }
         "Stream" {
@@ -312,9 +332,10 @@ Function Invoke-Fetcher {
             $Waiting = $WebPage.WaitForDownloadAsync()
             $WebPage.SetViewportSizeAsync(1400, 400).GetAwaiter().GetResult() | Out-Null
             $WebPage.GoToAsync("$Payload").GetAwaiter().GetResult() | Out-Null
-            $WebPage.WaitForSelectorAsync("#sh_pdf_download-2 > form > a").GetAwaiter().GetResult() | Out-Null
+            # $WebPage.WaitForSelectorAsync("#sh_pdf_download-2 > form > a").GetAwaiter().GetResult() | Out-Null
+            $WebPage.WaitForSelectorAsync(".btn-primary_dark").GetAwaiter().GetResult() | Out-Null
             $WebPage.WaitForTimeoutAsync(2000).GetAwaiter().GetResult() | Out-Null
-            $WebPage.EvaluateAsync("document.querySelector('#sh_pdf_download-2 > form > a').click()", "").GetAwaiter().GetResult() | Out-Null
+            $WebPage.EvaluateAsync("document.querySelector('.btn-primary_dark').click()", "").GetAwaiter().GetResult() | Out-Null
             $WebPage.WaitForSelectorAsync("a.sh_download-btn.done").GetAwaiter().GetResult() | Out-Null
             $WebPage.WaitForTimeoutAsync(6000).GetAwaiter().GetResult() | Out-Null
             $WebPage.EvaluateAsync("document.querySelector('a.sh_download-btn.done').click()", "").GetAwaiter().GetResult() | Out-Null
@@ -502,7 +523,7 @@ Function Remove-Feature {
 Function Update-Element {
 
     Param(
-        [ValidateSet("Computer", "Plan", "Timezone", "Volume")] [String] $Element,
+        [ValidateSet("Computer", "DesktopBackground", "LockscreenBackground", "Plan", "Timezone", "Volume")] [String] $Element,
         [String] $Payload
     )
 
@@ -511,6 +532,37 @@ Function Update-Element {
             If ([String]::IsNullOrWhiteSpace("$Payload")) { Return }
             If ((Hostname) -Ne "$Payload") {
                 Invoke-Gsudo { Rename-Computer -NewName "$Using:Payload" -EA SI *> $Null }
+            }
+        }
+        "DesktopBackground" {
+            If (-Not (Test-Path -Path "$Payload")) { return }
+            $Content = @()
+            $Content += 'using System.Runtime.InteropServices;'
+            $Content += 'public static class BackgroundChanger'
+            $Content += '{'
+            $Content += '   public const int SetDesktopWallpaper = 20;'
+            $Content += '   public const int UpdateIniFile = 0x01;'
+            $Content += '   public const int SendWinIniChange = 0x02;'
+            $Content += '   [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]'
+            $Content += '   private static extern int SystemParametersInfo(int uAction, int uParam, string lpvParam, int fuWinIni);'
+            $Content += '   public static void SetBackground(string path)'
+            $Content += '   {'
+            $Content += '       SystemParametersInfo(SetDesktopWallpaper, 0, path, UpdateIniFile | SendWinIniChange);'
+            $Content += '   }'
+            $Content += '}'
+            $Content = $Content | Out-String
+            Add-Type -TypeDefinition "$Content"
+            [BackgroundChanger]::SetBackground($Payload)
+        }
+        "LockscreenBackground" {
+            $KeyPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager"
+            Set-ItemProperty "$KeyPath" "SubscribedContent-338387Enabled" -Value "0"
+            $KeyPath = "HKLM:\Software\Microsoft\Windows\CurrentVersion\PersonalizationCSP"
+            Invoke-Gsudo {
+                New-Item "$Using:KeyPath" -Force -EA SI | Out-Null
+                New-ItemProperty "$Using:KeyPath" "LockScreenImageStatus" -Value "1" -Force | Out-Null
+                New-ItemProperty "$Using:KeyPath" "LockScreenImagePath" -Value "$Using:Payload" -Force | Out-Null
+                New-ItemProperty "$Using:KeyPath" "LockScreenImageUrl" -Value "$Using:Payload" -Force | Out-Null
             }
         }
         "Plan" {
@@ -573,6 +625,28 @@ Function Update-LnkFile {
 }
 
 Function Update-SysPath {
+
+    Param (
+        [String] $Payload,
+        [ValidateSet("Machine", "Process", "User")] [String] $Section
+    )
+
+    If (-Not (Test-Path "$Payload")) { Return }
+    $Pattern = "^$([Regex]::Escape($Payload))\\?"
+    If ($Section -Ne "Process" ) {
+        $OldPath = [Environment]::GetEnvironmentVariable("PATH", "$Section")
+        $OldPath = $OldPath -Split ";" | Where-Object { $_ -NotMatch "$Pattern" }
+        $NewPath = ($OldPath + $Payload) -Join ";"
+        Invoke-Gsudo {
+            [Environment]::SetEnvironmentVariable("PATH", "$Using:NewPath", "$Using:Section")
+        }
+    }
+    $OldPath = $Env:Path -Split ";" | Where-Object { $_ -NotMatch "$Pattern" }
+    $NewPath = ($OldPath + $Payload) -Join ";" ; $Env:Path = $NewPath -Join ";"
+
+}
+
+Function Update-SysPathOld {
     
     Param (
         [String] $Deposit,
@@ -735,6 +809,68 @@ Function Update-Antidote {
     If (-Not $Autorun) {
         Invoke-Gsudo { Remove-ItemProperty -Path "HKLM:\Software\Microsoft\Windows\CurrentVersion\Run" -Name "AgentConnectix64" -EA SI }
     }
+
+}
+
+Function Update-Appearance {
+
+    # Change pinned elements
+    $ShellAp = New-Object -ComObject Shell.Application
+    $ShellAp.Namespace("shell:::{679f85cb-0220-4080-b29b-5540cc05aab6}").Items() | ForEach-Object { $_.InvokeVerb("unpinfromhome") }
+    $ShellAp.Namespace("$Env:Temp").Self.InvokeVerb("pintohome")
+    $ShellAp.Namespace("$Env:UserProfile").Self.InvokeVerb("pintohome")
+    $ShellAp.Namespace("$Env:UserProfile\Downloads").Self.InvokeVerb("pintohome")
+    New-Item -Path "$Env:UserProfile\Projects" -ItemType Directory -EA SI ; $ShellAp.Namespace("$Env:UserProfile\Projects").Self.InvokeVerb("pintohome")
+
+    # Enable file extensions
+    Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "HideFileExt" -Value 0
+
+    # Enable hidden files
+    Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "Hidden" -Value 1
+
+    # Remove recent files
+    Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer" -Name "ShowFrequent" -Value 0
+    Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer" -Name "ShowRecent" -Value 0
+
+    # Remove taskbar items
+    Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "ShowTaskViewButton" -Type DWord -Value 0
+    Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "TaskbarDa" -Type DWord -Value 0
+    Set-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Search" -Name "SearchboxTaskbarMode" -Type DWord -Value 0
+
+    # Remove pinned applications
+    Try {
+        ((New-Object -Com Shell.Application).NameSpace('shell:::{4234d49b-0245-4df3-b780-3893943456e1}').Items() | `
+            Where-Object { $_.Name -Eq "Microsoft Edge" }).Verbs() | `
+            Where-Object { $_.Name.replace('&', '') -Match "Unpin from taskbar" } | `
+            ForEach-Object { $_.DoIt() }
+    }
+    Catch {}
+    Try {
+        ((New-Object -Com Shell.Application).NameSpace('shell:::{4234d49b-0245-4df3-b780-3893943456e1}').Items() | `
+            Where-Object { $_.Name -Eq "Microsoft Store" }).Verbs() | `
+            Where-Object { $_.Name.replace('&', '') -Match "Unpin from taskbar" } | `
+            ForEach-Object { $_.DoIt() }
+    }
+    Catch {}
+
+    # Update desktop background
+    $Deposit = "$Env:UserProfile\Pictures\Backgrounds"
+    $Picture = "$Deposit\android-higher-darker.png"
+    $Address = "https://raw.githubusercontent.com/sharpordie/andpaper/main/src/android-higher-darker.png"
+    New-Item -Path "$Deposit" -ItemType Directory -EA SI
+    If (-Not (Test-Path -Path "$Picture")) { Invoke-Fetcher "Webclient" "$Address" "$Picture" }
+    Update-Element "DesktopBackground" "$Picture"
+
+    # Update lockscreen background
+    $Deposit = "$Env:UserProfile\Pictures\Backgrounds"
+    $Picture = "$Deposit\android-bottom-darker.png"
+    $Address = "https://raw.githubusercontent.com/sharpordie/andpaper/main/src/android-bottom-darker.png"
+    New-Item -Path "$Deposit" -ItemType Directory -EA SI
+    If (-Not (Test-Path -Path "$Picture")) { Invoke-Fetcher "Webclient" "$Address" "$Picture" }
+    Update-Element "LockscreenBackground" "$Picture"
+
+    # Reboot explorer
+    Stop-Process -Name "explorer"
 
 }
 
@@ -1114,7 +1250,7 @@ Function Update-DockerDesktop {
 Function Update-Dotnet {
 
     Param (
-        [String] $Deposit = "$Env:UserProfile\Projects\_packages"
+        [String] $Deposit = "$Env:UserProfile\Projects\_modules"
     )
 
     $Current = Expand-Version "dotnet"
@@ -1437,11 +1573,11 @@ Function Update-Mambaforge {
     If (-Not $Present) {
         $Address = "https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-Windows-x86_64.exe"
         $Fetched = Invoke-Fetcher "Webclient" "$Address"
-        $ArgList = "/S /InstallationType=AllUsers /RegisterPython=0 /D=$Deposit"
-        Invoke-Gsudo { Start-Process "$Using:Fetched" "$Using:ArgList" -NoNewWindow -Wait }
+        $ArgList = "/S /InstallationType=JustMe /RegisterPython=0 /AddToPath=1 /NoRegistry=1 /D=$Deposit"
+        Start-Process "$Fetched" "$ArgList" -Wait
     }
 
-    Update-SysPath "$Deposit\Scripts" "Machine"
+    Update-SysPath "$Deposit\Scripts" "User"
     conda config --set auto_activate_base false
     conda update --all -y
 
@@ -1473,6 +1609,7 @@ Function Update-Maui {
 
     Update-VisualStudio2022Extension "MattLaceyLtd.MauiAppAccelerator"
     Update-VisualStudio2022Extension "TeamXavalon.XAMLStyler2022"
+    Update-VisualStudioCodeExtension "nromanov.dotnet-meteor"
 
 }
 
@@ -2125,7 +2262,7 @@ Function Update-VisualStudioCode {
         Invoke-Gsudo { Stop-Process -Name "Code" -EA SI ; Start-Process "$Using:Fetched" "$Using:ArgList" -Wait }
     }
 
-    Update-SysPath "$Env:LocalAppData\Programs\Microsoft VS Code\bin" "Machine"
+    Update-SysPath "$Env:LocalAppData\Programs\Microsoft VS Code\bin" "User"
     Update-VisualStudioCodeExtension "github.github-vscode-theme"
     Update-VisualStudioCodeExtension "ms-vscode.powershell"
 
@@ -2139,7 +2276,7 @@ Function Update-VisualStudioCode {
     $NewJson | Add-Member -Type NoteProperty -Name "security.workspace.trust.enabled" -Value $False -Force
     $NewJson | Add-Member -Type NoteProperty -Name "telemetry.telemetryLevel" -Value "crash" -Force
     $NewJson | Add-Member -Type NoteProperty -Name "update.mode" -Value "none" -Force
-    $NewJson | Add-Member -Type NoteProperty -Name "workbench.colorTheme" -Value "GitHub Dark Default" -Force
+    $NewJson | Add-Member -Type NoteProperty -Name "workbench.colorTheme" -Value "Default Dark+ Experimental" -Force
     $NewJson | ConvertTo-Json | Set-Content "$Configs"
 
 }
@@ -2282,7 +2419,7 @@ If ($MyInvocation.InvocationName -Ne "." -Or "$Env:TERM_PROGRAM" -Eq "Vscode") {
     Update-Powershell ; Enable-Feature "Uac"
 
     Update-Element "Timezone" "Romance Standard Time"
-    $Members = Export-Members -Variant "Coding"
+    $Members = Export-Members -Variant "Laptop"
 
     $Bigness = (65 - 19) * -1
     $Shaping = "`r{0,$Bigness}{1,-3}{2,-5}{3,-3}{4,-8}"
