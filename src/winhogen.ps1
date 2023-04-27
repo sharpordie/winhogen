@@ -217,6 +217,7 @@ Function Export-Members {
                 "Update-Git 'main' '72373746+sharpordie@users.noreply.github.com' 'sharpordie'"
                 "Update-VisualStudio2022"
                 "Update-VisualStudioCode"
+                "Update-Calibre"
                 "Update-Figma"
                 "Update-Flutter"
                 "Update-Jdownloader"
@@ -912,6 +913,22 @@ Function Update-Bluestacks {
             $Content[0x15] = $Content[0x15] -Bor 0x20
             Invoke-Gsudo { [IO.File]::WriteAllBytes("$Using:Altered", $Using:Content) | Out-Null }
         }
+    }
+
+}
+
+Function Update-Calibre {
+
+    $Current = Expand-Version "*calibre*"
+    $Address = "https://raw.githubusercontent.com/scoopinstaller/extras/master/bucket/calibre.json"
+    $Version = [Regex]::Match((Invoke-Scraper "Json" "$Address").version, "[\d.]+").Value
+    $Updated = [Version] "$Current" -Ge [Version] "$Version"
+
+    If (-Not $Updated) {
+        $Address = "https://download.calibre-ebook.com/$Version/calibre-64bit-$Version.msi"
+        $Fetched = Invoke-Fetcher "Webclient" "$Address"
+        Invoke-Gsudo { Start-Process "msiexec" "/i `"$Using:Fetched`" /qn" -Wait }
+        Remove-Desktop "*calibre*.lnk"
     }
 
 }
