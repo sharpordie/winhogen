@@ -175,29 +175,29 @@ Function Export-Members {
             @(
                 "Update-Windows"
                 "Update-Nvidia 'Game'"
-                "Update-AndroidStudio"
+                # "Update-AndroidStudio"
                 "Update-Chromium"
                 # "Update-DockerDesktop"
                 "Update-Git 'main' '72373746+sharpordie@users.noreply.github.com' 'sharpordie'"
                 "Update-Pycharm"
-                "Update-VisualStudio2022"
+                # "Update-VisualStudio2022"
                 "Update-VisualStudioCode"
-                # "Update-Antidote"
+                "Update-Antidote"
                 # "Update-Bluestacks '7'"
                 # "Update-DbeaverUltimate"
                 "Update-Figma"
                 "Update-Jdownloader"
                 # "Update-JoalDesktop"
                 "Update-Keepassxc"
-                # "Update-Mambaforge"
+                "Update-Mambaforge"
                 "Update-Mpv"
-                "Update-Flutter"
-                "Update-Maui"
+                # "Update-Flutter"
+                # "Update-Maui"
                 # "Update-Python"
-                "Update-Qbittorrent"
+                # "Update-Qbittorrent"
                 "Update-Scrcpy"
-                "Update-Spotify"
-                # "Update-VmwareWorkstation"
+                # "Update-Spotify"
+                "Update-VmwareWorkstation"
                 "Update-YtDlg"
             )
         }
@@ -781,35 +781,39 @@ Function Update-Antidote {
         Stop-Process -Name "AgentConnectix" -EA SI
         Stop-Process -Name "Antidote" -EA SI
         Stop-Process -Name "Connectix" -EA SI
-        $Handler = Deploy-Library Flaui
-        $Starter = (Get-Item "$Env:ProgramFiles\Drui*\Anti*\Appl*\Bin6*\Antidote.exe" -EA SI).FullName
-        $Started = [FlaUI.Core.Application]::Launch("$Starter")
-        $Window1 = $Started.GetMainWindow($Handler)
-        $Window1.Focus() ; Start-Sleep 1
-        [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::ENTER) ; Start-Sleep 4
-        $Window2 = $Started.GetMainWindow($Handler)
-        $Window2.Focus() ; Start-Sleep 1
-        $Button2 = $Window2.FindFirstDescendant($Handler.ConditionFactory.ByName("Manual activation…"))
-        $Button2.Click() ; Start-Sleep 6
-        $Window3 = $Started.GetMainWindow($Handler)
-        $Window3.Focus() ; Start-Sleep 1
-        [FlaUI.Core.Input.Keyboard]::Type("John") ; Start-Sleep 1
-        [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB) ; Start-Sleep 1
-        [FlaUI.Core.Input.Keyboard]::Type("Doe") ; Start-Sleep 1
-        [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB) ; Start-Sleep 1
-        [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB) ; Start-Sleep 1
-        [FlaUI.Core.Input.Keyboard]::Type("123-456-789-012-A11") ; Start-Sleep 1
-        [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE) ; Start-Sleep 4
-        $Window4 = $Started.GetMainWindow($Handler)
-        $Window4.Focus() ; Start-Sleep 1
-        [FlaUI.Core.Input.Keyboard]::Type("BV-12345-67890-12345-67890-12345") ; Start-Sleep 1
-        [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB) ; Start-Sleep 1
-        [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB) ; Start-Sleep 1
-        [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE) ; Start-Sleep 4
-        Stop-Process -Name "AgentConnectix" -EA SI
-        Stop-Process -Name "Antidote" -EA SI
-        Stop-Process -Name "Connectix" -EA SI
-        $Started.Dispose() | Out-Null ; $Handler.Dispose() | Out-Null
+        $Current = $Script:MyInvocation.MyCommand.Path
+        Invoke-Gsudo {
+            . $Using:Current ; Start-Sleep 4
+            $Handler = Deploy-Library Flaui
+            $Starter = (Get-Item "$Env:ProgramFiles\Drui*\Anti*\Appl*\Bin6*\Antidote.exe" -EA SI).FullName
+            $Started = [FlaUI.Core.Application]::Launch("$Starter")
+            $Window1 = $Started.GetMainWindow($Handler)
+            $Window1.Focus() ; Start-Sleep 1
+            [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::ENTER) ; Start-Sleep 4
+            $Window2 = $Started.GetMainWindow($Handler)
+            $Window2.Focus() ; Start-Sleep 1
+            $Button2 = $Window2.FindFirstDescendant($Handler.ConditionFactory.ByName("Manual activation…"))
+            $Button2.Click() ; Start-Sleep 6
+            $Window3 = $Started.GetMainWindow($Handler)
+            $Window3.Focus() ; Start-Sleep 1
+            [FlaUI.Core.Input.Keyboard]::Type("John") ; Start-Sleep 1
+            [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB) ; Start-Sleep 1
+            [FlaUI.Core.Input.Keyboard]::Type("Doe") ; Start-Sleep 1
+            [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB) ; Start-Sleep 1
+            [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB) ; Start-Sleep 1
+            [FlaUI.Core.Input.Keyboard]::Type("123-456-789-012-A11") ; Start-Sleep 1
+            [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE) ; Start-Sleep 4
+            $Window4 = $Started.GetMainWindow($Handler)
+            $Window4.Focus() ; Start-Sleep 1
+            [FlaUI.Core.Input.Keyboard]::Type("BV-12345-67890-12345-67890-12345") ; Start-Sleep 1
+            [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB) ; Start-Sleep 1
+            [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::TAB) ; Start-Sleep 1
+            [FlaUI.Core.Input.Keyboard]::Type([FlaUI.Core.WindowsAPI.VirtualKeyShort]::SPACE) ; Start-Sleep 4
+            Stop-Process -Name "AgentConnectix" -EA SI
+            Stop-Process -Name "Antidote" -EA SI
+            Stop-Process -Name "Connectix" -EA SI
+            $Started.Dispose() | Out-Null ; $Handler.Dispose() | Out-Null
+        }
     }
 
     If (-Not $Autorun) {
@@ -2466,7 +2470,7 @@ If ($MyInvocation.InvocationName -Ne "." -Or "$Env:TERM_PROGRAM" -Eq "Vscode") {
     Update-Powershell ; Enable-Feature "Uac"
 
     Update-Element "Timezone" "Romance Standard Time"
-    $Members = Export-Members -Variant "Laptop"
+    $Members = Export-Members -Variant "Coding"
 
     $Bigness = (65 - 19) * -1
     $Shaping = "`r{0,$Bigness}{1,-3}{2,-5}{3,-3}{4,-8}"
