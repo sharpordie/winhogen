@@ -242,29 +242,7 @@ Function Export-Members {
         "Tester" {
             @(
                 "Update-Windows"
-                # "Update-AndroidStudio"
-                # "Update-Chromium"
-                "Update-Git 'main' '72373746+sharpordie@users.noreply.github.com' 'sharpordie'"
-                # "Update-Pycharm"
-                # "Update-VisualStudio2022"
-                # "Update-VisualStudioCode"
-                # "Update-Antidote"
-                # "Update-DbeaverUltimate"
-                "Update-Figma"
-                # "Update-Flutter"
-                # "Update-Jdownloader"
-                # "Update-JoalDesktop"
-                # "Update-Keepassxc"
-                # "Update-Mambaforge"
-                # "Update-Maui"
-                "Update-Mpv"
-                # "Update-Python"
-                # "Update-Qbittorrent"
-                # "Update-Scrcpy"
-                # "Update-Spotify"
-                # "Update-Steam"
-                # "Update-VmwareWorkstation"
-                # "Update-YtDlg"
+                "Update-Antidote"
             )
         }
     }
@@ -2470,7 +2448,7 @@ If ($MyInvocation.InvocationName -Ne "." -Or "$Env:TERM_PROGRAM" -Eq "Vscode") {
     Update-Powershell ; Enable-Feature "Uac"
 
     Update-Element "Timezone" "Romance Standard Time"
-    $Members = Export-Members -Variant "Coding"
+    $Members = Export-Members -Variant "Tester"
 
     $Bigness = (65 - 19) * -1
     $Shaping = "`r{0,$Bigness}{1,-3}{2,-5}{3,-3}{4,-8}"
