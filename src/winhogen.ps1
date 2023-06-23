@@ -173,31 +173,31 @@ Function Export-Members {
     Switch ($Variant) {
         "Coding" {
             @(
-                "Update-Windows"
-                "Update-Nvidia 'Game'"
+                # "Update-Windows"
+                # "Update-Nvidia 'Game'"
                 # "Update-AndroidStudio"
-                "Update-Chromium"
-                # "Update-DockerDesktop"
+                # "Update-Chromium"
+                "Update-DockerDesktop"
                 "Update-Git 'main' '72373746+sharpordie@users.noreply.github.com' 'sharpordie'"
-                "Update-Pycharm"
+                # "Update-Pycharm"
                 # "Update-VisualStudio2022"
-                "Update-VisualStudioCode"
-                "Update-Antidote"
+                # "Update-VisualStudioCode"
+                # "Update-Antidote"
                 # "Update-Bluestacks '7'"
                 # "Update-DbeaverUltimate"
-                "Update-Figma"
-                "Update-Jdownloader"
+                # "Update-Figma"
+                # "Update-Jdownloader"
                 # "Update-JoalDesktop"
-                "Update-Keepassxc"
-                "Update-Mambaforge"
-                "Update-Mpv"
+                # "Update-Keepassxc"
+                # "Update-Mambaforge"
+                # "Update-Mpv"
                 # "Update-Flutter"
                 # "Update-Maui"
                 # "Update-Python"
                 # "Update-Qbittorrent"
-                "Update-Scrcpy"
+                # "Update-Scrcpy"
                 # "Update-Spotify"
-                "Update-VmwareWorkstation"
+                # "Update-VmwareWorkstation"
                 "Update-YtDlg"
             )
         }
@@ -2392,9 +2392,11 @@ Function Update-Wsl {
 
     $Program = "$Env:Windir\System32\wsl.exe"
     If (Test-Path "$Program") {
-        & "$Program" --update
-        & "$Program" --shutdown
-        & "$Program" --install ubuntu --no-launch
+        Invoke-Gsudo {
+            & "$Using:Program" --update
+            & "$Using:Program" --shutdown
+            & "$Using:Program" --install ubuntu --no-launch
+        }
     }
 
     $Program = "$Env:LocalAppData\Microsoft\WindowsApps\ubuntu.exe"
@@ -2448,7 +2450,7 @@ If ($MyInvocation.InvocationName -Ne "." -Or "$Env:TERM_PROGRAM" -Eq "Vscode") {
     Update-Powershell ; Enable-Feature "Uac"
 
     Update-Element "Timezone" "Romance Standard Time"
-    $Members = Export-Members -Variant "Tester"
+    $Members = Export-Members -Variant "Coding"
 
     $Bigness = (65 - 19) * -1
     $Shaping = "`r{0,$Bigness}{1,-3}{2,-5}{3,-3}{4,-8}"
