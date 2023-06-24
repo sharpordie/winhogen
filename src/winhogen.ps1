@@ -175,7 +175,7 @@ Function Export-Members {
             @(
                 # "Update-Windows"
                 # "Update-Nvidia 'Game'"
-                # "Update-AndroidStudio"
+                "Update-AndroidStudio"
                 # "Update-Chromium"
                 "Update-DockerDesktop"
                 "Update-Git 'main' '72373746+sharpordie@users.noreply.github.com' 'sharpordie'"
@@ -185,7 +185,7 @@ Function Export-Members {
                 # "Update-Antidote"
                 # "Update-Bluestacks '7'"
                 # "Update-DbeaverUltimate"
-                # "Update-Figma"
+                "Update-Figma"
                 # "Update-Jdownloader"
                 # "Update-JoalDesktop"
                 # "Update-Keepassxc"
@@ -194,7 +194,7 @@ Function Export-Members {
                 # "Update-Flutter"
                 # "Update-Maui"
                 # "Update-Python"
-                # "Update-Qbittorrent"
+                "Update-Qbittorrent"
                 # "Update-Scrcpy"
                 # "Update-Spotify"
                 # "Update-VmwareWorkstation"
@@ -693,19 +693,18 @@ Function Update-AndroidStudio {
     }
 
     If (-Not $Present) {
-        Write-Output $("y`n" * 10) | sdkmanager "build-tools;33.0.2"
+        Write-Output $("y`n" * 10) | sdkmanager "build-tools;34.0.0"
         Write-Output $("y`n" * 10) | sdkmanager "emulator"
         Write-Output $("y`n" * 10) | sdkmanager "extras;google;Android_Emulator_Hypervisor_Driver"
-        # Write-Output $("y`n" * 10) | sdkmanager "extras;intel;Hardware_Accelerated_Execution_Manager"
         Write-Output $("y`n" * 10) | sdkmanager "patcher;v4"
         Write-Output $("y`n" * 10) | sdkmanager "platform-tools"
         Write-Output $("y`n" * 10) | sdkmanager "platforms;android-33"
         Write-Output $("y`n" * 10) | sdkmanager "platforms;android-33-ext5"
-        Write-Output $("y`n" * 10) | sdkmanager "sources;android-33"
-        Write-Output $("y`n" * 10) | sdkmanager "system-images;android-33;google_apis;x86_64"
+        Write-Output $("y`n" * 10) | sdkmanager "sources;android-34"
+        Write-Output $("y`n" * 10) | sdkmanager "system-images;android-34;google_apis;x86_64"
         Write-Output $("y`n" * 10) | sdkmanager --licenses
         Write-Output $("y`n" * 10) | sdkmanager --update
-        avdmanager create avd -n "Pixel_3_API_33" -d "pixel_3" -k "system-images;android-33;google_apis;x86_64"
+        avdmanager create avd -n "Pixel_3_API_34" -d "pixel_3" -k "system-images;android-34;google_apis;x86_64"
     }
 
     If (-Not $Present) {
@@ -2087,7 +2086,8 @@ Function Update-Rider {
 
 Function Update-Rustdeck {
 
-    $Current = Expand-Version "*rustdeck*"
+    $Starter = "$Env:ProgramFiles\RustDesk\RustDesk.exe"
+    $Current = Expand-Version "$Starter"
     $Address = "https://api.github.com/repos/rustdesk/rustdesk/releases/latest"
     $Version = [Regex]::Match((Invoke-Scraper "Json" "$Address").tag_name , "[\d.]+").Value
     $Updated = [Version] "$Current" -Ge [Version] "$Version"
@@ -2097,6 +2097,7 @@ Function Update-Rustdeck {
         $Address = $Results.Where( { $_.browser_download_url -Like "*x64.exe" } ).browser_download_url
         $Fetched = Invoke-Fetcher "Webclient" "$Address"
         Invoke-Gsudo { Start-Process "$Using:Fetched" "--silent-install" -Wait }
+        Start-Sleep 4 ; Remove-Desktop "RustDeck*.lnk"
     }
 
 }
@@ -2468,7 +2469,7 @@ If ($MyInvocation.InvocationName -Ne "." -Or "$Env:TERM_PROGRAM" -Eq "Vscode") {
     Update-Powershell ; Enable-Feature "Uac"
 
     Update-Element "Timezone" "Romance Standard Time"
-    $Members = Export-Members -Variant "Tester"
+    $Members = Export-Members -Variant "Coding"
 
     $Bigness = (65 - 19) * -1
     $Shaping = "`r{0,$Bigness}{1,-3}{2,-5}{3,-3}{4,-8}"
