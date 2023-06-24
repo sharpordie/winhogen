@@ -241,8 +241,9 @@ Function Export-Members {
         }
         "Tester" {
             @(
-                "Update-Windows"
-                "Update-Antidote"
+                # "Update-Windows"
+                "Update-Mambaforge"
+                "Update-Spotify"
             )
         }
     }
@@ -1577,8 +1578,8 @@ Function Update-Mambaforge {
     If (-Not $Present) {
         $Address = "https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-Windows-x86_64.exe"
         $Fetched = Invoke-Fetcher "Webclient" "$Address"
-        $ArgList = "/S /InstallationType=JustMe /RegisterPython=0 /AddToPath=1 /NoRegistry=1 /D=$Deposit"
-        Start-Process "$Fetched" "$ArgList" -Wait
+        $ArgList = "/S /InstallationType=JustMe /RegisterPython=0 /AddToPath=0 /D=$Deposit"
+        Start-Process "$Fetched" "$ArgList" -Wait       
     }
 
     Update-SysPath "$Deposit\Scripts" "User"
@@ -2450,7 +2451,7 @@ If ($MyInvocation.InvocationName -Ne "." -Or "$Env:TERM_PROGRAM" -Eq "Vscode") {
     Update-Powershell ; Enable-Feature "Uac"
 
     Update-Element "Timezone" "Romance Standard Time"
-    $Members = Export-Members -Variant "Coding"
+    $Members = Export-Members -Variant "Tester"
 
     $Bigness = (65 - 19) * -1
     $Shaping = "`r{0,$Bigness}{1,-3}{2,-5}{3,-3}{4,-8}"
