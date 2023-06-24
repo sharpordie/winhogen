@@ -243,6 +243,7 @@ Function Export-Members {
             @(
                 # "Update-Windows"
                 "Update-Mambaforge"
+                "Update-Rustdeck"
                 "Update-Spotify"
             )
         }
@@ -2084,6 +2085,22 @@ Function Update-Rider {
 
 }
 
+Function Update-Rustdeck {
+
+    $Current = Expand-Version "*rustdeck*"
+    $Address = "https://api.github.com/repos/rustdesk/rustdesk/releases/latest"
+    $Version = [Regex]::Match((Invoke-Scraper "Json" "$Address").tag_name , "[\d.]+").Value
+    $Updated = [Version] "$Current" -Ge [Version] "$Version"
+
+    If (-Not $Updated) {
+        $Results = (Invoke-Scraper "Json" "$Address").assets
+        $Address = $Results.Where( { $_.browser_download_url -Like "*x64.exe" } ).browser_download_url
+        $Fetched = Invoke-Fetcher "Webclient" "$Address"
+        Invoke-Gsudo { Start-Process "$Using:Fetched" "--silent-install" -Wait }
+    }
+
+}
+
 Function Update-Scrcpy {
 
     $Deposit = "$Env:LocalAppData\Programs\Scrcpy"
@@ -2383,7 +2400,7 @@ Function Update-Windows {
 
     Enable-Feature "Activation"
     Enable-Feature "NightLight"
-    Enable-Feature "RemoteDesktop"
+    # Enable-Feature "RemoteDesktop" # Replaced by RustDeck
 
 }
 
