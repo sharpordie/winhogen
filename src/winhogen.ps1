@@ -175,17 +175,18 @@ Function Export-Members {
             @(
                 # "Update-Windows"
                 # "Update-Nvidia 'Game'"
-                "Update-AndroidStudio"
+                # "Update-AndroidStudio"
                 # "Update-Chromium"
-                "Update-DockerDesktop"
-                "Update-Git 'main' '72373746+sharpordie@users.noreply.github.com' 'sharpordie'"
+                # "Update-DockerDesktop"
+                "Update-DockerOsx"
+                # "Update-Git 'main' '72373746+sharpordie@users.noreply.github.com' 'sharpordie'"
                 # "Update-Pycharm"
                 # "Update-VisualStudio2022"
                 # "Update-VisualStudioCode"
                 # "Update-Antidote"
                 # "Update-Bluestacks '7'"
                 # "Update-DbeaverUltimate"
-                "Update-Figma"
+                # "Update-Figma"
                 # "Update-Jdownloader"
                 # "Update-JoalDesktop"
                 # "Update-Keepassxc"
@@ -194,11 +195,11 @@ Function Export-Members {
                 # "Update-Flutter"
                 # "Update-Maui"
                 # "Update-Python"
-                "Update-Qbittorrent"
+                # "Update-Qbittorrent"
                 # "Update-Scrcpy"
                 # "Update-Spotify"
                 # "Update-VmwareWorkstation"
-                "Update-YtDlg"
+                # "Update-YtDlg"
             )
         }
         "Gaming" {
@@ -707,17 +708,17 @@ Function Update-AndroidStudio {
         avdmanager create avd -n "Pixel_3_API_34" -d "pixel_3" -k "system-images;android-34;google_apis;x86_64"
     }
 
-    If (-Not $Present) {
-        Add-Type -AssemblyName System.Windows.Forms ; Start-Process "$Starter"
-        Start-Sleep 10 ; [Windows.Forms.SendKeys]::SendWait("{TAB}") ; Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
-        Start-Sleep 20 ; [Windows.Forms.SendKeys]::SendWait("{TAB}" * 2) ; Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
-        Start-Sleep 2; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
-        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{TAB}" * 2) ; Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
-        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
-        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{TAB}" * 3) ; Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
-        Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
-        Start-Sleep 6 ; [Windows.Forms.SendKeys]::SendWait("%{F4}")
-    }
+    # If (-Not $Present) {
+    #     Add-Type -AssemblyName System.Windows.Forms ; Start-Process "$Starter"
+    #     Start-Sleep 10 ; [Windows.Forms.SendKeys]::SendWait("{TAB}") ; Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+    #     Start-Sleep 20 ; [Windows.Forms.SendKeys]::SendWait("{TAB}" * 2) ; Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+    #     Start-Sleep 2; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+    #     Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{TAB}" * 2) ; Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+    #     Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+    #     Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{TAB}" * 3) ; Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+    #     Start-Sleep 2 ; [Windows.Forms.SendKeys]::SendWait("{ENTER}")
+    #     Start-Sleep 6 ; [Windows.Forms.SendKeys]::SendWait("%{F4}")
+    # }
 
 }
 
@@ -1244,11 +1245,38 @@ Function Update-DockerDesktop {
         $Content.autoStart = $True
         $Content.disableTips = $True
         $Content.disableUpdate = $True
-        $Content.displayedTutorial = $True
+        # $Content.displayedTutorial = $True
         $Content.licenseTermsVersion = 2
         $Content.openUIOnStartupDisabled = $True
         $Content | ConvertTo-Json | Set-Content "$Configs"
     }
+
+}
+
+Function Update-DockerOsx {
+
+    Update-DockerDesktop
+
+    $Configs = "$Env:UserProfile\.wslconfig"
+    Set-Content -Path "$Configs" -Value "[wsl2]"
+    Add-Content -Path "$Configs" -Value "nestedVirtualization=true"
+
+    $Program = "$Env:LocalAppData\Microsoft\WindowsApps\ubuntu.exe"
+    If (Test-Path "$Program") {
+        Start-Process "$Program" "run sudo apt install -y bridge-utils cpu-checker libvirt-clients libvirt-daemon qemu qemu-kvm" -WindowStyle Hidden -Wait
+        Start-Process "$Program" "run sudo apt install -y x11-apps" -WindowStyle Hidden -Wait
+    }
+
+    # net stop winnat
+    # net start winnat
+    # docker run -it \
+    #     --device /dev/kvm \
+    #     -p 50922:10022 \
+    #     -e "DISPLAY=${DISPLAY:-:0.0}" \
+    #     -v /mnt/wslg/.X11-unix:/tmp/.X11-unix \
+    #     -e GENERATE_UNIQUE=true \
+    #     -e MASTER_PLIST_URL='https://raw.githubusercontent.com/sickcodes/osx-serial-generator/master/config-custom.plist' \
+    #     sickcodes/docker-osx:ventura
 
 }
 
