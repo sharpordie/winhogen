@@ -244,9 +244,9 @@ Function Export-Members {
         "Tester" {
             @(
                 # "Update-Windows"
-                "Update-Mambaforge"
-                "Update-Rustdeck"
-                "Update-Spotify"
+                # "Update-Mambaforge"
+                "Update-Rustdesk"
+                # "Update-Spotify"
             )
         }
     }
@@ -2131,10 +2131,10 @@ Function Update-Rustdesk {
 
     If (-Not $Updated) {
         $Results = (Invoke-Scraper "Json" "$Address").assets
-        $Address = $Results.Where( { $_.browser_download_url -Like "*x64.exe" } ).browser_download_url
+        $Address = $Results.Where( { $_.browser_download_url -Like "*x86_64.exe" } ).browser_download_url
         $Fetched = Invoke-Fetcher "Webclient" "$Address"
-        Invoke-Gsudo { Start-Process "$Using:Fetched" "--silent-install" -Wait }
-        Start-Sleep 4 ; Remove-Desktop "RustDeck*.lnk"
+        Invoke-Gsudo { Start-Process "$Using:Fetched" "--silent-install" }
+        Start-Sleep 4 ; Remove-Desktop "RustDesk*.lnk"
     }
 
 }
@@ -2506,7 +2506,7 @@ If ($MyInvocation.InvocationName -Ne "." -Or "$Env:TERM_PROGRAM" -Eq "Vscode") {
     Update-Powershell ; Enable-Feature "Uac"
 
     Update-Element "Timezone" "Romance Standard Time"
-    $Members = Export-Members -Variant "Tester"
+    $Members = Export-Members -Variant "Coding"
 
     $Bigness = (65 - 19) * -1
     $Shaping = "`r{0,$Bigness}{1,-3}{2,-5}{3,-3}{4,-8}"
