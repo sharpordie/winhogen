@@ -117,7 +117,7 @@ Function Enable-Feature {
             $Content += '[DllImport("kernel32.dll", CharSet = CharSet.Auto,SetLastError = true)]'
             $Content += 'public static extern void SetThreadExecutionState(uint esFlags);'
             $Handler = Add-Type -MemberDefinition "$($Content | Out-String)" -Name System -Namespace Win32 -PassThru
-            $Handler::SetThreadExecutionState([uint32]"0x80000000") # ES_CONTINUOUS
+            $Handler::SetThreadExecutionState([Uint32]"0x80000000") # ES_CONTINUOUS
         }
         "Uac" {
             $Content = @(
@@ -173,34 +173,34 @@ Function Export-Members {
     Switch ($Variant) {
         "Coding" {
             @(
-                "Update-Windows"
-                "Update-Nvidia 'Game'"
-                "Update-AndroidStudio"
-                "Update-Chromium"
+                # "Update-Windows"
+                # "Update-Nvidia 'Game'"
+                # "Update-AndroidStudio"
+                # "Update-Chromium"
                 # "Update-DockerDesktop"
                 # "Update-DockerOsx"
-                "Update-Git 'main' '72373746+sharpordie@users.noreply.github.com' 'sharpordie'"
-                "Update-Pycharm"
+                # "Update-Git 'main' '72373746+sharpordie@users.noreply.github.com' 'sharpordie'"
+                # "Update-Pycharm"
                 # "Update-VisualStudio2022"
-                "Update-VisualStudioCode"
-                # "Update-Antidote"
+                # "Update-VisualStudioCode"
+                "Update-Antidote"
                 # "Update-Bluestacks '7'"
                 # "Update-DbeaverUltimate"
-                "Update-Figma"
-                "Update-Jdownloader"
+                # "Update-Figma"
+                # "Update-Jdownloader"
                 # "Update-JoalDesktop"
-                "Update-Keepassxc"
+                # "Update-Keepassxc"
                 "Update-Ldplayer"
                 "Update-Mambaforge"
-                "Update-Mpv"
-                "Update-Flutter"
+                # "Update-Mpv"
+                # "Update-Flutter"
                 # "Update-Maui"
                 # "Update-Python"
-                "Update-Qbittorrent"
-                "Update-Scrcpy"
+                # "Update-Qbittorrent"
+                # "Update-Scrcpy"
                 # "Update-Spotify"
-                "Update-VmwareWorkstation"
-                "Update-YtDlg"
+                # "Update-VmwareWorkstation"
+                # "Update-YtDlg"
             )
         }
         "Gaming" {
@@ -2500,7 +2500,8 @@ If ($MyInvocation.InvocationName -Ne "." -Or "$Env:TERM_PROGRAM" -Eq "Vscode") {
 
     $Loading = "`nTHE UPDATING DEPENDENCIES PROCESS HAS LAUNCHED"
     $Failure = "`rTHE UPDATING DEPENDENCIES PROCESS WAS CANCELED"
-    Write-Host "$Loading" -FO DarkYellow -NoNewline ; Remove-Feature "Uac" ; Remove-Feature "Sleeping"
+    Write-Host "$Loading" -FO DarkYellow -NoNewline
+    Remove-Feature "Uac" ; Remove-Feature "Sleeping" ; Update-Element -Element "Plan" "Ultimate"
     $Correct = (Update-Gsudo) -And ! (gsudo cache on -d -1 2>&1).ToString().Contains("Error")
     If (-Not $Correct) { Write-Host "$Failure`n" -FO Red ; Exit }
     Update-Powershell ; Enable-Feature "Uac"
